@@ -7,13 +7,36 @@
     <title>Hệ Thống Đào Tạo - Nhân Hiệu Từ Gốc</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* =========================================
+           1. CORE VARIABLES & THEME SETTINGS
+           ========================================= */
         :root {
+            /* Palette */
             --primary-color: #4facfe;
             --secondary-color: #00f2fe;
+            --accent-purple: #764ba2;
+
+            /* Status Colors */
+            --success-color: #00ef85;
+            --danger-color: #ff4b4b;
+            --warning-color: #f6d365;
+            --info-color: #00d2ff;
+
+            /* Glassmorphism System */
             --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-strong: rgba(255, 255, 255, 0.25);
             --glass-border: rgba(255, 255, 255, 0.2);
-            --text-color: #fff;
-            --input-bg: rgba(255, 255, 255, 0.2);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+
+            --text-color: #ffffff;
+            --input-bg: rgba(255, 255, 255, 0.1);
+        }
+
+        /* =========================================
+           2. GLOBAL RESETS & BODY
+           ========================================= */
+        * {
+            box-sizing: border-box;
         }
 
         body {
@@ -26,10 +49,11 @@
             min-height: 100vh;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             overflow: hidden;
-            position: relative;
+            /* Prevent body scroll, handle inside containers */
+            color: var(--text-color);
         }
 
-        /* Background Bubbles Animation */
+        /* --- Animated Background Particles --- */
         .circles {
             position: absolute;
             top: 0;
@@ -88,44 +112,6 @@
             animation-delay: 0s;
         }
 
-        .circles li:nth-child(6) {
-            left: 75%;
-            width: 110px;
-            height: 110px;
-            animation-delay: 3s;
-        }
-
-        .circles li:nth-child(7) {
-            left: 35%;
-            width: 150px;
-            height: 150px;
-            animation-delay: 7s;
-        }
-
-        .circles li:nth-child(8) {
-            left: 50%;
-            width: 25px;
-            height: 25px;
-            animation-delay: 15s;
-            animation-duration: 45s;
-        }
-
-        .circles li:nth-child(9) {
-            left: 20%;
-            width: 15px;
-            height: 15px;
-            animation-delay: 2s;
-            animation-duration: 35s;
-        }
-
-        .circles li:nth-child(10) {
-            left: 85%;
-            width: 150px;
-            height: 150px;
-            animation-delay: 0s;
-            animation-duration: 11s;
-        }
-
         @keyframes animate {
             0% {
                 transform: translateY(0) rotate(0deg);
@@ -140,29 +126,65 @@
             }
         }
 
-        /* Glassmorphism Container */
+        /* =========================================
+           3. UI COMPONENT UTILITIES
+           ========================================= */
+        .hidden {
+            display: none !important;
+        }
+
+        h2,
+        h3,
+        h4 {
+            margin: 0 0 15px 0;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Glass Container Base */
         .container {
             position: relative;
-            z-index: 1;
-            width: 380px;
+            z-index: 10;
             background: var(--glass-bg);
-            border-radius: 16px;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: var(--glass-shadow);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--glass-border);
-            padding: 40px;
-            text-align: center;
-            color: var(--text-color);
-            transition: height 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
-        h2 {
-            margin-bottom: 20px;
-            font-weight: 600;
-            letter-spacing: 1px;
+        /* Interactive Buttons */
+        button {
+            cursor: pointer;
+            border: none;
+            outline: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-family: inherit;
         }
 
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .main-btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 30px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            color: #fff;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 15px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Form Inputs */
         .input-group {
             position: relative;
             margin-bottom: 20px;
@@ -174,152 +196,504 @@
             left: 15px;
             top: 50%;
             transform: translateY(-50%);
-            color: #ddd;
-            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            pointer-events: none;
         }
 
-        input {
+        .input-group input {
             width: 100%;
-            padding: 12px 15px 12px 40px;
+            padding: 12px 15px 12px 45px;
             background: var(--input-bg);
             border: 1px solid var(--glass-border);
             border-radius: 30px;
             color: #fff;
-            font-size: 14px;
             box-sizing: border-box;
             outline: none;
-            transition: all 0.3s;
+            transition: background 0.3s;
         }
 
-        input::placeholder {
-            color: #ddd;
+        .input-group input:focus {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
         }
 
-        input:focus {
-            background: rgba(255, 255, 255, 0.3);
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
         }
 
-        .password-toggle {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            color: #ddd;
-            left: auto !important;
-            /* Override left icon style */
+        /* =========================================
+           4. AUTHENTICATION VIEW
+           ========================================= */
+        .auth-box {
+            width: 90%;
+            max-width: 420px;
+            padding: 50px 40px;
+            text-align: center;
         }
 
-        /* Button */
-        button {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-            border: none;
-            border-radius: 30px;
-            color: #fff;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            margin-top: 10px;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 242, 254, 0.4);
-        }
-
-        button:disabled {
-            background: #aaa;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Checkbox */
         .checkbox-container {
             display: flex;
             align-items: center;
+            justify-content: flex-start;
+            margin-top: 10px;
             font-size: 13px;
-            margin-bottom: 20px;
-            padding-left: 10px;
-            cursor: pointer;
+            opacity: 0.9;
         }
 
         .checkbox-container input {
-            width: auto;
             margin-right: 8px;
             cursor: pointer;
         }
 
-        /* Links */
-        .toggle-text {
-            margin-top: 20px;
-            font-size: 13px;
-            cursor: pointer;
-            color: #fff;
-            text-decoration: underline;
-            opacity: 0.8;
-            transition: opacity 0.3s;
+        /* =========================================
+           5. DASHBOARD LAYOUT (DESKTOP)
+           ========================================= */
+        .dash-box {
+            width: 1100px;
+            height: 700px;
+            /* Spacious Desktop Size */
+            max-width: 95vw;
+            max-height: 90vh;
+            display: flex;
+            overflow: hidden;
+            text-align: left;
         }
 
-        .toggle-text:hover {
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 260px;
+            background: rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            padding: 30px 0;
+            border-right: 1px solid var(--glass-border);
+            flex-shrink: 0;
+        }
+
+        .user-preview {
+            padding: 0 25px 30px;
+            border-bottom: 1px solid var(--glass-border);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            background: #fff;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-purple);
+            font-size: 32px;
+            font-weight: 800;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-item {
+            padding: 18px 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 16px;
+            opacity: 0.8;
+            border-left: 4px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
             opacity: 1;
         }
 
-        /* Notification */
-        #message {
-            margin-top: 15px;
-            min-height: 20px;
-            font-size: 14px;
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.15), transparent);
+            border-left-color: var(--secondary-color);
+            opacity: 1;
+            font-weight: 600;
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+        }
+
+        .nav-item i {
+            width: 24px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .logout-btn {
+            margin-top: auto;
+            padding: 20px 30px;
+            cursor: pointer;
+            color: #ffbaba;
+            display: flex;
+            align-items: center;
+            gap: 15px;
             font-weight: 500;
         }
 
-        /* Utility */
-        .hidden {
+        .logout-btn:hover {
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        /* Main Content Area */
+        .content-area {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            position: relative;
+            scroll-behavior: smooth;
+        }
+
+        /* Custom Scrollbar */
+        .content-area::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .content-area::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .content-area::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        .content-area::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* =========================================
+           6. DASHBOARD MODULES
+           ========================================= */
+
+        /* Grid Layouts */
+        .home-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+        }
+
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+        }
+
+        /* Cards */
+        .home-card,
+        .course-card {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s, background 0.3s;
+        }
+
+        .home-card:hover,
+        .course-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 15px;
+        }
+
+        .card-title {
+            font-weight: 700;
+            font-size: 17px;
+            color: var(--secondary-color);
+            letter-spacing: 0.5px;
+        }
+
+        /* Module 1: Roadmap Timeline */
+        .roadmap-container {
+            position: relative;
+            padding-left: 20px;
+            margin-top: 15px;
+        }
+
+        .roadmap-container::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 10px;
+            bottom: 0;
+            width: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        .step {
+            position: relative;
+            margin-bottom: 45px;
+            padding-left: 35px;
+        }
+
+        .step::after {
+            content: '';
+            position: absolute;
+            left: -2px;
+            top: 0;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #444;
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.3s;
+        }
+
+        .step.done::after {
+            background: var(--success-color);
+            border-color: var(--success-color);
+            box-shadow: 0 0 15px var(--success-color);
+        }
+
+        .step.active::after {
+            background: var(--warning-color);
+            border-color: var(--warning-color);
+            box-shadow: 0 0 20px var(--warning-color);
+            transform: scale(1.1);
+        }
+
+        .step-content {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .step-title {
+            color: var(--secondary-color);
+            font-size: 15px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        /* Module 2: Courses */
+        .course-img {
+            height: 120px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 40px;
+            transition: color 0.3s;
+        }
+
+        .course-card:hover .course-img {
+            color: #fff;
+        }
+
+        .c-status {
+            margin-top: auto;
+            padding: 10px;
+            text-align: center;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+        }
+
+        .status-reg {
+            background: rgba(0, 239, 133, 0.15);
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+            box-shadow: 0 0 10px rgba(0, 239, 133, 0.1);
+        }
+
+        .status-unreg {
+            background: rgba(255, 75, 75, 0.15);
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+        }
+
+        /* Checkin & Support Boxes specific */
+        .checkin-alert {
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .alert-danger {
+            background: rgba(255, 75, 75, 0.2);
+            border: 1px solid var(--danger-color);
+            color: var(--danger-color);
+        }
+
+        .alert-success {
+            background: rgba(0, 239, 133, 0.2);
+            border: 1px solid var(--success-color);
+            color: var(--success-color);
+        }
+
+        .btn-zalo {
+            background: #0068ff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(0, 104, 255, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .btn-zalo:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 104, 255, 0.5);
+        }
+
+        /* Loading Overlay */
+        #loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            border-radius: 16px;
+            backdrop-filter: blur(5px);
+        }
+
+        /* Responsive Mobile Header (Default Hidden) */
+        .mobile-header {
             display: none;
         }
 
-        .loading {
-            position: absolute;
-            right: 15px;
-            top: 12px;
-            width: 16px;
-            height: 16px;
-            border: 2px solid #fff;
-            border-top: 2px solid transparent;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
+        /* =========================================
+           7. MOBILE RESPONSIVE LOGIC
+           ========================================= */
+        @media (max-width: 768px) {
+            body {
+                align-items: flex-start;
+                background: #2c3e50;
+                /* Fallback solid color for mobile perf */
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             }
 
-            100% {
-                transform: rotate(360deg);
+            .dash-box {
+                width: 100vw;
+                height: 100vh;
+                max-width: 100%;
+                max-height: 100%;
+                border-radius: 0;
+                border: none;
+                box-shadow: none;
+                flex-direction: column;
             }
-        }
 
-        /* Config Warning */
-        #config-warning {
-            background: rgba(255, 99, 71, 0.9);
-            color: white;
-            padding: 10px;
-            position: absolute;
-            top: 0;
-            width: 100%;
-            text-align: center;
-            z-index: 100;
+            /* Header Visible on Mobile */
+            .mobile-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 15px 20px;
+                background: rgba(0, 0, 0, 0.3);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                z-index: 20;
+            }
+
+            /* Content Area: Adjust for Header & Bottom Nav */
+            .content-area {
+                padding: 20px;
+                padding-bottom: 100px;
+                /* Space for Bottom Nav */
+            }
+
+            /* Convert Sidebar to Bottom Navigation Bar */
+            .sidebar {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                justify-content: space-around;
+                background: rgba(15, 23, 42, 0.95);
+                backdrop-filter: blur(20px);
+                border-top: 1px solid rgba(255, 255, 255, 0.15);
+                border-right: none;
+                padding: 12px 0;
+                z-index: 100;
+            }
+
+            /* Hide non-nav items in sidebar */
+            .sidebar .user-preview,
+            .sidebar .logout-btn {
+                display: none;
+            }
+
+            /* Compact Nav Items */
+            .nav-item {
+                flex-direction: column;
+                gap: 6px;
+                padding: 5px;
+                font-size: 11px;
+                border-left: none;
+                width: 25%;
+                justify-content: center;
+                background: transparent !important;
+                /* Remove hover bg on mobile */
+            }
+
+            .nav-item i {
+                font-size: 20px;
+                margin-bottom: 2px;
+            }
+
+            .nav-item.active {
+                color: var(--secondary-color);
+                border-left: none;
+                text-shadow: none;
+                font-weight: bold;
+            }
+
+            .nav-item .active i {
+                filter: drop-shadow(0 0 5px var(--secondary-color));
+            }
+
+            /* Stack Grids */
+            .home-grid,
+            .courses-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .home-card[style*="span 2"] {
+                grid-column: span 1 !important;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <!-- Background Animation -->
     <ul class="circles">
         <li></li>
         <li></li>
@@ -333,235 +707,380 @@
         <li></li>
     </ul>
 
-    <!-- Config Warning -->
-    <div id="config-warning" class="hidden">
-        ⚠️ Chưa cấu hình API URL. Vui lòng mở file index.html và dán link Web App vào biến <b>API_URL</b>.
-    </div>
-
-    <!-- Main Form -->
-    <div class="container" id="app">
+    <!-- === AUTH BOX === -->
+    <div class="container auth-box" id="auth-container">
         <h2 id="form-title">Đăng Nhập</h2>
-
-        <!-- Login/Register Form -->
-        <form id="auth-form" onsubmit="event.preventDefault(); handleAction();">
-
-            <!-- Email / Phone Input -->
-            <div class="input-group">
-                <i class="fas fa-user"></i>
-                <input type="text" id="email" placeholder="Email hoặc Số điện thoại" required>
+        <form onsubmit="event.preventDefault(); handleAuth();">
+            <div class="input-group"><i class="fas fa-user"></i><input type="text" id="login-email"
+                    placeholder="Email hoặc SĐT" required></div>
+            <div id="register-fields" class="hidden">
+                <div class="input-group"><i class="fas fa-id-card"></i><input type="text" id="reg-name"
+                        placeholder="Họ và tên"></div>
+                <div class="input-group"><i class="fas fa-phone"></i><input type="text" id="reg-phone"
+                        placeholder="Số điện thoại cá nhân"></div>
             </div>
-
-            <!-- Full Name (Register Only) -->
-            <div class="input-group hidden" id="name-group">
-                <i class="fas fa-id-card"></i>
-                <input type="text" id="name" placeholder="Họ và tên của bạn">
-            </div>
-
-            <!-- Phone specific (Register Only - distinct field if needed, but we merged logic. 
-                 Wait, user asked for Name and Phone in register.
-                 Standard simplified: 'email' field acts as contact. 
-                 But to be strict: Register needs Email AND Phone separately as per previous logic.
-                 Let's add explicit Phone field for Register mode only.
-            -->
-            <div class="input-group hidden" id="phone-group">
-                <i class="fas fa-phone"></i>
-                <input type="text" id="phone" placeholder="Số điện thoại cá nhân">
-            </div>
-
-            <!-- Password -->
-            <div class="input-group">
-                <i class="fas fa-lock"></i>
-                <input type="password" id="password" placeholder="Mật khẩu" required>
-                <i class="fas fa-eye password-toggle" onclick="togglePassword(this)"></i>
-            </div>
-
-            <!-- Remember Me -->
-            <div class="checkbox-container" id="remember-container">
-                <input type="checkbox" id="rememberMe">
-                <label for="rememberMe">Ghi nhớ đăng nhập</label>
-            </div>
-
-            <!-- Submit Button -->
-            <button type="submit" id="submit-btn">
-                <span id="btn-text">ĐĂNG NHẬP</span>
-                <div class="loading hidden" id="btn-loading"></div>
-            </button>
+            <div class="input-group"><i class="fas fa-lock"></i><input type="password" id="login-pass"
+                    placeholder="Mật khẩu" required></div>
+            <div class="checkbox-container"><input type="checkbox" id="rememberMe"> <label for="rememberMe">Ghi nhớ đăng
+                    nhập</label></div>
+            <button type="submit" class="main-btn" id="btn-submit">ĐĂNG NHẬP</button>
         </form>
-
-        <div id="message"></div>
-
-        <p class="toggle-text" onclick="toggleMode()" id="toggle-text">
-            Chưa có tài khoản? Đăng ký ngay
-        </p>
+        <p id="auth-msg" style="margin-top: 15px; font-size: 14px;"></p>
+        <p style="margin-top: 15px; font-size: 13px; text-decoration: underline; cursor: pointer; opacity: 0.8;"
+            onclick="toggleAuthMode()" id="toggle-link">Chưa có tài khoản? Đăng ký ngay</p>
     </div>
 
+    <!-- === DASHBOARD === -->
+    <div class="container dash-box hidden" id="dashboard-container">
+
+        <!-- MOBILE HEADER -->
+        <div class="mobile-header">
+            <div style="font-weight: bold; font-size: 16px;">Nhân Hiệu Gốc</div>
+            <div style="font-size: 12px; opacity: 0.8;" id="m-user-name">User</div>
+        </div>
+
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="user-preview">
+                <div class="avatar" id="d-avatar">U</div>
+                <div style="font-weight: bold; font-size: 14px;" id="d-name">User</div>
+            </div>
+
+            <div class="nav-item active" onclick="switchModule('home')"> <i class="fas fa-home"></i> Trang Chủ </div>
+            <div class="nav-item" onclick="switchModule('map')"> <i class="fas fa-map-marked-alt"></i> Lộ Trình </div>
+            <div class="nav-item" onclick="switchModule('courses')"> <i class="fas fa-book-reader"></i> Khóa Học </div>
+            <div class="nav-item" onclick="switchModule('profile')"> <i class="fas fa-user-cog"></i> Tài Khoản </div>
+
+            <div class="logout-btn" onclick="logout()"> <i class="fas fa-sign-out-alt"></i> Đăng xuất </div>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="content-area">
+
+            <!-- 0. HOME MODULE -->
+            <div id="mod-home" class="module-view">
+                <h3>🏠 Truy Cập Nhanh</h3>
+                <div class="home-grid">
+
+                    <!-- A: ROADMAP CARD -->
+                    <div class="home-card" style="grid-column: span 2;">
+                        <div class="card-header"><i class="fas fa-map-signs" style="color: #00d2ff;"></i> <span
+                                class="card-title">Lộ Trình Của Tôi</span></div>
+                        <div id="home-roadmap-content">
+                            <!-- JS WILL RENDER: QUIZ PROMPT OR PROGRESS -->
+                            <div class="roadmap-status-box">
+                                <i class="fas fa-search-location roadmap-icon-lg"></i>
+                                <p>Bạn chưa xác định lộ trình học tập?</p>
+                                <button class="btn-action btn-start" onclick="openQuiz()">Làm bài Test định hướng
+                                    ngay</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- B: CHECK-IN CARD -->
+                    <div class="home-card">
+                        <div class="card-header"><i class="fas fa-calendar-check" style="color: #00ef85;"></i> <span
+                                class="card-title">Ghi Nhận Mỗi Ngày</span></div>
+
+                        <div id="checkin-status-box">
+                            <div class="checkin-alert alert-danger">
+                                <i class="fas fa-exclamation-circle"></i> Chưa ghi nhận hôm nay!
+                            </div>
+                            <p style="font-size: 12px; opacity: 0.8; margin-bottom: 10px;">Hãy cam kết kỷ luật bản thân
+                                bằng cách ghi nhận kết quả thực hành.</p>
+                            <button class="main-btn" style="margin-top: 0; font-size: 14px;" onclick="openCheckin()">Ghi
+                                nhận ngay</button>
+                        </div>
+                    </div>
+
+                    <!-- C: SUPPORT CARD -->
+                    <div class="home-card">
+                        <div class="card-header"><i class="fas fa-headset" style="color: #f6d365;"></i> <span
+                                class="card-title">Hỗ Trợ Nhanh</span></div>
+                        <div style="text-align: center; padding: 10px;">
+                            <p style="margin-bottom: 15px;">Gặp khó khăn? Liên hệ ngay với đội ngũ hỗ trợ.</p>
+                            <a href="https://zalo.me" target="_blank" class="btn-zalo"><i
+                                    class="fas fa-comment-dots"></i> Chat Zalo Hỗ Trợ</a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- 1. MAP MODULE -->
+            <div id="mod-map" class="module-view hidden">
+                <h3>📍 Bản Đồ Học Tập</h3>
+                <div class="roadmap-container">
+                    <div class="step done">
+                        <div class="step-content">
+                            <div class="step-title">Giai đoạn 1: Khám Phá Bản Thân</div>
+                            <span class="step-status" style="background:var(--success-color); color:#000;">Đã hoàn
+                                thành</span>
+                        </div>
+                    </div>
+                    <div class="step active">
+                        <div class="step-content">
+                            <div class="step-title">Giai đoạn 2: Xây Dựng Nhân Hiệu</div>
+                            <div class="step-desc">Bạn đang ở đây. Hãy hoàn thành các bài tập thực hành.</div>
+                        </div>
+                    </div>
+                    <!-- More steps... -->
+                </div>
+            </div>
+
+            <!-- 2. COURSES MODULE -->
+            <div id="mod-courses" class="module-view hidden">
+                <h3>📚 Kho Khóa Học</h3>
+                <div class="courses-grid" id="course-list-render">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+
+            <!-- 3. PROFILE MODULE -->
+            <div id="mod-profile" class="module-view hidden">
+                <h3>⚙️ Cài Đặt Tài Khoản</h3>
+                <div class="profile-form">
+                    <div class="input-group"><label>Họ tên</label><input type="text" id="p-name"></div>
+                    <div class="input-group"><label>SĐT</label><input type="text" id="p-phone"></div>
+                    <button class="main-btn" onclick="updateProfileGeneric()"
+                        style="background: rgba(255,255,255,0.2);">Lưu Thay Đổi</button>
+
+                    <h4 style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 10px;">Đổi
+                        Mật Khẩu</h4>
+                    <div class="input-group"><input type="password" id="p-new-pass" placeholder="Mật khẩu mới"></div>
+                    <button class="main-btn" onclick="updateProfileGeneric()"
+                        style="background: rgba(255,255,255,0.2);">Đổi Mật Khẩu</button>
+
+                    <div style="margin-top: 15px; font-size: 13px;">
+                        Email: <b id="p-email">...</b>
+                        <a href="#" onclick="promptEmailChange()"
+                            style="color: var(--secondary-color); margin-left: 10px;">(Đổi Email)</a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="loading-overlay" class="hidden"><i class="fas fa-spinner fa-spin" style="font-size: 30px;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT -->
     <script>
-        // ============================================================
-        // CẤU HÌNH: DÁN URL WEB APP CỦA BẠN VÀO DƯỚI ĐÂY
-        // ============================================================
-        const API_URL = "https://script.google.com/macros/s/AKfycbw1KISNYGtgchksXowPdsDw6QcceI4ATV2wQKyhpTJYRH62mu4g6LH5jkRvGkG5onh5/exec";
-        // Ví dụ: "https://script.google.com/macros/s/AKfycbx.../exec"
-        // ============================================================
+        const API_URL = "https://script.google.com/macros/s/AKfycbzZ9T9uEkcIFJBAYHPHNFsX2VWQF03Ti78w-ROBPIMGZ7TzTsUql5boexX7VOF5G7dx/exec";
 
-        let isLoginMode = true;
+        let isLogin = true;
+        let currentUser = null;
+        let currentPass = "";
 
-        // Init
-        window.onload = function () {
-            // Chỉ hiện cảnh báo nếu vẫn còn dòng chữ placeholder mặc định
-            if (API_URL === "PASTE_YOUR_WEB_APP_URL_HERE") {
-                document.getElementById('config-warning').classList.remove('hidden');
-            }
-            loadSavedCreds();
+        // MOCK DATA FOR DEMO
+        let mockHomeData = {
+            roadmapStatus: 'new', // 'new' or 'active'
+            todayCheckin: false // true or false
         };
 
-        function toggleMode() {
-            isLoginMode = !isLoginMode;
+        window.onload = loadSaved;
 
-            const title = document.getElementById('form-title');
-            const btnText = document.getElementById('btn-text');
-            const toggleText = document.getElementById('toggle-text');
-            const nameGroup = document.getElementById('name-group');
-            const phoneGroup = document.getElementById('phone-group');
-            const remember = document.getElementById('remember-container');
-            const emailInput = document.getElementById('email');
-
-            document.getElementById('message').innerText = "";
-
-            if (isLoginMode) {
-                title.innerText = "Đăng Nhập";
-                btnText.innerText = "ĐĂNG NHẬP";
-                toggleText.innerText = "Chưa có tài khoản? Đăng ký ngay";
-                nameGroup.classList.add('hidden');
-                phoneGroup.classList.add('hidden');
-                remember.classList.remove('hidden');
-                emailInput.placeholder = "Email hoặc Số điện thoại";
-            } else {
-                title.innerText = "Đăng Ký";
-                btnText.innerText = "ĐĂNG KÝ NGAY";
-                toggleText.innerText = "Đã có tài khoản? Đăng nhập";
-                nameGroup.classList.remove('hidden');
-                phoneGroup.classList.remove('hidden');
-                remember.classList.add('hidden');
-                emailInput.placeholder = "Địa chỉ Email (Gmail)"; // Explicit email for register
-            }
+        // --- AUTH ---
+        function toggleAuthMode() {
+            isLogin = !isLogin;
+            document.getElementById('form-title').innerText = isLogin ? "Đăng Nhập" : "Đăng Ký";
+            document.getElementById('btn-submit').innerText = isLogin ? "ĐĂNG NHẬP" : "ĐĂNG KÝ NGAY";
+            document.getElementById('toggle-link').innerText = isLogin ? "Chưa có tài khoản? Đăng ký ngay" : "Đã có tài khoản? Đăng nhập";
+            isLogin ? document.getElementById('register-fields').classList.add('hidden') : document.getElementById('register-fields').classList.remove('hidden');
         }
 
-        function togglePassword(icon) {
-            const input = document.getElementById('password');
-            if (input.type === "password") {
-                input.type = "text";
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                input.type = "password";
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
-        }
+        async function handleAuth() {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+            const name = document.getElementById('reg-name').value;
+            const phone = document.getElementById('reg-phone').value;
+            const btn = document.getElementById('btn-submit');
 
-        async function handleAction() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            const name = document.getElementById('name').value.trim();
-            const phone = document.getElementById('phone').value.trim();
-            const msg = document.getElementById('message');
-            const btn = document.getElementById('submit-btn');
-            const loader = document.getElementById('btn-loading');
-
-            // Validate simple
-            if (!email || !password) {
-                showMessage("Vui lòng nhập đủ thông tin!", "red");
-                return;
-            }
-            if (!isLoginMode && (!name || !phone)) {
-                showMessage("Vui lòng nhập Tên và Số điện thoại!", "red");
-                return;
-            }
-
-            // UI Loading
-            btn.disabled = true;
-            loader.classList.remove('hidden');
-            showMessage("", "white");
-
-            // Prepare Payload
-            const payload = {
-                action: isLoginMode ? "login" : "register",
-                loginInput: email, // For login, this is email/phone
-                email: email,      // For register
-                password: password,
-                name: name,
-                phone: phone
-            };
-
-            // Handle Remember Me (Local logic only)
-            if (isLoginMode && document.getElementById('rememberMe').checked) {
-                localStorage.setItem('u_email', email);
-                localStorage.setItem('u_pass', btoa(password));
-            } else if (isLoginMode) {
-                localStorage.removeItem('u_email');
-                localStorage.removeItem('u_pass');
-            }
+            btn.disabled = true; document.getElementById('auth-msg').innerText = "Đang xử lý...";
 
             try {
-                // Call API (Using fetch with no-cors / cors mode)
-                // Note: Apps Script API should be called with POST and stringify body
-                // To avoid CORS preflight issues with simple requests, sometimes text/plain is safer, 
-                // but we implemented CORS in GAS so application/json is fine.
+                const res = await fetch(API_URL, {
+                    method: 'POST', body: JSON.stringify({
+                        action: isLogin ? "login" : "register",
+                        loginInput: email, email: email, password: pass, name: name, phone: phone
+                    })
+                }).then(r => r.json());
 
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await response.json(); // backend returns JSON
-
-                btn.disabled = false;
-                loader.classList.add('hidden');
-
-                if (data.success) {
-                    showMessage(data.msg, "#00ff88"); // Green
-                    if (isLoginMode) {
-                        // Success Login UI
-                        document.getElementById('app').innerHTML = `
-                            <div style="text-align:center; padding: 20px;">
-                                <i class="fas fa-check-circle" style="font-size: 60px; color: #00ff88; margin-bottom: 20px;"></i>
-                                <h3>${data.msg}</h3>
-                                <p>Đang chuyển hướng...</p>
-                                <button onclick="location.reload()" style="background: rgba(255,255,255,0.2);">Đăng xuất</button>
-                            </div>
-                        `;
+                if (res.success) {
+                    if (isLogin) {
+                        currentPass = pass;
+                        currentUser = res.user || { email: email, name: "User" };
+                        enterDashboard();
+                        if (document.getElementById('rememberMe').checked) {
+                            localStorage.setItem('u_e', email); localStorage.setItem('u_p', btoa(pass));
+                        }
+                    } else {
+                        document.getElementById('auth-msg').innerText = res.msg;
+                        toggleAuthMode();
                     }
                 } else {
-                    showMessage(data.msg, "#ff4b4b"); // Red
+                    document.getElementById('auth-msg').innerText = res.msg;
                 }
+            } catch (e) { document.getElementById('auth-msg').innerText = "Lỗi: " + e; }
+            btn.disabled = false;
+        }
 
-            } catch (error) {
-                console.error(error);
-                btn.disabled = false;
-                loader.classList.add('hidden');
-                showMessage("Lỗi kết nối Server! Vui lòng kiểm tra lại đường truyền.", "#ff4b4b");
+        // --- DASHBOARD ---
+        async function enterDashboard() {
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('dashboard-container').classList.remove('hidden');
+
+            // Render basic UI
+            renderSidebar();
+
+            // Default View: Home
+            switchModule('home');
+
+            // Sync Data
+            try {
+                const res = await callApi("getProfile", { email: currentUser.email });
+                if (res.success) {
+                    currentUser = res.data;
+                    renderSidebar();
+                    renderProfile();
+                    renderCourses(); // Mock
+                    renderHomeLogic(); // Mock
+                }
+            } catch (e) { }
+        }
+
+        function switchModule(mod) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            // Set Active Logic
+            if (mod == 'home') document.querySelectorAll('.nav-item')[0].classList.add('active');
+            if (mod == 'map') document.querySelectorAll('.nav-item')[1].classList.add('active');
+            if (mod == 'courses') document.querySelectorAll('.nav-item')[2].classList.add('active');
+            if (mod == 'profile') document.querySelectorAll('.nav-item')[3].classList.add('active');
+
+            document.querySelectorAll('.module-view').forEach(el => el.classList.add('hidden'));
+            document.getElementById('mod-' + mod).classList.remove('hidden');
+        }
+
+        // --- RENDER LOGIC ---
+        function renderHomeLogic() {
+            // 1. Roadmap Card Logic
+            const rdContent = document.getElementById('home-roadmap-content');
+            if (mockHomeData.roadmapStatus === 'new') {
+                rdContent.innerHTML = `
+                    <div class="roadmap-status-box">
+                        <i class="fas fa-search-location roadmap-icon-lg"></i>
+                        <p>Bạn chưa xác định lộ trình?</p>
+                        <button class="btn-action btn-start" onclick="openQuiz()">Làm bài Test ngay</button>
+                    </div>`;
+            } else {
+                rdContent.innerHTML = `
+                    <div style="padding:10px;">
+                        <h4>Lộ trình hiện tại: Xây Dựng Nhân Hiệu</h4>
+                        <div style="background:rgba(255,255,255,0.1); height:10px; border-radius:5px; margin:10px 0;">
+                            <div style="width:30%; background:var(--success-color); height:100%; border-radius:5px;"></div>
+                        </div>
+                        <p style="font-size:12px;">Đã hoàn thành: 30%</p>
+                        <button class="btn-action btn-continue" onclick="switchModule('map')">Tiếp tục học</button>
+                    </div>`;
+            }
+
+            // 2. Checkin Card Logic
+            const ckContent = document.getElementById('checkin-status-box');
+            if (!mockHomeData.todayCheckin) {
+                ckContent.innerHTML = `
+                     <div class="checkin-alert alert-danger"><i class="fas fa-exclamation-circle"></i> Chưa ghi nhận hôm nay!</div>
+                     <p style="font-size:12px;opacity:0.8;">Hãy cam kết kỷ luật bản thân.</p>
+                     <button class="main-btn" style="margin-top:5px; font-size:14px;" onclick="openCheckin()">Ghi nhận ngay</button>
+                 `;
+            } else {
+                ckContent.innerHTML = `
+                    <div class="checkin-alert alert-success"><i class="fas fa-check-circle"></i> Đã ghi nhận hôm nay</div>
+                    <p style="font-size:12px;opacity:0.8;">Tuyệt vời! Hãy giữ vững phong độ nhé.</p>
+                `;
             }
         }
 
-        function showMessage(text, color) {
-            const m = document.getElementById('message');
-            m.style.color = color;
-            m.innerText = text;
+        function renderSidebar() {
+            document.getElementById('d-name').innerText = currentUser.name || "User";
+            document.getElementById('m-user-name').innerText = currentUser.name || "User";
+            document.getElementById('d-avatar').innerText = (currentUser.name && currentUser.name[0]) ? currentUser.name[0].toUpperCase() : "U";
         }
 
-        function loadSavedCreds() {
-            const e = localStorage.getItem('u_email');
-            const p = localStorage.getItem('u_pass');
-            if (e) {
-                document.getElementById('email').value = e;
-                document.getElementById('rememberMe').checked = true;
-            }
-            if (p) {
-                try { document.getElementById('password').value = atob(p); } catch { }
+        function renderProfile() {
+            document.getElementById('p-name').value = currentUser.name;
+            document.getElementById('p-phone').value = currentUser.phone;
+            document.getElementById('p-email').innerText = currentUser.email;
+        }
+
+        async function renderCourses() {
+            const list = document.getElementById('course-list-render');
+            list.innerHTML = '<div style="grid-column:span 2; text-align:center;"><i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu khóa học...</div>';
+
+            try {
+                const res = await callApi("getCourses", { email: currentUser.email });
+                if (res.success && res.data.length > 0) {
+                    list.innerHTML = ""; // Clear loader
+                    res.data.forEach(c => {
+                        const statusClass = c.isRegistered ? "status-reg" : "status-unreg";
+                        const statusText = c.isRegistered ? "ĐÃ ĐĂNG KÝ" : "CHƯA ĐĂNG KÝ";
+                        const html = `
+                            <div class="course-card">
+                                    <div class="course-img"><i class="fas ${c.icon}"></i></div>
+                                    <div style="font-weight:bold; min-height:40px;">${c.title}</div>
+                                    <div style="font-size:12px; opacity:0.8; margin-bottom:10px;">${c.desc || ""}</div>
+                                    <div class="c-status ${statusClass}">${statusText}</div>
+                            </div>`;
+                        list.innerHTML += html;
+                    });
+                } else {
+                    list.innerHTML = '<p style="grid-column:span 2; text-align:center;">Chưa có khóa học nào.</p>';
+                }
+            } catch (e) {
+                list.innerHTML = '<p style="color:red; grid-column:span 2; text-align:center;">Lỗi tải khóa học.</p>';
             }
         }
+
+        // --- ACTIONS ---
+        function openQuiz() { alert("Mở module bài Test... (Đang phát triển)"); }
+        function openCheckin() {
+            const note = prompt("Nhập nội dung ghi nhận hôm nay:");
+            if (note) {
+                mockHomeData.todayCheckin = true; // Mock update
+                renderHomeLogic();
+                alert("Đã ghi nhận thành công!");
+            }
+        }
+
+        async function updateProfileGeneric() {
+            const name = document.getElementById('p-name').value;
+            const newPass = document.getElementById('p-new-pass').value;
+            // Simplified call
+            showLoading(true);
+            try {
+                const res = await callApi("updateProfile", {
+                    email: currentUser.email, oldPassword: currentPass,
+                    newName: name, newPhone: document.getElementById('p-phone').value, newPassword: newPass
+                });
+                if (res.success) { alert("Cập nhật thành công!"); if (newPass) currentPass = newPass; }
+                else alert(res.msg);
+            } catch (e) { alert("Lỗi: " + e); }
+            showLoading(false);
+        }
+
+        // --- UTILS ---
+        async function callApi(action, data) {
+            data.action = action;
+            return fetch(API_URL, { method: 'POST', body: JSON.stringify(data) }).then(r => r.json());
+        }
+        function loadSaved() {
+            const e = localStorage.getItem('u_e');
+            const p = localStorage.getItem('u_p');
+            if (e) { document.getElementById('login-email').value = e; document.getElementById('rememberMe').checked = true; if (p) try { document.getElementById('login-pass').value = atob(p) } catch { } }
+        }
+        function showLoading(b) { b ? document.getElementById('loading-overlay').classList.remove('hidden') : document.getElementById('loading-overlay').classList.add('hidden'); }
+        function logout() { location.reload(); }
+
     </script>
 </body>
-
 
 </html>
