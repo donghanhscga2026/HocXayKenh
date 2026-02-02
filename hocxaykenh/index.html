@@ -707,7 +707,6 @@
         <li></li>
     </ul>
 
-    <!-- === AUTH BOX === -->
     <div class="container auth-box" id="auth-container">
         <h2 id="form-title">Đăng Nhập</h2>
         <form onsubmit="event.preventDefault(); handleAuth();">
@@ -730,16 +729,13 @@
             onclick="toggleAuthMode()" id="toggle-link">Chưa có tài khoản? Đăng ký ngay</p>
     </div>
 
-    <!-- === DASHBOARD === -->
     <div class="container dash-box hidden" id="dashboard-container">
 
-        <!-- MOBILE HEADER -->
         <div class="mobile-header">
             <div style="font-weight: bold; font-size: 16px;">Nhân Hiệu Gốc</div>
             <div style="font-size: 12px; opacity: 0.8;" id="m-user-name">User</div>
         </div>
 
-        <!-- SIDEBAR -->
         <div class="sidebar">
             <div class="user-preview">
                 <div class="avatar" id="d-avatar">U</div>
@@ -754,20 +750,16 @@
             <div class="logout-btn" onclick="logout()"> <i class="fas fa-sign-out-alt"></i> Đăng xuất </div>
         </div>
 
-        <!-- CONTENT -->
         <div class="content-area">
 
-            <!-- 0. HOME MODULE -->
             <div id="mod-home" class="module-view">
                 <h3>🏠 Truy Cập Nhanh</h3>
                 <div class="home-grid">
 
-                    <!-- A: ROADMAP CARD -->
                     <div class="home-card" style="grid-column: span 2;">
                         <div class="card-header"><i class="fas fa-map-signs" style="color: #00d2ff;"></i> <span
                                 class="card-title">Lộ Trình Của Tôi</span></div>
                         <div id="home-roadmap-content">
-                            <!-- JS WILL RENDER: QUIZ PROMPT OR PROGRESS -->
                             <div class="roadmap-status-box">
                                 <i class="fas fa-search-location roadmap-icon-lg"></i>
                                 <p>Bạn chưa xác định lộ trình học tập?</p>
@@ -777,7 +769,6 @@
                         </div>
                     </div>
 
-                    <!-- B: CHECK-IN CARD -->
                     <div class="home-card">
                         <div class="card-header"><i class="fas fa-calendar-check" style="color: #00ef85;"></i> <span
                                 class="card-title">Ghi Nhận Mỗi Ngày</span></div>
@@ -793,7 +784,6 @@
                         </div>
                     </div>
 
-                    <!-- C: SUPPORT CARD -->
                     <div class="home-card">
                         <div class="card-header"><i class="fas fa-headset" style="color: #f6d365;"></i> <span
                                 class="card-title">Hỗ Trợ Nhanh</span></div>
@@ -807,7 +797,6 @@
                 </div>
             </div>
 
-            <!-- 1. MAP MODULE -->
             <div id="mod-map" class="module-view hidden">
                 <h3>📍 Bản Đồ Học Tập</h3>
                 <div class="roadmap-container">
@@ -824,19 +813,15 @@
                             <div class="step-desc">Bạn đang ở đây. Hãy hoàn thành các bài tập thực hành.</div>
                         </div>
                     </div>
-                    <!-- More steps... -->
-                </div>
+                    </div>
             </div>
 
-            <!-- 2. COURSES MODULE -->
             <div id="mod-courses" class="module-view hidden">
                 <h3>📚 Kho Khóa Học</h3>
                 <div class="courses-grid" id="course-list-render">
-                    <!-- Rendered by JS -->
-                </div>
+                    </div>
             </div>
 
-            <!-- 3. PROFILE MODULE -->
             <div id="mod-profile" class="module-view hidden">
                 <h3>⚙️ Cài Đặt Tài Khoản</h3>
                 <div class="profile-form">
@@ -864,7 +849,6 @@
         </div>
     </div>
 
-    <!-- SCRIPT -->
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzZ9T9uEkcIFJBAYHPHNFsX2VWQF03Ti78w-ROBPIMGZ7TzTsUql5boexX7VOF5G7dx/exec";
 
@@ -910,7 +894,14 @@
                     if (isLogin) {
                         currentPass = pass;
                         currentUser = res.user || { email: email, name: "User" };
+
+                        // CẬP NHẬT 1: LƯU TOÀN BỘ DATA USER VÀO LOCALSTORAGE ĐỂ KHÔNG BỊ TRÔI DATA
+                        // + LƯU TRẠNG THÁI ĐĂNG NHẬP
+                        localStorage.setItem('user_data', JSON.stringify(currentUser));
+                        
                         enterDashboard();
+                        
+                        // Logic ghi nhớ mật khẩu cũ
                         if (document.getElementById('rememberMe').checked) {
                             localStorage.setItem('u_e', email); localStorage.setItem('u_p', btoa(pass));
                         }
@@ -933,23 +924,32 @@
             // Render basic UI
             renderSidebar();
 
-            // Default View: Home
-            switchModule('home');
+            // CẬP NHẬT 2: KHÔI PHỤC TAB CŨ (NẾU CÓ) HOẶC VỀ HOME
+            const lastMod = localStorage.getItem('last_module') || 'home';
+            switchModule(lastMod);
 
             // Sync Data
             try {
                 const res = await callApi("getProfile", { email: currentUser.email });
                 if (res.success) {
-                    currentUser = res.data;
-                    renderSidebar();
-                    renderProfile();
+                    // CẬP NHẬT 3: CHỈ UPDATE NẾU CÓ DỮ LIỆU THỰC SỰ, TRÁNH GHI ĐÈ BẰNG NULL
+                    if(res.data && res.data.name) {
+                        currentUser = res.data;
+                        // Cập nhật lại cache
+                        localStorage.setItem('user_data', JSON.stringify(currentUser));
+                        renderSidebar();
+                        renderProfile();
+                    }
                     renderCourses(); // Mock
                     renderHomeLogic(); // Mock
                 }
-            } catch (e) { }
+            } catch (e) { console.log("Lỗi sync: ", e)}
         }
 
         function switchModule(mod) {
+            // CẬP NHẬT 4: LƯU TAB HIỆN TẠI VÀO STORAGE
+            localStorage.setItem('last_module', mod);
+
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             // Set Active Logic
             if (mod == 'home') document.querySelectorAll('.nav-item')[0].classList.add('active');
@@ -958,7 +958,12 @@
             if (mod == 'profile') document.querySelectorAll('.nav-item')[3].classList.add('active');
 
             document.querySelectorAll('.module-view').forEach(el => el.classList.add('hidden'));
-            document.getElementById('mod-' + mod).classList.remove('hidden');
+            try {
+                document.getElementById('mod-' + mod).classList.remove('hidden');
+            } catch(e) {
+                // Nếu lỗi module (do code cũ lưu tên sai) thì về home
+                document.getElementById('mod-home').classList.remove('hidden');
+            }
         }
 
         // --- RENDER LOGIC ---
@@ -988,10 +993,10 @@
             const ckContent = document.getElementById('checkin-status-box');
             if (!mockHomeData.todayCheckin) {
                 ckContent.innerHTML = `
-                     <div class="checkin-alert alert-danger"><i class="fas fa-exclamation-circle"></i> Chưa ghi nhận hôm nay!</div>
-                     <p style="font-size:12px;opacity:0.8;">Hãy cam kết kỷ luật bản thân.</p>
-                     <button class="main-btn" style="margin-top:5px; font-size:14px;" onclick="openCheckin()">Ghi nhận ngay</button>
-                 `;
+                      <div class="checkin-alert alert-danger"><i class="fas fa-exclamation-circle"></i> Chưa ghi nhận hôm nay!</div>
+                      <p style="font-size:12px;opacity:0.8;">Hãy cam kết kỷ luật bản thân.</p>
+                      <button class="main-btn" style="margin-top:5px; font-size:14px;" onclick="openCheckin()">Ghi nhận ngay</button>
+                  `;
             } else {
                 ckContent.innerHTML = `
                     <div class="checkin-alert alert-success"><i class="fas fa-check-circle"></i> Đã ghi nhận hôm nay</div>
@@ -1001,15 +1006,26 @@
         }
 
         function renderSidebar() {
-            document.getElementById('d-name').innerText = currentUser.name || "User";
-            document.getElementById('m-user-name').innerText = currentUser.name || "User";
-            document.getElementById('d-avatar').innerText = (currentUser.name && currentUser.name[0]) ? currentUser.name[0].toUpperCase() : "U";
+            // CẬP NHẬT 5: BẢO VỆ DỮ LIỆU HIỂN THỊ
+            // Nếu currentUser chưa có, thử lấy từ localStorage
+            if(!currentUser) {
+                const cached = localStorage.getItem('user_data');
+                if(cached) currentUser = JSON.parse(cached);
+            }
+
+            if(currentUser) {
+                document.getElementById('d-name').innerText = currentUser.name || "Học viên";
+                document.getElementById('m-user-name').innerText = currentUser.name || "Học viên";
+                document.getElementById('d-avatar').innerText = (currentUser.name && currentUser.name[0]) ? currentUser.name[0].toUpperCase() : "U";
+            }
         }
 
         function renderProfile() {
-            document.getElementById('p-name').value = currentUser.name;
-            document.getElementById('p-phone').value = currentUser.phone;
-            document.getElementById('p-email').innerText = currentUser.email;
+            if(currentUser) {
+                document.getElementById('p-name').value = currentUser.name;
+                document.getElementById('p-phone').value = currentUser.phone;
+                document.getElementById('p-email').innerText = currentUser.email;
+            }
         }
 
         async function renderCourses() {
@@ -1061,7 +1077,14 @@
                     email: currentUser.email, oldPassword: currentPass,
                     newName: name, newPhone: document.getElementById('p-phone').value, newPassword: newPass
                 });
-                if (res.success) { alert("Cập nhật thành công!"); if (newPass) currentPass = newPass; }
+                if (res.success) { 
+                    alert("Cập nhật thành công!"); 
+                    if (newPass) currentPass = newPass; 
+                    // Update cache local luôn
+                    currentUser.name = name;
+                    localStorage.setItem('user_data', JSON.stringify(currentUser));
+                    renderSidebar();
+                }
                 else alert(res.msg);
             } catch (e) { alert("Lỗi: " + e); }
             showLoading(false);
@@ -1072,13 +1095,35 @@
             data.action = action;
             return fetch(API_URL, { method: 'POST', body: JSON.stringify(data) }).then(r => r.json());
         }
+
         function loadSaved() {
+            // CẬP NHẬT 6: TỰ ĐỘNG KHÔI PHỤC USER NẾU ĐÃ ĐĂNG NHẬP (FIX LỖI F5 BỊ OUT)
+            const savedUserData = localStorage.getItem('user_data');
+            if(savedUserData) {
+                currentUser = JSON.parse(savedUserData);
+                // Lấy mật khẩu cũ để dùng cho API call update profile nếu cần
+                const p = localStorage.getItem('u_p');
+                if(p) try { currentPass = atob(p); } catch {}
+                
+                // Vào thẳng dashboard
+                enterDashboard();
+                return; // Dừng, không cần điền form login nữa
+            }
+
+            // Nếu chưa đăng nhập thì điền form như cũ
             const e = localStorage.getItem('u_e');
             const p = localStorage.getItem('u_p');
             if (e) { document.getElementById('login-email').value = e; document.getElementById('rememberMe').checked = true; if (p) try { document.getElementById('login-pass').value = atob(p) } catch { } }
         }
+
         function showLoading(b) { b ? document.getElementById('loading-overlay').classList.remove('hidden') : document.getElementById('loading-overlay').classList.add('hidden'); }
-        function logout() { location.reload(); }
+        
+        function logout() { 
+            // CẬP NHẬT 7: XÓA CACHE USER KHI LOGOUT
+            localStorage.removeItem('user_data');
+            localStorage.removeItem('last_module');
+            location.reload(); 
+        }
 
     </script>
 </body>
