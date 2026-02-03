@@ -915,7 +915,7 @@
         /**
          * CONFIGURATION & CONSTANTS
          */
-        const API_URL = "https://script.google.com/macros/s/AKfycbzZ9T9uEkcIFJBAYHPHNFsX2VWQF03Ti78w-ROBPIMGZ7TzTsUql5boexX7VOF5G7dx/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbwd9qsO3FlcwNMOWBqPm5c7NWb0d5c8hMCd5o2YzeXlFOQMVayvHErqcUcWHrelojIbeA/exec";
 
         const STORAGE_KEYS = {
             USER: 'user_data',
@@ -932,7 +932,8 @@
             mockHome: {
                 roadmapStatus: 'active', // 'new' | 'active'
                 todayCheckin: false
-            }
+            },
+            roadmap: {} // New: Store roadmap progress
         };
 
         /**
@@ -1091,6 +1092,7 @@
 
                 // Đồng bộ dữ liệu mới nhất từ server
                 await App.syncUserData();
+                if (STATE.currentUser.code) await App.syncRoadmapData();
             },
 
             syncUserData: async () => {
@@ -1107,6 +1109,16 @@
                         App.renderHome();
                     }
                 } catch (e) { console.log("Background sync failed", e); }
+            },
+
+            syncRoadmapData: async () => {
+                try {
+                    const res = await Utils.callApi("getRoadmap", { studentCode: STATE.currentUser.code });
+                    if (res.success) {
+                        STATE.roadmap = res.data || {};
+                        App.renderHome(); // Re-render triggers UI update
+                    }
+                } catch (e) { console.log("Roadmap sync failed", e); }
             },
 
             switchModule: (modName) => {
@@ -1149,27 +1161,35 @@
             },
 
             renderHome: () => {
-                // 1. Roadmap Widget
+                // 1. Roadmap Widget (Entry Survey Logic)
                 const rdContainer = document.getElementById('home-roadmap-content');
-                if (STATE.mockHome.roadmapStatus === 'new') {
+                const surveyStatus = STATE.roadmap['KHAO_SAT']?.status || 'Pending';
+
+                if (surveyStatus === 'Pending') {
                     rdContainer.innerHTML = `
                         <div class="roadmap-status-box">
-                            <i class="fas fa-search-location roadmap-icon-lg"></i>
-                            <p>Bạn chưa xác định lộ trình học tập?</p>
-                            <button class="main-btn btn-start" onclick="App.openQuiz()" style="font-size:14px;">Làm bài Test định hướng</button>
+                            <i class="fas fa-search-location roadmap-icon-lg" style="font-size:30px; margin-bottom:10px; color:var(--warning-color);"></i>
+                            <p style="margin-bottom:10px;">Chào <b>${STATE.currentUser.name}</b>, hãy bắt đầu hành trình bằng việc xác định vị thế của bạn.</p>
+                            <button class="main-btn btn-start" onclick="App.startSurvey()" style="font-size:14px; background: linear-gradient(90deg, #ff9966, #ff5e62);">
+                                <i class="fas fa-clipboard-list"></i> Làm Khảo Sát Đầu Vào
+                            </button>
                         </div>`;
-                } else {
+                } else if (surveyStatus === 'Completed') {
                     rdContainer.innerHTML = `
                         <div style="padding:10px;">
-                            <h4>Lộ trình: Xây Dựng Nhân Hiệu</h4>
+                            <h4 style="color:var(--success-color);"><i class="fas fa-check-circle"></i> Đã hoàn thành khảo sát</h4>
+                            <p style="font-size:13px; opacity:0.8; margin-bottom:10px;">Giảng viên đã ghi nhận kết quả của bạn.</p>
                             <div style="background:rgba(255,255,255,0.1); height:8px; border-radius:5px; margin:10px 0;">
-                                <div style="width:35%; background:var(--success-color); height:100%; border-radius:5px; box-shadow: 0 0 10px var(--success-color);"></div>
+                                <div style="width:10%; background:var(--success-color); height:100%; border-radius:5px;"></div>
                             </div>
-                            <div style="display:flex; justify-content:space-between; font-size:12px; opacity:0.8;">
-                                <span>Tiến độ: 35%</span>
-                                <span>Giai đoạn 2</span>
-                            </div>
-                            <button class="main-btn" onclick="App.switchModule('map')" style="margin-top:10px; font-size:14px;">Tiếp tục học</button>
+                            <button class="main-btn" onclick="App.switchModule('map')" style="margin-top:10px; font-size:14px;">Xem Tiếp Lộ Trình</button>
+                        </div>`;
+                } else {
+                    // Submitted / Processing
+                    rdContainer.innerHTML = `
+                        <div class="roadmap-status-box">
+                             <i class="fas fa-clock" style="font-size:30px; margin-bottom:10px; color:var(--info-color);"></i>
+                            <p>Đã nộp bài khảo sát. Vui lòng chờ Giảng viên nhận xét.</p>
                         </div>`;
                 }
 
@@ -1268,6 +1288,29 @@
 
             openQuiz: () => {
                 Utils.showToast("Tính năng bài thi đang được phát triển!", "info");
+            },
+
+            startSurvey: async () => {
+                const link = prompt("Vui lòng nhập link bài làm khảo sát của bạn (Google Doc/Drive):");
+                if (link) {
+                    Utils.showLoading(true);
+                    const res = await Utils.callApi("updateCheckpoint", {
+                        studentCode: STATE.currentUser.code,
+                        checkpointId: "KHAO_SAT",
+                        status: "Submitted",
+                        submissionData: link
+                    });
+                    Utils.showLoading(false);
+
+                    if (res.success) {
+                        Utils.showToast("Đã nộp bài thành công!", "success");
+                        // Cập nhật local state
+                        STATE.roadmap['KHAO_SAT'] = { status: 'Submitted', data: link };
+                        App.renderHome();
+                    } else {
+                        Utils.showToast("Lỗi nộp bài: " + res.msg, "error");
+                    }
+                }
             },
 
             doCheckin: () => {

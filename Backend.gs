@@ -392,6 +392,7 @@ function getCourses(email) {
 }
 
 // Hàm giả định kiểm tra đăng ký (Sau này sẽ check sheet "DangKy")
+function checkRegistration(email, courseId) {
   if (courseId === "C01") return true; // Demo: Đã đăng ký khóa 1
   return false;
 }
