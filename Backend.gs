@@ -35,12 +35,28 @@ function doPost(e) {
     else if (action === "getCourses") {
       return returnJSON(getCourses(content.email));
     }
+    // === NEW ROADMAP APIs ===
+    else if (action === "getRoadmap") {
+      return returnJSON(getRoadmap(content.email));
+    }
+    else if (action === "updateCheckpoint") {
+      return returnJSON(updateCheckpoint(content.email, content.checkpointId, content.status, content.submissionData));
+    }
     
     return returnJSON({ success: false, msg: "Hành động không hợp lệ!" });
     
   } catch (error) {
     return returnJSON({ success: false, msg: "Lỗi hệ thống: " + error.toString() });
   }
+}
+
+// ------------------------------------------------------------------
+// CONFIG: DATABASE ID
+// ------------------------------------------------------------------
+const DB_ID = "1VWskTJhF6G_Y5SFMdaHsckeCn2H7hc03bEnGQ7UNn9A"; // New Data Source
+
+function getDB() {
+  return SpreadsheetApp.openById(DB_ID);
 }
 
 // ... (returnJSON giữ nguyên)
@@ -58,7 +74,8 @@ function doPost(e) {
 // === TÍNH NĂNG MỚI: CẬP NHẬT THÔNG TIN ===
 
 function getProfile(email) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("HocVien");
+  const sheet = getDB().getSheetByName("HocVien");
+  if (!sheet) return { success: false, msg: "Lỗi: Không tìm thấy sheet HocVien" };
   const data = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
     if (data[i][0] == email) {
@@ -76,7 +93,7 @@ function getProfile(email) {
 }
 
 function updateProfile(email, oldPassword, newName, newPhone, newPassword) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("HocVien");
+  const sheet = getDB().getSheetByName("HocVien");
   const data = sheet.getDataRange().getValues();
   const cleanNewPhone = normalizePhone(newPhone);
 
@@ -109,7 +126,7 @@ function updateProfile(email, oldPassword, newName, newPhone, newPassword) {
 }
 
 function requestEmailChange(currentEmail, newEmail) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("HocVien");
+  const sheet = getDB().getSheetByName("HocVien");
   const data = sheet.getDataRange().getValues();
   
   // Kiểm tra email mới đã tồn tại chưa
@@ -138,7 +155,7 @@ function requestEmailChange(currentEmail, newEmail) {
 }
 
 function verifyEmailChange(token) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("HocVien");
+  const sheet = getDB().getSheetByName("HocVien");
   const data = sheet.getDataRange().getValues();
   
   for (let i = 1; i < data.length; i++) {
@@ -170,8 +187,10 @@ function returnJSON(data) {
 
 // Hàm Đăng ký tài khoản
 function registerUser(email, password, phone, name) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  // const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getDB();
   const sheet = ss.getSheetByName("HocVien");
+  if (!sheet) return { success: false, msg: "Lỗi: Không tìm thấy sheet HocVien" };
   const data = sheet.getDataRange().getValues();
   
   const cleanPhone = normalizePhone(phone); 
@@ -203,7 +222,8 @@ function registerUser(email, password, phone, name) {
 
 // Hàm Đăng nhập
 function loginUser(loginInput, password) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("HocVien");
+  const sheet = getDB().getSheetByName("HocVien");
+  if (!sheet) return { success: false, msg: "Lỗi: Không tìm thấy sheet HocVien" };
   const data = sheet.getDataRange().getValues();
   
   const cleanInput = normalizePhone(loginInput);
@@ -261,7 +281,8 @@ function logLoginHistory(email) {
 
 // Giữ lại hàm verifyAccount để link trong email vẫn chạy được (chạy dạng Web App cũ)
 function verifyAccount(token) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("HocVien");
+  const sheet = getDB().getSheetByName("HocVien");
+  if (!sheet) return HtmlService.createHtmlOutput("<h2>Lỗi kết nối DB.</h2>");
   const data = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
     if (data[i][3] === token) {
@@ -275,7 +296,7 @@ function verifyAccount(token) {
 // --- COURSES FEATURE ---
 function getCourses(email) {
   // 1. Lấy danh sách khóa học từ Sheet "KhoaHoc"
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getDB();
   var courseSheet = ss.getSheetByName("KhoaHoc");
   if (!courseSheet) {
     // Nếu chưa có Sheet, tự tạo và thêm dữ liệu mẫu
@@ -304,8 +325,63 @@ function getCourses(email) {
 }
 
 // Hàm giả định kiểm tra đăng ký (Sau này sẽ check sheet "DangKy")
-function checkRegistration(email, courseId) {
-  // Mặc định trả về false để test nút "Chưa đăng ký"
   if (courseId === "C01") return true; // Demo: Đã đăng ký khóa 1
   return false;
+}
+
+// ------------------------------------------------------------------
+// ROADMAP FEATURE (Lộ Trình)
+// ------------------------------------------------------------------
+
+function getRoadmap(email) {
+  const ss = getDB();
+  let sheet = ss.getSheetByName("LoTrinh");
+  if (!sheet) {
+    sheet = ss.insertSheet("LoTrinh");
+    sheet.appendRow(["Email", "CheckpointID", "Status", "SubmissionData", "TeacherNote", "LastUpdated"]);
+  }
+  
+  const data = sheet.getDataRange().getValues();
+  const roadmap = {};
+  
+  // Start from 1 to skip header
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] == email) {
+      const code = data[i][1];
+      roadmap[code] = {
+        status: data[i][2],
+        data: data[i][3],
+        note: data[i][4],
+        updated: data[i][5]
+      };
+    }
+  }
+  
+  return { success: true, data: roadmap };
+}
+
+function updateCheckpoint(email, checkpointId, status, submissionData) {
+  const ss = getDB();
+  let sheet = ss.getSheetByName("LoTrinh");
+  if (!sheet) {
+    sheet = ss.insertSheet("LoTrinh");
+    sheet.appendRow(["Email", "CheckpointID", "Status", "SubmissionData", "TeacherNote", "LastUpdated"]);
+  }
+  
+  const data = sheet.getDataRange().getValues();
+  const timestamp = new Date();
+  
+  // Find existing
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] == email && data[i][1] == checkpointId) {
+      if (status) sheet.getRange(i + 1, 3).setValue(status);
+      if (submissionData) sheet.getRange(i + 1, 4).setValue(submissionData);
+      sheet.getRange(i + 1, 6).setValue(timestamp);
+      return { success: true, msg: "Cập nhật tiến độ thành công!" };
+    }
+  }
+  
+  // Not found -> Create new
+  sheet.appendRow([email, checkpointId, status || "Pending", submissionData || "", "", timestamp]);
+  return { success: true, msg: "Đã tạo mới tiến độ!" };
 }
