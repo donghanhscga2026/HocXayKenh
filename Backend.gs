@@ -51,6 +51,12 @@ function doPost(e) {
     else if (action === "forgotPassword") {
       return returnJSON(sendPasswordResetEmail(content.email));
     }
+    else if (action === "getReferrerInfo") {
+      return returnJSON(getReferrerInfo(content.referralCode));
+    }
+    else if (action === "getAllAvailableCourses") {
+      return returnJSON(getAllAvailableCourses());
+    }
     
     return returnJSON({ success: false, msg: "Hành động không hợp lệ!" });
     
@@ -359,11 +365,13 @@ function loginUser(loginInput, password) {
   
   for (let i = 1; i < data.length; i++) {
     const rowPhone = normalizePhone(data[i][COL_PHONE]);
+    const rowCode = String(data[i][COL_CODE]).trim();
     const isEmailMatch = (String(data[i][COL_EMAIL]).toLowerCase() === String(loginInput).toLowerCase());
     const isPhoneMatch = (cleanInput !== "" && rowPhone === cleanInput);
+    const isCodeMatch = (rowCode !== "" && rowCode === String(loginInput).trim());
     
-    // Nếu tìm thấy User
-    if (isEmailMatch || isPhoneMatch) {
+    // Nếu tìm thấy User (Email, Phone, hoặc CODE)
+    if (isEmailMatch || isPhoneMatch || isCodeMatch) {
       // Check pass
       if (String(data[i][COL_PASS]) === String(password)) {
          // Check activation status
@@ -429,31 +437,46 @@ function verifyAccount(token) {
 
 // --- COURSES FEATURE ---
 function getCourses(email) {
-  // 1. Lấy danh sách khóa học từ Sheet "KH"
-  var ss = getDB();
-  var courseSheet = ss.getSheetByName("KH");
+  // 1. Lấy mã học viên từ email
+  const studentCode = getStudentCodeByEmail(email);
+  if (!studentCode) {
+    return { success: false, msg: "Không tìm thấy thông tin học viên!" };
+  }
+  
+  // 2. Lấy danh sách khóa đã kích hoạt từ LS_DangKy
+  const activatedCourses = getActivatedCoursesFromLS(studentCode);
+  
+  // 3. Lấy danh sách khóa học từ Sheet "KH"
+  const ss = getDB();
+  const courseSheet = ss.getSheetByName("KH");
   if (!courseSheet) return { success: false, msg: "Chưa có dữ liệu khóa học" };
   
-  var courses = courseSheet.getDataRange().getValues();
-  var courseList = [];
+  const courses = courseSheet.getDataRange().getValues();
+  const courseList = [];
   
   // Mapping columns for KH sheet:
-  // 0: Tên lớp học, 1: Tên khóa học (Title), 3: Mã khóa (ID), 5: Mô tả ngắn
-  const C_TITLE = 1;
-  const C_ID = 3;
-  const C_DESC = 5;
+  const C_TITLE = 1;    // Cột B: Tên khóa học
+  const C_ID = 3;       // Cột D: Mã khóa
+  const C_AVAILABLE = 4; // Cột E: Có sẵn (TRUE/FALSE)
+  const C_DESC = 5;     // Cột F: Mô tả ngắn
+  const C_IS_FREE = 14; // Cột O: isFree
 
   // Bỏ qua header, duyệt từ dòng 2
-  for (var i = 1; i < courses.length; i++) {
-    // Chỉ lấy dòng có ID khóa học
-    if(courses[i][C_ID]) {
-        courseList.push({
-        id: courses[i][C_ID],
-        title: courses[i][C_TITLE],
-        desc: courses[i][C_DESC] || "",
-        icon: "fa-book", // Default icon as sheet doesn't have it
-        isRegistered: checkRegistration(email, courses[i][C_ID])
-        });
+  for (let i = 1; i < courses.length; i++) {
+    // Chỉ lấy khóa học có Có sẵn (cột E) = TRUE
+    if (courses[i][C_AVAILABLE] === true && courses[i][C_ID]) {
+      const courseId = String(courses[i][C_ID]);
+      const courseName = String(courses[i][C_TITLE] || "");
+      const compositeKey = courseName + "|" + courseId;
+      
+      courseList.push({
+        id: courseId,
+        title: courseName,
+        desc: String(courses[i][C_DESC] || ""),
+        icon: "fa-book",
+        isFree: courses[i][C_IS_FREE] === true,
+        isActivated: activatedCourses.includes(compositeKey)
+      });
     }
   }
   
@@ -719,4 +742,211 @@ Ban Tổ Chức BRK
   }
   
   return { success: false, msg: "Không tìm thấy email này trong hệ thống!" };
+}
+
+// Lấy thông tin người giới thiệu (cho frontend)
+function getReferrerInfo(referralCode) {
+  const sheet = getDB().getSheetByName("Dky");
+  if (!sheet) return { success: false, msg: "Lỗi kết nối hệ thống!" };
+  
+  const data = sheet.getDataRange().getValues();
+  
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][COL_CODE]) === String(referralCode)) {
+      return { 
+        success: true, 
+        name: data[i][COL_NAME] || "Không xác định",
+        code: data[i][COL_CODE]
+      };
+    }
+  }
+  
+  return { success: false, msg: "Không tìm thấy mã giới thiệu!" };
+}
+
+// ------------------------------------------------------------------
+// LANDING PAGE APIs
+// ------------------------------------------------------------------
+
+// Lấy tất cả khóa học có sẵn (cho landing page - public)
+function getAllAvailableCourses() {
+  const ss = getDB();
+  const courseSheet = ss.getSheetByName("KH");
+  
+  if (!courseSheet) {
+    return { success: false, msg: "Sheet KH không tồn tại!" };
+  }
+  
+  const data = courseSheet.getDataRange().getValues();
+  const availableCourses = [];
+  
+  // Column mapping (adjust based on your actual sheet structure)
+  const COL_ID = 3;        // Cột D: Mã khóa
+  const COL_TITLE = 1;     // Cột B: Tên khóa học
+  const COL_AVAILABLE = 4; // Cột E: Có sẵn (TRUE/FALSE)
+  const COL_DESC = 5;      // Cột F: Mô tả ngắn
+  const COL_IS_FREE = 14;  // Cột O: isFree (TRUE/FALSE)
+  
+  for (let i = 1; i < data.length; i++) {
+    // Chỉ lấy khóa học có Có sẵn (cột E) = TRUE
+    if (data[i][COL_AVAILABLE] === true && data[i][COL_ID]) {
+      availableCourses.push({
+        id: String(data[i][COL_ID]),
+        title: String(data[i][COL_TITLE] || ""),
+        desc: String(data[i][COL_DESC] || ""),
+        icon: "fa-book",
+        isFree: data[i][COL_IS_FREE] === true,
+        isActivated: false // Public view, không có thông tin kích hoạt
+      });
+    }
+  }
+  
+  return { success: true, data: availableCourses };
+}
+
+// Helper: Lấy mã học viên từ email
+function getStudentCodeByEmail(email) {
+  const sheet = getDB().getSheetByName("Dky");
+  if (!sheet) return null;
+  
+  const data = sheet.getDataRange().getValues();
+  
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][COL_EMAIL]).toLowerCase() === email.toLowerCase()) {
+      return String(data[i][COL_CODE]);
+    }
+  }
+  return null;
+}
+
+// Helper: Lấy danh sách khóa đã kích hoạt từ sheet LS_DangKy
+function getActivatedCoursesFromLS(studentCode) {
+  const ss = getDB();
+  const lsDangKySheet = ss.getSheetByName("LS_DangKy");
+  const khSheet = ss.getSheetByName("KH");
+  
+  if (!lsDangKySheet) {
+    Logger.log("Sheet LS_DangKy không tồn tại!");
+    return [];
+  }
+  
+  if (!khSheet) {
+    Logger.log("Sheet KH không tồn tại!");
+    return [];
+  }
+  
+  const lsData = lsDangKySheet.getDataRange().getValues();
+  const khData = khSheet.getDataRange().getValues();
+  
+  Logger.log("=== DEBUG: Kiểm tra kích hoạt cho CODE: " + studentCode + " ===");
+  
+  // Tìm Ma_Lop của học viên trong LS_DangKy
+  let maLopList = [];
+  
+  for (let i = 1; i < lsData.length; i++) {
+    // Cột B: MÃ CODE (index 1)
+    // Cột O: Ma_Lop (index 14)
+    // Cột K: Trạng thái duyệt (index 10)
+    const maHocVien = String(lsData[i][1]).trim();
+    const maLop = String(lsData[i][14]).trim();
+    const trangThaiDuyet = String(lsData[i][10]).trim();
+    
+    if (maHocVien === String(studentCode)) {
+      Logger.log("Row " + (i+1) + ": Ma_Lop = '" + maLop + "', Trạng thái = '" + trangThaiDuyet + "'");
+    }
+    
+    // Chấp nhận cả "Đã duyệt" và "Đã duyệt (Dữ liệu cũ)"
+    const isDuyet = trangThaiDuyet.startsWith("Đã duyệt");
+    
+    if (maHocVien === String(studentCode) && 
+        isDuyet &&
+        maLop) {
+      maLopList.push(maLop);
+    }
+  }
+  
+  Logger.log("Ma_Lop đã duyệt: " + JSON.stringify(maLopList));
+  
+  // Nếu không tìm thấy Ma_Lop nào
+  if (maLopList.length === 0) {
+    Logger.log("Không tìm thấy Ma_Lop đã duyệt");
+    return [];
+  }
+  
+  // Kiểm tra xem có Ma_Lop = "86D" không (kích hoạt tất cả)
+  const hasVIPAccess = maLopList.some(ml => ml === "86D");
+  
+  if (hasVIPAccess) {
+    Logger.log("Phát hiện Ma_Lop = 86D - Kích hoạt TẤT CẢ khóa học");
+    // Kích hoạt TẤT CẢ khóa học
+    const allCourses = [];
+    for (let i = 1; i < khData.length; i++) {
+      const courseId = String(khData[i][3]); // Cột D: Mã khóa (index 3)
+      if (courseId) {
+        allCourses.push(courseId);
+      }
+    }
+    return allCourses;
+  }
+  
+  // Nếu không có 86D, đối chiếu Ma_Lop với sheet KH
+  const activatedCourses = [];
+  
+  Logger.log("=== Đối chiếu với sheet KH ===");
+  
+  for (let i = 1; i < khData.length; i++) {
+    // Cột D: Mã khóa (index 3)
+    // Cột B: Tên khóa (index 1)
+    // Cột P: Ma_Lop (index 15)
+    const courseId = String(khData[i][3]).trim();
+    const courseName = String(khData[i][1]).trim();
+    const courseMaLop = String(khData[i][15]).trim();
+    
+    if (courseId && courseMaLop) {
+      const isActivated = maLopList.includes(courseMaLop);
+      if (isActivated) {
+        Logger.log("✅ Khóa '" + courseName + "' (ID: " + courseId + ") - Ma_Lop: '" + courseMaLop + "' - KÍCH HOẠT");
+        // Sử dụng composite key: courseName + "|" + courseId để tránh trùng lặp
+        activatedCourses.push(courseName + "|" + courseId);
+      } else {
+        Logger.log("❌ Khóa '" + courseName + "' (ID: " + courseId + ") - Ma_Lop: '" + courseMaLop + "' - CHƯA kích hoạt");
+      }
+    }
+  }
+  
+  Logger.log("=== Tổng số khóa kích hoạt: " + activatedCourses.length + " ===");
+  
+  return activatedCourses;
+}
+
+// ===================================================================
+// TEST FUNCTION - Chỉ dùng để debug, xóa sau khi xong
+// ===================================================================
+function testActivation838() {
+  Logger.log("=== BẮT ĐẦU TEST ===");
+  const result = getActivatedCoursesFromLS("838");
+  Logger.log("Kết quả: " + JSON.stringify(result));
+  Logger.log("=== KẾT THÚC TEST ===");
+  return result;
+}
+
+function testActivation470() {
+  Logger.log("=== BẮT ĐẦU TEST CODE 470 ===");
+  const result = getActivatedCoursesFromLS("470");
+  Logger.log("Kết quả: " + JSON.stringify(result));
+  Logger.log("=== KẾT THÚC TEST ===");
+  return result;
+}
+
+// Function để check version
+function checkVersion() {
+  Logger.log("=== VERSION INFO ===");
+  Logger.log("Deployment Time: " + new Date());
+  Logger.log("Logic: Sử dụng Ma_Lop (cột O LS_DangKy, cột P KH)");
+  Logger.log("Version: 2.0 - Ma_Lop Based Activation");
+  return {
+    version: "2.0",
+    logic: "Ma_Lop based",
+    timestamp: new Date()
+  };
 }

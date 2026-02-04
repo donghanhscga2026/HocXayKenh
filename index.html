@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BRK - Đăng nhập / Đăng ký</title>
+    <title>Học viện BRK - Ngân hàng phước báu</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -15,527 +15,983 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        /* Header */
+        .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* Animated Background */
-        .circles {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            z-index: 0;
-        }
-
-        .circles li {
-            position: absolute;
-            display: block;
-            list-style: none;
-            width: 20px;
-            height: 20px;
-            background: rgba(255, 255, 255, 0.2);
-            animation: animate 25s linear infinite;
-            bottom: -150px;
-        }
-
-        .circles li:nth-child(1) {
-            left: 25%;
-            width: 80px;
-            height: 80px;
-            animation-delay: 0s;
-        }
-
-        .circles li:nth-child(2) {
-            left: 10%;
-            width: 20px;
-            height: 20px;
-            animation-delay: 2s;
-            animation-duration: 12s;
-        }
-
-        .circles li:nth-child(3) {
-            left: 70%;
-            width: 20px;
-            height: 20px;
-            animation-delay: 4s;
-        }
-
-        .circles li:nth-child(4) {
-            left: 40%;
-            width: 60px;
-            height: 60px;
-            animation-delay: 0s;
-            animation-duration: 18s;
-        }
-
-        .circles li:nth-child(5) {
-            left: 65%;
-            width: 20px;
-            height: 20px;
-            animation-delay: 0s;
-        }
-
-        @keyframes animate {
-            0% {
-                transform: translateY(0) rotate(0deg);
-                opacity: 1;
-                border-radius: 0;
-            }
-
-            100% {
-                transform: translateY(-1000px) rotate(720deg);
-                opacity: 0;
-                border-radius: 50%;
-            }
-        }
-
-        /* Container */
-        .container {
-            position: relative;
-            z-index: 10;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 20px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 50px 40px;
-            width: 90%;
-            max-width: 450px;
-            text-align: center;
             color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .logo {
-            font-size: 3em;
-            margin-bottom: 10px;
-        }
-
-        h2 {
-            margin-bottom: 10px;
-            font-size: 2em;
-        }
-
-        .subtitle {
-            opacity: 0.9;
-            margin-bottom: 30px;
-            font-size: 0.95em;
-        }
-
-        .input-group {
-            position: relative;
-            margin-bottom: 20px;
-            text-align: left;
-        }
-
-        .input-group i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 12px 15px 12px 45px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 30px;
-            color: #fff;
-            outline: none;
-            transition: all 0.3s;
-        }
-
-        .input-group input:focus {
-            background: rgba(255, 255, 255, 0.25);
-            border-color: rgba(255, 255, 255, 0.5);
-        }
-
-        .input-group input::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .password-toggle {
-            position: absolute;
-            right: 15px;
-            left: auto !important;
-            cursor: pointer;
-            transition: color 0.3s;
-        }
-
-        .password-toggle:hover {
-            color: #fff;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 14px;
-            border-radius: 30px;
-            background: linear-gradient(90deg, #4facfe, #00f2fe);
-            color: #fff;
+            font-size: 24px;
             font-weight: bold;
-            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.3s;
+        }
+
+        .nav-menu a:hover {
+            opacity: 0.8;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .btn-login {
+            background: white;
+            color: #667eea;
+            padding: 10px 25px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 80px 20px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .hero p {
+            font-size: 20px;
+            opacity: 0.95;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Courses Section */
+        .courses-section {
+            max-width: 1200px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+
+        .section-title {
+            font-size: 32px;
+            margin-bottom: 40px;
+            text-align: center;
+            color: #333;
+        }
+
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
+        }
+
+        .course-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+        }
+
+        .course-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .course-icon {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .course-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .course-desc {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .course-badges {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge-free {
+            background: #10B981;
+            color: white;
+        }
+
+        .badge-paid {
+            background: #F59E0B;
+            color: white;
+        }
+
+        .badge-activated {
+            background: #3B82F6;
+            color: white;
+        }
+
+        .btn-activate {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            color: white;
             border: none;
+            border-radius: 25px;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
-            margin-top: 10px;
         }
 
-        .btn:hover {
+        .btn-activate:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
         }
 
-        .btn:disabled {
+        .btn-activate:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
         }
 
-        .toggle-link {
-            margin-top: 20px;
-            font-size: 14px;
-            opacity: 0.9;
-            cursor: pointer;
-            text-decoration: underline;
+        /* Roadmap Section */
+        .roadmap-section {
+            max-width: 1200px;
+            margin: 60px auto;
+            padding: 40px 20px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
-        .toggle-link:hover {
+        .roadmap-container {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .roadmap-container::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: #e0e0e0;
+        }
+
+        .roadmap-step {
+            position: relative;
+            margin-bottom: 30px;
+            padding-left: 30px;
+        }
+
+        .roadmap-step::before {
+            content: '';
+            position: absolute;
+            left: -24px;
+            top: 5px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ccc;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px #ccc;
+        }
+
+        .roadmap-step.done::before {
+            background: #10B981;
+            box-shadow: 0 0 0 2px #10B981;
+        }
+
+        .roadmap-step.active::before {
+            background: #F59E0B;
+            box-shadow: 0 0 0 2px #F59E0B;
+        }
+
+        .step-content {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .step-title {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        /* Footer */
+        .footer {
+            background: #2d3748;
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+            margin-top: 80px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        .footer-links a:hover {
             opacity: 1;
         }
 
-        .forgot-link {
-            display: block;
-            margin-top: 10px;
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.8);
-            text-decoration: none;
+        /* Alert/Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            gap: 10px;
         }
 
-        .forgot-link:hover {
-            text-decoration: underline;
+        .toast.show {
+            display: flex;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .toast.success {
+            border-left: 4px solid #10B981;
+        }
+
+        .toast.error {
+            border-left: 4px solid #EF4444;
+        }
+
+        .toast.info {
+            border-left: 4px solid #3B82F6;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         .hidden {
             display: none !important;
         }
 
-        .alert {
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            animation: slideDown 0.3s ease;
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 32px;
+            }
+
+            .hero p {
+                font-size: 16px;
+            }
+
+            .courses-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-menu {
+                display: none;
+            }
         }
 
-        .alert.success {
-            background: rgba(16, 185, 129, 0.2);
-            border: 1px solid #10B981;
-            color: #D1FAE5;
+        /* Modal Countdown */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
         }
 
-        .alert.error {
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid #EF4444;
-            color: #FEE2E2;
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 450px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
         }
 
-        @keyframes slideDown {
+        @keyframes modalSlideIn {
             from {
+                transform: translateY(-50px);
                 opacity: 0;
-                transform: translateY(-10px);
             }
 
             to {
-                opacity: 1;
                 transform: translateY(0);
+                opacity: 1;
             }
         }
 
-        .checkbox-container {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            margin-top: 10px;
-            font-size: 13px;
-            opacity: 0.9;
+        .modal-icon {
+            font-size: 64px;
+            color: #667eea;
+            margin-bottom: 20px;
         }
 
-        .checkbox-container input {
-            margin-right: 8px;
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .modal-message {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .countdown-timer {
+            font-size: 48px;
+            font-weight: 700;
+            color: #667eea;
+            margin: 20px 0;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 15px;
+        }
+
+        .modal-btn-primary {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .modal-btn-secondary {
+            background: #e5e7eb;
+            color: #666;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #d1d5db;
+        }
+
+        /* Loading Spinner */
+        .loading-container {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            color: #666;
+            font-size: 16px;
+        }
+
+        /* User Dropdown */
+        .user-dropdown {
+            position: relative;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            padding: 8px 15px;
+            border-radius: 25px;
+            transition: background 0.3s;
+        }
+
+        .user-info:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 10px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            min-width: 200px;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s;
+        }
+
+        .dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            padding: 12px 20px;
+            color: #333;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
             cursor: pointer;
         }
 
-        @media (max-width: 480px) {
-            .container {
-                padding: 40px 30px;
-            }
+        .dropdown-item:hover {
+            background: #f3f4f6;
+        }
 
-            h2 {
-                font-size: 1.5em;
-            }
+        .dropdown-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: #e5e7eb;
+            margin: 5px 0;
         }
     </style>
 </head>
 
 <body>
-    <!-- Background Animation -->
-    <ul class="circles">
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-        <li></li>
-    </ul>
-
-    <!-- Auth Container -->
-    <div class="container">
-        <div class="logo">🎓</div>
-        <h2 id="form-title">Đăng Nhập</h2>
-        <p class="subtitle">Nhân hiệu từ gốc</p>
-
-        <div id="alert" class="alert hidden"></div>
-
-        <form id="auth-form">
-            <div class="input-group">
-                <i class="fas fa-user"></i>
-                <input type="text" id="login-email" placeholder="Email hoặc SĐT" required>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Học viện BRK</span>
             </div>
-
-            <!-- Register Fields (Hidden by default) -->
-            <div id="register-fields" class="hidden">
-                <div class="input-group">
-                    <i class="fas fa-id-card"></i>
-                    <input type="text" id="reg-name" placeholder="Họ và tên">
-                </div>
-                <div class="input-group">
-                    <i class="fas fa-phone"></i>
-                    <input type="text" id="reg-phone" placeholder="Số điện thoại Zalo">
-                </div>
-                <div class="input-group">
-                    <i class="fas fa-user-tag"></i>
-                    <input type="text" id="reg-referral" placeholder="Mã người giới thiệu (nếu có)">
-                </div>
+            <nav class="nav-menu">
+                <a href="#home">Trang chủ</a>
+                <a href="#courses">Khóa học</a>
+                <a href="#about">Giới thiệu</a>
+            </nav>
+            <div class="user-section" id="user-section">
+                <!-- Dynamic content: Login button or User dropdown -->
             </div>
+        </div>
+    </header>
 
-            <div class="input-group">
-                <i class="fas fa-lock"></i>
-                <input type="password" id="login-pass" placeholder="Mật khẩu" required style="padding-right: 45px;">
-                <i class="fas fa-eye password-toggle" id="toggle-pass"></i>
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>Học viện BRK - Ngân hàng phước báu</h1>
+        <p>Nơi khơi nguồn tri thức, xây dựng tương lai</p>
+    </section>
+
+    <!-- Roadmap Section (Only for logged-in users) - MOVED TO TOP -->
+    <section class="roadmap-section hidden" id="roadmap-section">
+        <h2 class="section-title">Lộ Trình Học Tập Của Tôi</h2>
+        <div class="roadmap-container" id="roadmap-container">
+            <!-- Dynamic roadmap will be inserted here -->
+        </div>
+    </section>
+
+    <!-- Courses Section -->
+    <section class="courses-section" id="courses">
+        <h2 class="section-title">Danh Sách Khóa Học</h2>
+        <!-- Loading State -->
+        <div class="loading-container" id="loading-courses">
+            <div class="spinner"></div>
+            <p class="loading-text">Đang tải danh sách khóa học...</p>
+        </div>
+        <!-- Courses Grid -->
+        <div class="courses-grid hidden" id="courses-grid">
+            <!-- Dynamic course cards will be inserted here -->
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="#"><i class="fab fa-facebook"></i> Facebook</a>
+                <a href="#"><i class="fab fa-youtube"></i> YouTube</a>
+                <a href="mailto:support@brk.com"><i class="fas fa-envelope"></i> Email</a>
             </div>
+            <p>&copy; 2026 Học viện BRK. All rights reserved.</p>
+        </div>
+    </footer>
 
-            <div class="checkbox-container" id="remember-container">
-                <input type="checkbox" id="rememberMe">
-                <label for="rememberMe">Ghi nhớ đăng nhập</label>
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-info-circle"></i>
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- Modal Countdown -->
+    <div class="modal-overlay hidden" id="login-modal">
+        <div class="modal-content">
+            <div class="modal-icon">
+                <i class="fas fa-user-lock"></i>
             </div>
-
-            <button type="submit" class="btn" id="btn-submit">ĐĂNG NHẬP</button>
-        </form>
-
-        <a href="forgot_password.html" class="forgot-link" id="forgot-link">Quên mật khẩu?</a>
-        <p class="toggle-link" id="toggle-link">Chưa có tài khoản? Đăng ký ngay</p>
+            <h3 class="modal-title">Cần Đăng Nhập</h3>
+            <p class="modal-message">Bạn cần đăng nhập để kích hoạt khóa học này</p>
+            <div class="countdown-timer" id="countdown">10</div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-secondary" onclick="closeLoginModal()">
+                    <i class="fas fa-times"></i> Để sau
+                </button>
+                <button class="modal-btn modal-btn-primary" onclick="goToLogin()">
+                    <i class="fas fa-sign-in-alt"></i> Đăng nhập/Đăng ký
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbwd9qsO3FlcwNMOWBqPm5c7NWb0d5c8hMCd5o2YzeXlFOQMVayvHErqcUcWHrelojIbeA/exec";
 
-        let isLoginMode = true;
+        // Check login status
+        const user = localStorage.getItem('user');
+        const isLoggedIn = !!user;
+        let userData = null;
 
-        // DOM Elements
-        const formTitle = document.getElementById('form-title');
-        const registerFields = document.getElementById('register-fields');
-        const btnSubmit = document.getElementById('btn-submit');
-        const toggleLink = document.getElementById('toggle-link');
-        const authForm = document.getElementById('auth-form');
-        const alert = document.getElementById('alert');
-        const togglePass = document.getElementById('toggle-pass');
-        const rememberContainer = document.getElementById('remember-container');
-        const forgotLink = document.getElementById('forgot-link');
-
-        // Toggle between Login/Register
-        toggleLink.addEventListener('click', () => {
-            isLoginMode = !isLoginMode;
-            if (isLoginMode) {
-                formTitle.textContent = 'Đăng Nhập';
-                registerFields.classList.add('hidden');
-                btnSubmit.textContent = 'ĐĂNG NHẬP';
-                toggleLink.textContent = 'Chưa có tài khoản? Đăng ký ngay';
-                rememberContainer.classList.remove('hidden');
-                forgotLink.classList.remove('hidden');
-            } else {
-                formTitle.textContent = 'Đăng Ký';
-                registerFields.classList.remove('hidden');
-                btnSubmit.textContent = 'ĐĂNG KÝ';
-                toggleLink.textContent = 'Đã có tài khoản? Đăng nhập';
-                rememberContainer.classList.add('hidden');
-                forgotLink.classList.add('hidden');
-            }
-            hideAlert();
-        });
-
-        // Password Toggle
-        togglePass.addEventListener('click', () => {
-            const passInput = document.getElementById('login-pass');
-            if (passInput.type === 'password') {
-                passInput.type = 'text';
-                togglePass.classList.remove('fa-eye');
-                togglePass.classList.add('fa-eye-slash');
-            } else {
-                passInput.type = 'password';
-                togglePass.classList.remove('fa-eye-slash');
-                togglePass.classList.add('fa-eye');
-            }
-        });
-
-        // Form Submit
-        authForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            if (isLoginMode) {
-                await handleLogin();
-            } else {
-                await handleRegister();
-            }
-        });
-
-        // Handle Login
-        async function handleLogin() {
-            const loginInput = document.getElementById('login-email').value.trim();
-            const password = document.getElementById('login-pass').value;
-
-            if (!loginInput || !password) {
-                showAlert('Vui lòng điền đầy đủ thông tin!', 'error');
-                return;
-            }
-
-            btnSubmit.disabled = true;
-            btnSubmit.textContent = 'Đang đăng nhập...';
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: "login",
-                        loginInput: loginInput,
-                        password: password
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    // Save user info
-                    localStorage.setItem('user', JSON.stringify(result.user));
-                    localStorage.setItem('password', password);
-
-                    showAlert(result.msg, 'success');
-
-                    // Redirect to dashboard
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 1000);
-                } else {
-                    showAlert(result.msg, 'error');
-                }
-            } catch (error) {
-                showAlert('Lỗi kết nối! Vui lòng thử lại.', 'error');
-                console.error('Error:', error);
-            } finally {
-                btnSubmit.disabled = false;
-                btnSubmit.textContent = 'ĐĂNG NHẬP';
-            }
+        if (isLoggedIn) {
+            userData = JSON.parse(user);
         }
 
-        // Handle Register
-        async function handleRegister() {
-            const email = document.getElementById('login-email').value.trim();
-            const name = document.getElementById('reg-name').value.trim();
-            const phone = document.getElementById('reg-phone').value.trim();
-            const referralCode = document.getElementById('reg-referral').value.trim();
-            const password = document.getElementById('login-pass').value;
-
-            if (!email || !name || !phone || !password) {
-                showAlert('Vui lòng điền đầy đủ thông tin!', 'error');
-                return;
-            }
-
-            btnSubmit.disabled = true;
-            btnSubmit.textContent = 'Đang đăng ký...';
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: "register",
-                        email: email,
-                        password: password,
-                        phone: phone,
-                        name: name,
-                        referralCode: referralCode
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showAlert('Đăng ký thành công! Mã học viên: ' + result.code + '. Vui lòng kiểm tra email để kích hoạt tài khoản.', 'success');
-
-                    // Reset form
-                    authForm.reset();
-
-                    // Switch to login mode after 3 seconds
-                    setTimeout(() => {
-                        toggleLink.click();
-                    }, 3000);
-                } else {
-                    showAlert(result.msg, 'error');
-                }
-            } catch (error) {
-                showAlert('Lỗi kết nối! Vui lòng thử lại.', 'error');
-                console.error('Error:', error);
-            } finally {
-                btnSubmit.disabled = false;
-                btnSubmit.textContent = 'ĐĂNG KÝ';
-            }
-        }
-
-        // Alert Functions
-        function showAlert(message, type) {
-            alert.textContent = message;
-            alert.className = `alert ${type}`;
-            alert.classList.remove('hidden');
-        }
-
-        function hideAlert() {
-            alert.classList.add('hidden');
-        }
-
-        // Check if already logged in
+        // Initialize page
         window.addEventListener('load', () => {
-            const user = localStorage.getItem('user');
-            if (user) {
-                // Already logged in, redirect to dashboard
-                window.location.href = 'dashboard.html';
-            }
-
-            // Check for referral code in URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const refCode = urlParams.get('ref');
-            if (refCode) {
-                // Switch to register mode and fill referral code
-                toggleLink.click();
-                document.getElementById('reg-referral').value = refCode;
+            renderHeader();
+            loadCourses();
+            if (isLoggedIn) {
+                loadRoadmap();
             }
         });
+
+        // Render Header
+        function renderHeader() {
+            const userSection = document.getElementById('user-section');
+
+            if (isLoggedIn) {
+                const initial = userData.name ? userData.name.charAt(0).toUpperCase() : 'U';
+                userSection.innerHTML = `
+                    <div class="user-dropdown">
+                        <div class="user-info" onclick="toggleDropdown()">
+                            <div class="user-avatar">${initial}</div>
+                            <span>${userData.name}</span>
+                            <i class="fas fa-chevron-down" style="font-size: 12px;"></i>
+                        </div>
+                        <div class="dropdown-menu" id="user-dropdown-menu">
+                            <div class="dropdown-item" onclick="editProfile()">
+                                <i class="fas fa-user-edit"></i>
+                                <span>Sửa thông tin</span>
+                            </div>
+                            <div class="dropdown-item" onclick="changePassword()">
+                                <i class="fas fa-key"></i>
+                                <span>Đổi mật khẩu</span>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <div class="dropdown-item" onclick="logout()">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Đăng xuất</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                userSection.innerHTML = `
+                    <a href="Login.html" class="btn-login">Đăng nhập / Đăng ký</a>
+                `;
+            }
+        }
+
+        // Toggle Dropdown Menu
+        function toggleDropdown() {
+            const dropdown = document.getElementById('user-dropdown-menu');
+            dropdown.classList.toggle('show');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('user-dropdown-menu');
+            const userInfo = document.querySelector('.user-info');
+            if (dropdown && !userInfo?.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // Logout
+        function logout() {
+            if (confirm('Bạn có chắc muốn đăng xuất?')) {
+                localStorage.removeItem('user');
+                localStorage.removeItem('password');
+                showToast('Đã đăng xuất thành công!', 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
+        }
+
+        // Edit Profile
+        function editProfile() {
+            // TODO: Open edit profile modal
+            showToast('Tính năng đang phát triển!', 'info');
+        }
+
+        // Change Password
+        function changePassword() {
+            // TODO: Open change password modal
+            showToast('Tính năng đang phát triển!', 'info');
+        }
+
+        // Load Courses
+        async function loadCourses() {
+            const loadingEl = document.getElementById('loading-courses');
+            const gridEl = document.getElementById('courses-grid');
+
+            try {
+                // Show loading
+                loadingEl.classList.remove('hidden');
+                gridEl.classList.add('hidden');
+
+                let courses = [];
+
+                if (isLoggedIn) {
+                    // Fetch courses with activation status
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: "getCourses",
+                            email: userData.email
+                        })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        courses = result.data;
+                    }
+                } else {
+                    // Fetch all available courses (public)
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: "getAllAvailableCourses"
+                        })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        courses = result.data;
+                    }
+                }
+
+                // Hide loading, show grid
+                loadingEl.classList.add('hidden');
+                gridEl.classList.remove('hidden');
+
+                renderCourses(courses);
+            } catch (error) {
+                console.error('Error loading courses:', error);
+                loadingEl.classList.add('hidden');
+                gridEl.classList.remove('hidden');
+                showToast('Lỗi tải danh sách khóa học!', 'error');
+            }
+        }
+
+        // Render Courses
+        function renderCourses(courses) {
+            const grid = document.getElementById('courses-grid');
+            grid.innerHTML = '';
+
+            if (courses.length === 0) {
+                grid.innerHTML = '<p style="text-align: center; color: #666;">Chưa có khóa học nào.</p>';
+                return;
+            }
+
+            courses.forEach(course => {
+                const card = document.createElement('div');
+                card.className = 'course-card';
+
+                const badges = [];
+                if (course.isFree) {
+                    badges.push('<span class="badge badge-free">MIỄN PHÍ</span>');
+                } else {
+                    badges.push('<span class="badge badge-paid">CÓ PHÍ</span>');
+                }
+
+                if (course.isActivated) {
+                    badges.push('<span class="badge badge-activated">ĐÃ KÍCH HOẠT</span>');
+                }
+
+                const showActivateButton = !course.isFree && !course.isActivated;
+
+                card.innerHTML = `
+                    <div class="course-icon">
+                        <i class="fas ${course.icon || 'fa-book'}"></i>
+                    </div>
+                    <h3 class="course-title">${course.title}</h3>
+                    <p class="course-desc">${course.desc || 'Mô tả khóa học'}</p>
+                    <div class="course-badges">
+                        ${badges.join('')}
+                    </div>
+                    ${showActivateButton ? `
+                        <button class="btn-activate" onclick="handleActivate('${course.id}')">
+                            <i class="fas fa-check-circle"></i> Kích hoạt khóa học
+                        </button>
+                    ` : ''}
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        // Handle Activate Button Click
+        let countdownInterval = null;
+
+        function handleActivate(courseId) {
+            if (!isLoggedIn) {
+                showLoginModal();
+            } else {
+                // TODO: Open course registration modal/form
+                showToast('Tính năng đăng ký khóa học đang được phát triển!', 'info');
+            }
+        }
+
+        // Show Login Modal with Countdown
+        function showLoginModal() {
+            const modal = document.getElementById('login-modal');
+            const countdownEl = document.getElementById('countdown');
+
+            modal.classList.remove('hidden');
+
+            let timeLeft = 10;
+            countdownEl.textContent = timeLeft;
+
+            // Clear any existing interval
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+
+            // Start countdown
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                countdownEl.textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    closeLoginModal();
+                }
+            }, 1000);
+        }
+
+        // Close Login Modal
+        function closeLoginModal() {
+            const modal = document.getElementById('login-modal');
+            modal.classList.add('hidden');
+
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+        }
+
+        // Go to Login Page
+        function goToLogin() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+            window.location.href = 'Login.html';
+        }
+
+        // Load Roadmap (for logged-in users)
+        async function loadRoadmap() {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: "getRoadmap",
+                        studentCode: userData.code
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    renderRoadmap(result.data);
+                    document.getElementById('roadmap-section').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error loading roadmap:', error);
+            }
+        }
+
+        // Render Roadmap
+        function renderRoadmap(roadmapData) {
+            const container = document.getElementById('roadmap-container');
+            container.innerHTML = '';
+
+            // Define roadmap steps (you can customize this)
+            const steps = [
+                { id: 'step1', title: 'Đăng ký tài khoản', desc: 'Hoàn thành đăng ký' },
+                { id: 'step2', title: 'Kích hoạt khóa học đầu tiên', desc: 'Chọn và kích hoạt khóa học' },
+                { id: 'step3', title: 'Hoàn thành bài học đầu tiên', desc: 'Học và làm bài tập' },
+                { id: 'step4', title: 'Tham gia cộng đồng', desc: 'Kết nối với học viên khác' }
+            ];
+
+            steps.forEach((step, index) => {
+                const stepData = roadmapData[step.id];
+                const status = stepData ? stepData.status : 'pending';
+                const statusClass = status === 'done' ? 'done' : status === 'active' ? 'active' : '';
+
+                const stepEl = document.createElement('div');
+                stepEl.className = `roadmap-step ${statusClass}`;
+                stepEl.innerHTML = `
+                    <div class="step-content">
+                        <div class="step-title">${step.title}</div>
+                        <div>${step.desc}</div>
+                    </div>
+                `;
+                container.appendChild(stepEl);
+            });
+        }
+
+        // Show Toast Notification
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+
+            toast.className = `toast ${type} show`;
+            toastMessage.textContent = message;
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
     </script>
 </body>
 
