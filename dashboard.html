@@ -952,8 +952,8 @@
                 const savedPass = localStorage.getItem('password');
 
                 if (!savedUser || !savedPass) {
-                    // Not logged in, redirect to Index.html
-                    window.location.href = 'Index.html';
+                    // Not logged in, redirect to index.html
+                    window.location.href = 'index.html';
                     return;
                 }
 
@@ -968,7 +968,7 @@
                     console.error("Lỗi parse user data", e);
                     localStorage.removeItem('user');
                     localStorage.removeItem('password');
-                    window.location.href = 'Index.html';
+                    window.location.href = 'index.html';
                 }
             },
 
@@ -977,7 +977,7 @@
                     localStorage.removeItem('user');
                     localStorage.removeItem('password');
                     localStorage.removeItem(STORAGE_KEYS.LAST_MODULE);
-                    window.location.href = 'Index.html';
+                    window.location.href = 'index.html';
                 }
             }
         };
