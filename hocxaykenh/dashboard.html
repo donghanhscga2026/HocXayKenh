@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Đào Tạo - Nhân Hiệu Từ Gốc</title>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* =========================================
+           1. CORE VARIABLES & THEME SETTINGS
+           ========================================= */
+        :root {
+            /* Palette Color (Bảng màu chính) */
+            --primary-color: #4facfe;
+            --secondary-color: #00f2fe;
+            --accent-purple: #764ba2;
+
+            /* Status Colors (Màu trạng thái) */
+            --success-color: #00ef85;
+            --danger-color: #ff4b4b;
+            --warning-color: #f6d365;
+            --info-color: #00d2ff;
+
+            /* Glassmorphism System (Hiệu ứng kính) */
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-strong: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+
+            --text-color: #ffffff;
+            --input-bg: rgba(255, 255, 255, 0.1);
+        }
+
+        /* =========================================
+           2. GLOBAL RESETS & BODY
+           ========================================= */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+            color: var(--text-color);
+        }
+
+        /* --- Animated Background Particles (Hiệu ứng nền động) --- */
+        .circles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .circles li {
+            position: absolute;
+            display: block;
+            list-style: none;
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            animation: animate 25s linear infinite;
+            bottom: -150px;
+        }
+
+        .circles li:nth-child(1) {
+            left: 25%;
+            width: 80px;
+            height: 80px;
+            animation-delay: 0s;
+        }
+
+        .circles li:nth-child(2) {
+            left: 10%;
+            width: 20px;
+            height: 20px;
+            animation-delay: 2s;
+            animation-duration: 12s;
+        }
+
+        .circles li:nth-child(3) {
+            left: 70%;
+            width: 20px;
+            height: 20px;
+            animation-delay: 4s;
+        }
+
+        .circles li:nth-child(4) {
+            left: 40%;
+            width: 60px;
+            height: 60px;
+            animation-delay: 0s;
+            animation-duration: 18s;
+        }
+
+        .circles li:nth-child(5) {
+            left: 65%;
+            width: 20px;
+            height: 20px;
+            animation-delay: 0s;
+        }
+
+        @keyframes animate {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+                border-radius: 0;
+            }
+
+            100% {
+                transform: translateY(-1000px) rotate(720deg);
+                opacity: 0;
+                border-radius: 50%;
+            }
+        }
+
+        /* =========================================
+           3. UI COMPONENT UTILITIES
+           ========================================= */
+        .hidden {
+            display: none !important;
+        }
+
+        h2,
+        h3,
+        h4 {
+            margin: 0 0 15px 0;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Glass Container Base */
+        .container {
+            position: relative;
+            z-index: 10;
+            background: var(--glass-bg);
+            border-radius: 20px;
+            box-shadow: var(--glass-shadow);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* Interactive Buttons */
+        button {
+            cursor: pointer;
+            border: none;
+            outline: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .main-btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 30px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            color: #fff;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 15px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Form Inputs */
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.7);
+            pointer-events: none;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px 12px 45px;
+            background: var(--input-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            color: #fff;
+            box-sizing: border-box;
+            outline: none;
+            transition: background 0.3s;
+        }
+
+        /* --- Password Toggle Icon --- */
+        .input-group .password-toggle {
+            position: absolute;
+            right: 15px;
+            left: auto;
+            /* Override generic left */
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            z-index: 5;
+            transition: color 0.3s;
+            pointer-events: auto;
+            /* Override pointer-events: none */
+        }
+
+        .input-group .password-toggle:hover {
+            color: #fff;
+        }
+
+        .input-group input:focus {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Toast Notifications (Thông báo nổi) */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast-msg {
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out;
+            min-width: 250px;
+            border-left: 4px solid var(--info-color);
+        }
+
+        .toast-msg.success {
+            border-left-color: var(--success-color);
+        }
+
+        .toast-msg.error {
+            border-left-color: var(--danger-color);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Loading Overlay */
+        #loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            border-radius: 16px;
+            backdrop-filter: blur(5px);
+        }
+
+        /* =========================================
+           4. AUTHENTICATION VIEW
+           ========================================= */
+        .auth-box {
+            width: 90%;
+            max-width: 420px;
+            padding: 50px 40px;
+            text-align: center;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            margin-top: 10px;
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .checkbox-container input {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        /* =========================================
+           5. DASHBOARD LAYOUT (DESKTOP)
+           ========================================= */
+        .dash-box {
+            width: 1100px;
+            height: 700px;
+            max-width: 95vw;
+            max-height: 90vh;
+            display: flex;
+            overflow: hidden;
+            text-align: left;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 260px;
+            background: rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            padding: 30px 0;
+            border-right: 1px solid var(--glass-border);
+            flex-shrink: 0;
+        }
+
+        .user-preview {
+            padding: 0 25px 30px;
+            border-bottom: 1px solid var(--glass-border);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            background: #fff;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-purple);
+            font-size: 32px;
+            font-weight: 800;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-item {
+            padding: 18px 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 16px;
+            opacity: 0.8;
+            border-left: 4px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            opacity: 1;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.15), transparent);
+            border-left-color: var(--secondary-color);
+            opacity: 1;
+            font-weight: 600;
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+        }
+
+        .logout-btn {
+            margin-top: auto;
+            padding: 20px 30px;
+            cursor: pointer;
+            color: #ffbaba;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 500;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        /* Main Content Area */
+        .content-area {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            position: relative;
+            scroll-behavior: smooth;
+        }
+
+        .content-area::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .content-area::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .content-area::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        .content-area::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* =========================================
+           6. MODULES
+           ========================================= */
+        .home-grid,
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+        }
+
+        .home-card,
+        .course-card {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s, background 0.3s;
+        }
+
+        .home-card:hover,
+        .course-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 15px;
+        }
+
+        .card-title {
+            font-weight: 700;
+            font-size: 17px;
+            color: var(--secondary-color);
+            letter-spacing: 0.5px;
+        }
+
+        /* Roadmap Styles */
+        .roadmap-container {
+            position: relative;
+            padding-left: 20px;
+            margin-top: 15px;
+        }
+
+        .roadmap-container::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 10px;
+            bottom: 0;
+            width: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        .step {
+            position: relative;
+            margin-bottom: 45px;
+            padding-left: 35px;
+        }
+
+        .step::after {
+            content: '';
+            position: absolute;
+            left: -2px;
+            top: 0;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #444;
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.3s;
+        }
+
+        .step.done::after {
+            background: var(--success-color);
+            border-color: var(--success-color);
+            box-shadow: 0 0 15px var(--success-color);
+        }
+
+        .step.active::after {
+            background: var(--warning-color);
+            border-color: var(--warning-color);
+            box-shadow: 0 0 20px var(--warning-color);
+            transform: scale(1.1);
+        }
+
+        .step-content {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .step-title {
+            color: var(--secondary-color);
+            font-size: 15px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        /* Courses Styles */
+        .course-img {
+            height: 120px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 40px;
+            transition: color 0.3s;
+        }
+
+        .course-card:hover .course-img {
+            color: #fff;
+        }
+
+        .c-status {
+            margin-top: auto;
+            padding: 10px;
+            text-align: center;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+        }
+
+        .status-reg {
+            background: rgba(0, 239, 133, 0.15);
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+            box-shadow: 0 0 10px rgba(0, 239, 133, 0.1);
+        }
+
+        .status-unreg {
+            background: rgba(255, 75, 75, 0.15);
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+        }
+
+        /* Checkin & Support */
+        .checkin-alert {
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .alert-danger {
+            background: #ffff00;
+            border: 1px solid #ff0000;
+            color: #ff0000;
+        }
+
+        .alert-success {
+            background: rgba(0, 239, 133, 0.2);
+            border: 1px solid var(--success-color);
+            color: var(--success-color);
+        }
+
+        .btn-zalo {
+            background: #0068ff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(0, 104, 255, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .btn-zalo:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 104, 255, 0.5);
+        }
+
+        /* =========================================
+           7. MOBILE RESPONSIVE LOGIC
+           ========================================= */
+        .mobile-header {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                align-items: flex-start;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            }
+
+            .dash-box {
+                width: 100vw;
+                height: 100vh;
+                max-width: 100%;
+                max-height: 100%;
+                border-radius: 0;
+                border: none;
+                box-shadow: none;
+                flex-direction: column;
+            }
+
+            .mobile-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 15px 20px;
+                background: rgba(0, 0, 0, 0.3);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                z-index: 20;
+            }
+
+            .content-area {
+                padding: 20px;
+                padding-bottom: 100px;
+            }
+
+            .sidebar {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                justify-content: space-around;
+                background: rgba(15, 23, 42, 0.95);
+                backdrop-filter: blur(20px);
+                border-top: 1px solid rgba(255, 255, 255, 0.15);
+                border-right: none;
+                padding: 12px 0;
+                z-index: 100;
+            }
+
+            .sidebar .user-preview,
+            .sidebar .logout-btn {
+                display: none;
+            }
+
+            .nav-item {
+                flex-direction: column;
+                gap: 6px;
+                padding: 5px;
+                font-size: 11px;
+                border-left: none;
+                width: 25%;
+                justify-content: center;
+                background: transparent !important;
+            }
+
+            .nav-item i {
+                font-size: 20px;
+                margin-bottom: 2px;
+            }
+
+            .nav-item.active {
+                color: var(--secondary-color);
+                text-shadow: none;
+            }
+
+            .nav-item .active i {
+                filter: drop-shadow(0 0 5px var(--secondary-color));
+            }
+
+            .home-grid,
+            .courses-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .home-card[style*="span 2"] {
+                grid-column: span 1 !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Background Elements -->
+    <ul class="circles">
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+    </ul>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+
+    <!-- === DASHBOARD APP === -->
+    <div class="container dash-box" id="dashboard-container">
+
+        <!-- Mobile Header -->
+        <div class="mobile-header">
+            <div style="font-weight: bold; font-size: 16px;">Nhân Hiệu Gốc</div>
+            <div style="font-size: 12px; opacity: 0.8;" id="m-user-name">User</div>
+        </div>
+
+        <!-- Sidebar / Bottom Nav -->
+        <div class="sidebar">
+            <div class="user-preview">
+                <div class="avatar" id="d-avatar">U</div>
+                <div style="font-weight: bold; font-size: 14px;" id="d-name">User</div>
+            </div>
+
+            <div class="nav-item active" onclick="App.switchModule('home')"> <i class="fas fa-home"></i> Trang Chủ
+            </div>
+            <div class="nav-item" onclick="App.switchModule('map')"> <i class="fas fa-map-marked-alt"></i> Lộ Trình
+            </div>
+            <div class="nav-item" onclick="App.switchModule('courses')"> <i class="fas fa-book-reader"></i> Khóa Học
+            </div>
+            <div class="nav-item" onclick="App.switchModule('profile')"> <i class="fas fa-user-cog"></i> Tài Khoản
+            </div>
+
+            <div class="logout-btn" onclick="AuthModule.logout()"> <i class="fas fa-sign-out-alt"></i> Đăng xuất </div>
+        </div>
+
+        <!-- Main Content Components -->
+        <div class="content-area">
+
+            <!-- MODULE 1: HOME -->
+            <div id="mod-home" class="module-view">
+                <h3>🏠 Truy Cập Nhanh</h3>
+                <div class="home-grid">
+                    <!-- Roadmap Summary -->
+                    <div class="home-card" style="grid-column: span 2;">
+                        <div class="card-header"><i class="fas fa-map-signs" style="color: #00d2ff;"></i> <span
+                                class="card-title">Lộ Trình Của Tôi</span></div>
+                        <div id="home-roadmap-content">
+                            <!-- Dynamic Content -->
+                        </div>
+                    </div>
+
+                    <!-- Daily Checkin -->
+                    <div class="home-card">
+                        <div class="card-header"><i class="fas fa-calendar-check" style="color: #00ef85;"></i> <span
+                                class="card-title">Ghi Nhận Mỗi Ngày</span></div>
+                        <div id="checkin-status-box">
+                            <!-- Dynamic Content -->
+                        </div>
+                    </div>
+
+                    <!-- Support -->
+                    <div class="home-card">
+                        <div class="card-header"><i class="fas fa-headset" style="color: #f6d365;"></i> <span
+                                class="card-title">Hỗ Trợ Nhanh</span></div>
+                        <div style="text-align: center; padding: 10px;">
+                            <p style="margin-bottom: 15px;">Gặp khó khăn? Liên hệ ngay với đội ngũ.</p>
+                            <a href="https://zalo.me" target="_blank" class="btn-zalo"><i
+                                    class="fas fa-comment-dots"></i> Chat Zalo Hỗ Trợ</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODULE 2: MAP -->
+            <div id="mod-map" class="module-view hidden">
+                <h3>📍 Bản Đồ Học Tập</h3>
+                <div class="roadmap-container">
+                    <div class="step done">
+                        <div class="step-content">
+                            <div class="step-title">Giai đoạn 1: Khám Phá Bản Thân</div>
+                            <span class="step-status"
+                                style="background:var(--success-color); color:#000; padding:2px 8px; border-radius:4px; font-size:12px;">Đã
+                                hoàn thành</span>
+                        </div>
+                    </div>
+                    <div class="step active">
+                        <div class="step-content">
+                            <div class="step-title">Giai đoạn 2: Xây Dựng Nhân Hiệu</div>
+                            <div class="step-desc">Bạn đang ở đây. Hãy hoàn thành các bài tập thực hành.</div>
+                        </div>
+                    </div>
+                    <!-- Future steps can be added here -->
+                </div>
+            </div>
+
+            <!-- MODULE 3: COURSES -->
+            <div id="mod-courses" class="module-view hidden">
+                <h3>📚 Kho Khóa Học</h3>
+                <div class="courses-grid" id="course-list-render">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+
+            <!-- MODULE 4: PROFILE -->
+            <div id="mod-profile" class="module-view hidden">
+                <h3>⚙️ Cài Đặt Tài Khoản</h3>
+                <div class="profile-form">
+                    <div class="input-group"><label style="margin-bottom:5px; display:block;">Họ tên</label><input
+                            type="text" id="p-name"></div>
+                    <div class="input-group"><label style="margin-bottom:5px; display:block;">SĐT</label><input
+                            type="text" id="p-phone"></div>
+
+                    <button class="main-btn" onclick="App.updateProfile()"
+                        style="background: rgba(255,255,255,0.2);">Lưu Thay Đổi</button>
+
+                    <h4 style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px;">Đổi
+                        Mật Khẩu</h4>
+                    <div class="input-group"><input type="password" id="p-new-pass"
+                            placeholder="Mật khẩu mới (nếu muốn đổi)"></div>
+                    <button class="main-btn" onclick="App.updateProfile()"
+                        style="background: rgba(255,255,255,0.2);">Cập Nhật Mật Khẩu</button>
+
+                    <div style="margin-top: 15px; font-size: 13px;">
+                        Email: <b id="p-email">...</b>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Spinner Overlay -->
+            <div id="loading-overlay" class="hidden">
+                <i class="fas fa-spinner fa-spin" style="font-size: 40px; color: var(--secondary-color);"></i>
+                <p style="margin-top: 15px; font-weight: bold;">Đang xử lý...</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- === MAIN LOGIC === -->
+    <script>
+        /**
+         * CONFIGURATION & CONSTANTS
+         */
+        const API_URL = "https://script.google.com/macros/s/AKfycbwd9qsO3FlcwNMOWBqPm5c7NWb0d5c8hMCd5o2YzeXlFOQMVayvHErqcUcWHrelojIbeA/exec";
+
+        const STORAGE_KEYS = {
+            USER: 'user_data',
+            LAST_MODULE: 'last_module',
+            REMEMBER_EMAIL: 'u_e',
+            REMEMBER_PASS: 'u_p'
+        };
+
+        const STATE = {
+            isLoginMode: true,
+            currentUser: null,
+            currentPass: "",
+            // Mock data for demo purposes
+            mockHome: {
+                roadmapStatus: 'active', // 'new' | 'active'
+                todayCheckin: false
+            },
+            roadmap: {} // New: Store roadmap progress
+        };
+
+        /**
+         * UTILITIES
+         */
+        const Utils = {
+            // Hiển thị thông báo (Toast)
+            showToast: (msg, type = 'info') => {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = `toast-msg ${type}`;
+                let icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-times-circle' : 'fa-info-circle');
+                toast.innerHTML = `<i class="fas ${icon}"></i> <span>${msg}</span>`;
+                container.appendChild(toast);
+                setTimeout(() => toast.remove(), 4000);
+            },
+
+            showLoading: (isLoading) => {
+                const overlay = document.getElementById('loading-overlay');
+                isLoading ? overlay.classList.remove('hidden') : overlay.classList.add('hidden');
+            },
+
+            // Gọi API Wrapper
+            callApi: async (action, data) => {
+                data.action = action;
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(data)
+                    });
+                    return await response.json();
+                } catch (error) {
+                    console.error("API Error:", error);
+                    return { success: false, msg: "Lỗi kết nối server!" };
+                }
+            }
+        };
+
+        /**
+         * AUTHENTICATION MODULE
+         */
+        const AuthModule = {
+            init: () => {
+                // CHECK LOGIN STATUS - Redirect if not logged in
+                const savedUser = localStorage.getItem('user');
+                const savedPass = localStorage.getItem('password');
+
+                if (!savedUser || !savedPass) {
+                    // Not logged in, redirect to Index.html
+                    window.location.href = 'Index.html';
+                    return;
+                }
+
+                // Tự động load thông tin đã lưu
+                try {
+                    STATE.currentUser = JSON.parse(savedUser);
+                    STATE.currentPass = savedPass;
+
+                    console.log("Khôi phục phiên làm việc cho:", STATE.currentUser.name);
+                    return App.enterDashboard();
+                } catch (e) {
+                    console.error("Lỗi parse user data", e);
+                    localStorage.removeItem('user');
+                    localStorage.removeItem('password');
+                    window.location.href = 'Index.html';
+                }
+            },
+
+            logout: () => {
+                if (confirm("Bạn có chắc chắn muốn đăng xuất?")) {
+                    localStorage.removeItem('user');
+                    localStorage.removeItem('password');
+                    localStorage.removeItem(STORAGE_KEYS.LAST_MODULE);
+                    window.location.href = 'Index.html';
+                }
+            }
+        };
+
+        /**
+         * DASHBOARD APPLICATION LOGIC
+         */
+        const App = {
+            enterDashboard: async () => {
+                // Dashboard is already visible, no need to toggle containers
+
+                // Render dữ liệu ban đầu từ cache (để UI hiện ngay lập tức)
+                App.renderUserInfo();
+
+                // Khôi phục tab cũ
+                const lastMod = localStorage.getItem(STORAGE_KEYS.LAST_MODULE) || 'home';
+                App.switchModule(lastMod);
+
+                // Đồng bộ dữ liệu mới nhất từ server
+                await App.syncUserData();
+                if (STATE.currentUser.code) await App.syncRoadmapData();
+            },
+
+            syncUserData: async () => {
+                try {
+                    const res = await Utils.callApi("getProfile", { email: STATE.currentUser.email });
+                    if (res.success && res.data && res.data.name) {
+                        // Cập nhật state và cache
+                        STATE.currentUser = res.data;
+                        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(STATE.currentUser));
+
+                        // Re-render
+                        App.renderUserInfo();
+                        App.renderCourses(); // Mock load
+                        App.renderHome();
+                    }
+                } catch (e) { console.log("Background sync failed", e); }
+            },
+
+            syncRoadmapData: async () => {
+                try {
+                    const res = await Utils.callApi("getRoadmap", { studentCode: STATE.currentUser.code });
+                    if (res.success) {
+                        STATE.roadmap = res.data || {};
+                        App.renderHome(); // Re-render triggers UI update
+                    }
+                } catch (e) { console.log("Roadmap sync failed", e); }
+            },
+
+            switchModule: (modName) => {
+                // Lưu trạng thái tab
+                localStorage.setItem(STORAGE_KEYS.LAST_MODULE, modName);
+
+                // Update Nav UI
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+                // Active class mapping (index dựa trên thứ tự html)
+                const mapIndex = { 'home': 0, 'map': 1, 'courses': 2, 'profile': 3 };
+                const idx = mapIndex[modName] !== undefined ? mapIndex[modName] : 0;
+                document.querySelectorAll('.nav-item')[idx].classList.add('active');
+
+                // Switch Content View
+                document.querySelectorAll('.module-view').forEach(el => el.classList.add('hidden'));
+
+                const target = document.getElementById('mod-' + modName);
+                if (target) target.classList.remove('hidden');
+                else document.getElementById('mod-home').classList.remove('hidden'); // Fallback
+
+                // Lazy load logic nếu cần
+                if (modName === 'home') App.renderHome();
+                if (modName === 'courses') App.renderCourses();
+                if (modName === 'profile') App.renderProfileForm();
+            },
+
+            // --- RENDER FUNCTIONS ---
+
+            renderUserInfo: () => {
+                const u = STATE.currentUser;
+                if (!u) return;
+
+                const name = u.name || "Học Viên";
+                document.getElementById('d-name').innerText = name;
+                document.getElementById('m-user-name').innerText = name;
+
+                const initial = name.charAt(0).toUpperCase();
+                document.getElementById('d-avatar').innerText = initial;
+            },
+
+            renderHome: () => {
+                // 1. Roadmap Widget (Entry Survey Logic)
+                const rdContainer = document.getElementById('home-roadmap-content');
+                const surveyStatus = STATE.roadmap['KHAO_SAT']?.status || 'Pending';
+
+                if (surveyStatus === 'Pending') {
+                    rdContainer.innerHTML = `
+                        <div class="roadmap-status-box">
+                            <i class="fas fa-search-location roadmap-icon-lg" style="font-size:30px; margin-bottom:10px; color:var(--warning-color);"></i>
+                            <p style="margin-bottom:10px;">Chào <b>${STATE.currentUser.name}</b>, hãy bắt đầu hành trình bằng việc xác định vị thế của bạn.</p>
+                            <button class="main-btn btn-start" onclick="App.startSurvey()" style="font-size:14px; background: linear-gradient(90deg, #ff9966, #ff5e62);">
+                                <i class="fas fa-clipboard-list"></i> Làm Khảo Sát Đầu Vào
+                            </button>
+                        </div>`;
+                } else if (surveyStatus === 'Completed') {
+                    rdContainer.innerHTML = `
+                        <div style="padding:10px;">
+                            <h4 style="color:var(--success-color);"><i class="fas fa-check-circle"></i> Đã hoàn thành khảo sát</h4>
+                            <p style="font-size:13px; opacity:0.8; margin-bottom:10px;">Giảng viên đã ghi nhận kết quả của bạn.</p>
+                            <div style="background:rgba(255,255,255,0.1); height:8px; border-radius:5px; margin:10px 0;">
+                                <div style="width:10%; background:var(--success-color); height:100%; border-radius:5px;"></div>
+                            </div>
+                            <button class="main-btn" onclick="App.switchModule('map')" style="margin-top:10px; font-size:14px;">Xem Tiếp Lộ Trình</button>
+                        </div>`;
+                } else {
+                    // Submitted / Processing
+                    rdContainer.innerHTML = `
+                        <div class="roadmap-status-box">
+                             <i class="fas fa-clock" style="font-size:30px; margin-bottom:10px; color:var(--info-color);"></i>
+                            <p>Đã nộp bài khảo sát. Vui lòng chờ Giảng viên nhận xét.</p>
+                        </div>`;
+                }
+
+                // 2. Checkin Widget
+                const ckContainer = document.getElementById('checkin-status-box');
+                if (!STATE.mockHome.todayCheckin) {
+                    ckContainer.innerHTML = `
+                        <div class="checkin-alert alert-danger"><i class="fas fa-exclamation-circle"></i> Chưa ghi nhận hôm nay!</div>
+                        <p style="font-size:12px;opacity:0.8; text-align:center;">Thiên đạo CẦN MẪN hãy luôn nhớ!</p>
+                        <button class="main-btn" style="margin-top:10px; font-size:14px;" onclick="App.doCheckin()">Ghi nhận ngay</button>
+                    `;
+                } else {
+                    ckContainer.innerHTML = `
+                        <div class="checkin-alert alert-success"><i class="fas fa-check-circle"></i> Đã ghi nhận hôm nay</div>
+                        <p style="font-size:13px;opacity:0.9; text-align:center;">Tuyệt vời! Hãy giữ vững phong độ.</p>
+                    `;
+                }
+            },
+
+            renderCourses: async () => {
+                const list = document.getElementById('course-list-render');
+                // Nếu đã có nội dung rồi thì không load lại để tránh giật, trừ khi force refresh
+                if (list.children.length > 1) return;
+
+                list.innerHTML = '<div style="grid-column:span 2; text-align:center; padding:20px;"><i class="fas fa-spinner fa-spin"></i> Đang tải khóa học...</div>';
+
+                try {
+                    const res = await Utils.callApi("getCourses", { email: STATE.currentUser.email });
+                    if (res.success && res.data.length > 0) {
+                        list.innerHTML = "";
+                        res.data.forEach(c => {
+                            const isReg = c.isRegistered;
+                            const html = `
+                                <div class="course-card">
+                                    <div class="course-img"><i class="fas ${c.icon || 'fa-book'}"></i></div>
+                                    <div style="font-weight:bold; margin-bottom:5px;">${c.title}</div>
+                                    <div style="font-size:12px; opacity:0.7; flex:1;">${c.desc || "Mô tả khóa học..."}</div>
+                                    <div class="c-status ${isReg ? 'status-reg' : 'status-unreg'}">
+                                        ${isReg ? 'ĐÃ ĐĂNG KÝ' : 'CHƯA ĐĂNG KÝ'}
+                                    </div>
+                                </div>`;
+                            list.innerHTML += html;
+                        });
+                    } else {
+                        list.innerHTML = '<p style="grid-column:span 2; text-align:center;">Chưa có khóa học nào.</p>';
+                    }
+                } catch (e) {
+                    list.innerHTML = '<p style="color:#ffbaba; grid-column:span 2; text-align:center;">Không thể tải danh sách khóa học.</p>';
+                }
+            },
+
+            renderProfileForm: () => {
+                if (!STATE.currentUser) return;
+                document.getElementById('p-name').value = STATE.currentUser.name || "";
+                document.getElementById('p-phone').value = STATE.currentUser.phone || "";
+                document.getElementById('p-email').innerText = STATE.currentUser.email || "";
+            },
+
+            // --- USER ACTIONS ---
+
+            updateProfile: async () => {
+                const name = document.getElementById('p-name').value;
+                const phone = document.getElementById('p-phone').value;
+                const newPass = document.getElementById('p-new-pass').value;
+
+                Utils.showLoading(true);
+                const res = await Utils.callApi("updateProfile", {
+                    email: STATE.currentUser.email,
+                    oldPassword: STATE.currentPass, // Pass hiện tại để verify bên server
+                    newName: name,
+                    newPhone: phone,
+                    newPassword: newPass
+                });
+                Utils.showLoading(false);
+
+                if (res.success) {
+                    Utils.showToast("Cập nhật hồ sơ thành công!", "success");
+
+                    // Update Local State
+                    STATE.currentUser.name = name;
+                    STATE.currentUser.phone = phone;
+                    if (newPass) STATE.currentPass = newPass;
+
+                    // Update Store
+                    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(STATE.currentUser));
+
+                    // Update UI
+                    App.renderUserInfo();
+
+                    // Clear pass field
+                    document.getElementById('p-new-pass').value = "";
+                } else {
+                    Utils.showToast(res.msg || "Cập nhật thất bại", "error");
+                }
+            },
+
+            openQuiz: () => {
+                Utils.showToast("Tính năng bài thi đang được phát triển!", "info");
+            },
+
+            startSurvey: async () => {
+                const link = prompt("Vui lòng nhập link bài làm khảo sát của bạn (Google Doc/Drive):");
+                if (link) {
+                    Utils.showLoading(true);
+                    const res = await Utils.callApi("updateCheckpoint", {
+                        studentCode: STATE.currentUser.code,
+                        checkpointId: "KHAO_SAT",
+                        status: "Submitted",
+                        submissionData: link
+                    });
+                    Utils.showLoading(false);
+
+                    if (res.success) {
+                        Utils.showToast("Đã nộp bài thành công!", "success");
+                        // Cập nhật local state
+                        STATE.roadmap['KHAO_SAT'] = { status: 'Submitted', data: link };
+                        App.renderHome();
+                    } else {
+                        Utils.showToast("Lỗi nộp bài: " + res.msg, "error");
+                    }
+                }
+            },
+
+            doCheckin: () => {
+                const note = prompt("Bạn đã học được gì hôm nay?");
+                if (note) {
+                    STATE.mockHome.todayCheckin = true;
+                    App.renderHome();
+                    Utils.showToast("Ghi nhận thành công! +10 điểm tích cực", "success");
+                }
+            }
+        };
+
+        // --- INIT APP ---
+        window.onload = AuthModule.init;
+
+    </script>
+</body>
+
+</html>

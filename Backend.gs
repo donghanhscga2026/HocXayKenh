@@ -1,10 +1,15 @@
 function doGet(e) {
-  // 1. Xử lý xác nhận đổi Email
+  // 1. Xử lý kích hoạt tài khoản
+  if (e.parameter.action === "activate") {
+    return activateAccount(e.parameter.token);
+  }
+  
+  // 2. Xử lý xác nhận đổi Email
   if (e.parameter.action === "verifyEmailChange") {
     return verifyEmailChange(e.parameter.token);
   }
 
-  // 2. Mặc định trả về JSON check status
+  // 3. Mặc định trả về JSON check status
   return returnJSON({ 
     status: "success", 
     message: "Hệ thống API Nhân hiệu từ gốc đang hoạt động!",
@@ -21,7 +26,7 @@ function doPost(e) {
       return returnJSON(loginUser(content.loginInput, content.password));
     } 
     else if (action === "register") {
-      return returnJSON(registerUser(content.email, content.password, content.phone, content.name));
+      return returnJSON(registerUser(content.email, content.password, content.phone, content.name, content.referralCode));
     }
     else if (action === "updateProfile") {
       return returnJSON(updateProfile(content.email, content.oldPassword, content.newName, content.newPhone, content.newPassword));
@@ -42,6 +47,9 @@ function doPost(e) {
     }
     else if (action === "updateCheckpoint") {
       return returnJSON(updateCheckpoint(content.studentCode, content.checkpointId, content.status, content.submissionData));
+    }
+    else if (action === "forgotPassword") {
+      return returnJSON(sendPasswordResetEmail(content.email));
     }
     
     return returnJSON({ success: false, msg: "Hành động không hợp lệ!" });
@@ -196,15 +204,49 @@ function returnJSON(data) {
 // ------------------------------------------------------------------
 // CONFIG: DATABASE MAPPING (Sheet: Dky)
 // ------------------------------------------------------------------
-// Base on Log Step 253: 0:Time, 1:Code, 2:Name, 5:Phone, 6:Email, 22:Note, 24:Pass, 25:Status, 26:Token
+// SỬ DỤNG TÊN CỘT THAY VÌ INDEX - Tối ưu hơn, không sợ lỗi khi chèn/xóa cột
+// Hàm lấy index cột theo tên header
+function getColumnIndex(sheet, columnName) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  for (let i = 0; i < headers.length; i++) {
+    if (String(headers[i]).trim().toLowerCase() === columnName.toLowerCase()) {
+      return i;
+    }
+  }
+  return -1; // Không tìm thấy
+}
+
+// Cache column indexes for performance (call once per request)
+let COL_CACHE = null;
+
+function getColumnIndexes(sheet) {
+  if (COL_CACHE) return COL_CACHE;
+  
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const indexes = {};
+  
+  for (let i = 0; i < headers.length; i++) {
+    const name = String(headers[i]).trim();
+    indexes[name] = i;
+  }
+  
+  COL_CACHE = indexes;
+  return indexes;
+}
+
+// Fallback to hardcoded indexes if header not found
 const COL_CODE = 1;
 const COL_NAME = 2;
+const COL_REFERRAL_CODE = 3;  // Cột D (Mã giới thiệu)
+const COL_REFERRER_NAME = 4;  // Cột E (Tên người giới thiệu)
 const COL_PHONE = 5;
 const COL_EMAIL = 6;
+const COL_AFFILIATE_LINK = 13; // Cột N (Link tiếp thị)
 const COL_NOTE = 22;
 const COL_PASS = 24;
-const COL_STATUS = 25;
+const COL_STATUS = 25; // Cột Z (Đã kích hoạt)
 const COL_TOKEN = 26;
+const COL_ACTIVATION_STATUS = 25; // Cùng cột Z, không cần 2 cột
 
 function normalizePhone(input) {
   if (!input) return "";
@@ -218,69 +260,93 @@ function normalizePhone(input) {
 // Hàm sinh mã học viên tự động
 function generateStudentCode(sheet) {
   const data = sheet.getDataRange().getValues();
-  let maxCode = 1000; // Start from 1000 if empty
+  let maxCode = 0; // Start from 0 to find actual max
   
   // Skip header, start from row 1
   for (let i = 1; i < data.length; i++) {
     const codeVal = data[i][COL_CODE];
     const noteVal = data[i][COL_NOTE];
     
-    // Logic: Chỉ xét các mã là số và KHÔNG phải là VIP
-    // Nếu note có chứa chữ VIP thì bỏ qua (hoặc chính xác là "VIP")
-    const isVip = String(noteVal).toUpperCase().includes("VIP");
+    // Skip completely empty rows
+    if (!codeVal && !data[i][COL_NAME] && !data[i][COL_EMAIL]) {
+      continue;
+    }
     
-    if (!isVip && !isNaN(codeVal) && Number(codeVal) > 0) {
+    // Logic: Chỉ xét các mã là số và KHÔNG phải là VIP
+    // Nếu note có chứa chữ VIP thì bỏ qua
+    const isVip = noteVal && String(noteVal).toUpperCase().includes("VIP");
+    
+    if (!isVip && codeVal) {
       const num = Number(codeVal);
-      if (num > maxCode) maxCode = num;
+      if (!isNaN(num) && num > 0 && num > maxCode) {
+        maxCode = num;
+      }
     }
   }
+  
+  // If no valid code found, start from 1000
+  if (maxCode === 0) {
+    maxCode = 1000;
+  }
+  
   return maxCode + 1;
 }
 
 // Hàm Đăng ký tài khoản
-function registerUser(email, password, phone, name) {
+function registerUser(email, password, phone, name, referralCode) {
   const ss = getDB();
   const sheet = ss.getSheetByName("Dky");
   if (!sheet) return { success: false, msg: "Lỗi: Không tìm thấy sheet Dky" };
   const data = sheet.getDataRange().getValues();
   
-  const cleanPhone = normalizePhone(phone); 
+  const cleanPhone = normalizePhone(phone);
+  const finalPassword = password || "Brk@3773"; // Mật khẩu mặc định
   
   // Kiểm tra email hoặc số điện thoại
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][COL_EMAIL]).toLowerCase() == String(email).toLowerCase()) return { success: false, msg: "Email này đã được đăng ký!" };
+    if (String(data[i][COL_EMAIL]).toLowerCase() == String(email).toLowerCase()) {
+      return { success: false, msg: "Email này đã được đăng ký!", isDuplicate: true };
+    }
     if (normalizePhone(data[i][COL_PHONE]) == cleanPhone && cleanPhone !== "") {
-        return { success: false, msg: "Số điện thoại này đã được đăng ký!" };
+      return { success: false, msg: "Số điện thoại này đã được đăng ký!", isDuplicate: true };
     }
   }
   
   const token = Utilities.getUuid(); 
   const timestamp = new Date();
-  const newCode = generateStudentCode(sheet); // Auto-gen Code
+  const newCode = generateStudentCode(sheet);
+  const affiliateLink = "https://go.giautoandien.site/r/" + newCode;
+  
+  // Tra cứu tên người giới thiệu
+  const referrerName = getReferrerName(sheet, referralCode);
 
-  // Tạo row mới với cấu trúc chuẩn
-  let newRow = new Array(28).fill(""); // Ensure enough columns
+  // Find the correct row to insert (right after last data row)
+  let nextRow = sheet.getLastRow() + 1;
   
-  newRow[0] = timestamp;
-  newRow[COL_CODE] = newCode; 
-  newRow[COL_NAME] = name;
-  newRow[COL_PHONE] = cleanPhone;
-  newRow[COL_EMAIL] = email;
-  newRow[COL_PASS] = password;
-  newRow[COL_STATUS] = "Pending";
-  newRow[COL_TOKEN] = token;
+  // Ghi dữ liệu vào từng cột cụ thể (tránh lỗi mapping)
+  sheet.getRange(nextRow, 1).setValue(timestamp);                    // Cột A: Timestamp
+  sheet.getRange(nextRow, COL_CODE + 1).setValue(newCode);           // Cột B: Code
+  sheet.getRange(nextRow, COL_NAME + 1).setValue(name);              // Cột C: Name
+  sheet.getRange(nextRow, COL_REFERRAL_CODE + 1).setValue(referralCode || ""); // Cột D: Mã giới thiệu
+  sheet.getRange(nextRow, COL_REFERRER_NAME + 1).setValue(referrerName);        // Cột E: Tên người giới thiệu
+  sheet.getRange(nextRow, COL_PHONE + 1).setValue(cleanPhone);       // Cột F: Phone
+  sheet.getRange(nextRow, COL_EMAIL + 1).setValue(email);            // Cột G: Email
+  sheet.getRange(nextRow, COL_AFFILIATE_LINK + 1).setValue(affiliateLink);      // Cột N: Link tiếp thị
+  sheet.getRange(nextRow, COL_NOTE + 1).setValue("");                // Cột W: Note (trống)
+  sheet.getRange(nextRow, COL_PASS + 1).setValue(finalPassword);     // Cột Y: Password
+  sheet.getRange(nextRow, COL_STATUS + 1).setValue("Chưa kích hoạt"); // Cột Z: Status
+  sheet.getRange(nextRow, COL_TOKEN + 1).setValue(token);            // Cột AA: Token
+ 
   
-  sheet.appendRow(newRow); 
+  // Gửi email chào mừng
+  sendWelcomeEmail(email, name, newCode, finalPassword, affiliateLink, token);
   
-  // Gửi email xác nhận
-  try {
-    const url = ScriptApp.getService().getUrl() + "?token=" + token;
-    const body = "Chào " + name + " (Mã HV: " + newCode + "), hãy nhấn vào link sau để xác nhận đăng ký: " + url;
-    MailApp.sendEmail(email, "Xác nhận đăng ký - Nhân hiệu từ gốc", body);
-  } catch(e) {
-  }
-  
-  return { success: true, msg: "Đăng ký thành công! Mã học viên: " + newCode + ". Kiểm tra email để xác nhận." };
+  return { 
+    success: true, 
+    msg: "Đăng ký thành công! Mã học viên: " + newCode + ". Vui lòng kiểm tra email để kích hoạt tài khoản.",
+    code: newCode,
+    affiliateLink: affiliateLink
+  };
 }
 
 // Hàm Đăng nhập
@@ -300,9 +366,12 @@ function loginUser(loginInput, password) {
     if (isEmailMatch || isPhoneMatch) {
       // Check pass
       if (String(data[i][COL_PASS]) === String(password)) {
-         // Check status
+         // Check activation status
+         const activationStatus = data[i][COL_ACTIVATION_STATUS];
          const status = data[i][COL_STATUS];
-         if (status === "Verified" || status === "Active" || status === "") { // Chap nhan Active hoac rong cho user cu
+         
+         // Chấp nhận: "Đã kích hoạt", "Verified", "Active", hoặc rỗng (user cũ)
+         if (activationStatus === "Đã kích hoạt" || status === "Verified" || status === "Active" || status === "" || activationStatus === "") {
             const email = data[i][COL_EMAIL];
             const name = data[i][COL_NAME] || email;
             const code = data[i][COL_CODE];
@@ -318,7 +387,7 @@ function loginUser(loginInput, password) {
                 } 
             };
          } else {
-            return { success: false, msg: "Tài khoản chưa xác nhận Email!" };
+            return { success: false, msg: "Tài khoản chưa được kích hoạt! Vui lòng kiểm tra email để kích hoạt." };
          }
       } else {
          return { success: false, msg: "Mật khẩu không chính xác!" };
@@ -453,4 +522,201 @@ function updateCheckpoint(studentCode, checkpointId, status, submissionData) {
   // Not found -> Create new
   sheet.appendRow([studentCode, checkpointId, status || "Pending", submissionData || "", "", timestamp]);
   return { success: true, msg: "Đã tạo mới tiến độ!" };
+}
+
+// ------------------------------------------------------------------
+// NEW ACCOUNT REGISTRATION FUNCTIONS
+// ------------------------------------------------------------------
+
+// Tra cứu tên người giới thiệu
+function getReferrerName(sheet, referralCode) {
+  if (!referralCode) return "";
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][COL_CODE]) === String(referralCode)) {
+      return data[i][COL_NAME] || "";
+    }
+  }
+  return "";
+}
+
+// Gửi email chào mừng với link kích hoạt
+function sendWelcomeEmail(email, name, code, password, affiliateLink, token) {
+  const activateUrl = ScriptApp.getService().getUrl() + "?action=activate&token=" + token;
+  
+  const subject = "🎉 Chào mừng bạn đến với BRK - Nhân hiệu từ gốc!";
+  const body = `
+Xin chào ${name},
+
+Chúc mừng bạn đã đăng ký thành công tài khoản!
+
+📌 THÔNG TIN TÀI KHOẢN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Mã học viên: ${code}
+• Email: ${email}
+• Mật khẩu: ${password}
+
+⚠️ QUAN TRỌNG: Vui lòng kích hoạt tài khoản bằng cách click vào link sau:
+👉 ${activateUrl}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔗 LINK GIỚI THIỆU CỦA BẠN:
+${affiliateLink}
+
+Hãy chia sẻ link này với bạn bè để cùng tham gia cộng đồng BRK!
+Mỗi người bạn giới thiệu thành công, bạn sẽ nhận được ưu đãi đặc biệt.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Nếu cần hỗ trợ, vui lòng liên hệ:
+📞 Hotline: 0876.473.257
+📧 Email: support@giautoandien.site
+
+Trân trọng,
+Ban Tổ Chức BRK
+  `;
+  
+  try {
+    MailApp.sendEmail({
+      to: email,
+      subject: subject,
+      body: body
+    });
+    Logger.log("Đã gửi email chào mừng đến: " + email);
+  } catch(e) {
+    Logger.log("Lỗi gửi email: " + e.toString());
+  }
+}
+
+// Xử lý kích hoạt tài khoản
+function activateAccount(token) {
+  const sheet = getDB().getSheetByName("Dky");
+  if (!sheet) {
+    return HtmlService.createHtmlOutput("<h2>❌ Lỗi kết nối hệ thống.</h2>");
+  }
+  
+  const data = sheet.getDataRange().getValues();
+  
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][COL_TOKEN] === token) {
+      // Cập nhật cả 2 cột status
+      sheet.getRange(i + 1, COL_STATUS + 1).setValue("Đã kích hoạt");
+      sheet.getRange(i + 1, COL_ACTIVATION_STATUS + 1).setValue("Đã kích hoạt");
+      
+      const name = data[i][COL_NAME];
+      const code = data[i][COL_CODE];
+      
+      return HtmlService.createHtmlOutput(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+            .container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; max-width: 500px; }
+            .icon { font-size: 80px; margin-bottom: 20px; }
+            h1 { color: #10B981; margin: 0 0 10px 0; font-size: 2em; }
+            p { color: #6B7280; font-size: 1.1em; line-height: 1.6; margin: 15px 0; }
+            .code { background: #F3F4F6; padding: 15px; border-radius: 10px; font-size: 1.3em; font-weight: bold; color: #F59E0B; margin: 20px 0; }
+            .btn { display: inline-block; background: #F59E0B; color: white; padding: 15px 40px; border-radius: 10px; text-decoration: none; font-weight: bold; margin-top: 20px; transition: all 0.3s; }
+            .btn:hover { background: #D97706; transform: translateY(-2px); box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3); }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="icon">✅</div>
+            <h1>Kích hoạt thành công!</h1>
+            <p>Xin chào <strong>${name}</strong>,</p>
+            <p>Tài khoản của bạn đã được kích hoạt thành công!</p>
+            <div class="code">Mã học viên: ${code}</div>
+            <p>Bạn có thể đăng nhập ngay bây giờ để bắt đầu hành trình học tập.</p>
+            <a href="https://yourdomain.vercel.app/login.html" class="btn">Đăng nhập ngay →</a>
+          </div>
+        </body>
+        </html>
+      `);
+    }
+  }
+  
+  return HtmlService.createHtmlOutput(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; max-width: 500px; }
+        .icon { font-size: 80px; margin-bottom: 20px; }
+        h1 { color: #EF4444; margin: 0 0 10px 0; font-size: 2em; }
+        p { color: #6B7280; font-size: 1.1em; line-height: 1.6; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="icon">❌</div>
+        <h1>Link không hợp lệ</h1>
+        <p>Link kích hoạt không đúng hoặc đã hết hạn.</p>
+        <p>Vui lòng kiểm tra lại email hoặc liên hệ hỗ trợ.</p>
+      </div>
+    </body>
+    </html>
+  `);
+}
+
+// Gửi lại mật khẩu (Quên mật khẩu)
+function sendPasswordResetEmail(email) {
+  const sheet = getDB().getSheetByName("Dky");
+  if (!sheet) return { success: false, msg: "Lỗi kết nối hệ thống!" };
+  
+  const data = sheet.getDataRange().getValues();
+  
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][COL_EMAIL]).toLowerCase() === email.toLowerCase()) {
+      const name = data[i][COL_NAME];
+      const code = data[i][COL_CODE];
+      
+      // Reset về mật khẩu mặc định
+      sheet.getRange(i + 1, COL_PASS + 1).setValue("Brk@3773");
+      
+      const subject = "🔑 Lấy lại mật khẩu - BRK";
+      const body = `
+Xin chào ${name},
+
+Bạn vừa yêu cầu lấy lại mật khẩu tài khoản.
+
+📌 THÔNG TIN ĐĂNG NHẬP:
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Mã học viên: ${code}
+• Email: ${email}
+• Mật khẩu mặc định: Brk@3773
+
+⚠️ VUI LÒNG:
+1. Đăng nhập bằng mật khẩu mặc định trên
+2. Vào phần "Cài đặt" để đổi mật khẩu mới
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Nếu bạn không yêu cầu lấy lại mật khẩu, vui lòng bỏ qua email này.
+
+Trân trọng,
+Ban Tổ Chức BRK
+      `;
+      
+      try {
+        MailApp.sendEmail({
+          to: email,
+          subject: subject,
+          body: body
+        });
+        return { success: true, msg: "Đã gửi mật khẩu mặc định vào email của bạn! Vui lòng kiểm tra hộp thư." };
+      } catch(e) {
+        return { success: false, msg: "Lỗi gửi email: " + e.toString() };
+      }
+    }
+  }
+  
+  return { success: false, msg: "Không tìm thấy email này trong hệ thống!" };
 }
