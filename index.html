@@ -142,10 +142,13 @@
         .course-card {
             background: white;
             border-radius: 16px;
-            padding: 25px;
+            padding: 0;
+            /* Remove padding for image */
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s, box-shadow 0.3s;
             position: relative;
+            overflow: hidden;
+            /* For image */
         }
 
         .course-card:hover {
@@ -153,36 +156,56 @@
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         }
 
+        .course-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: block;
+        }
+
+        .course-content {
+            padding: 20px;
+        }
+
+        .course-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
         .course-icon {
-            font-size: 48px;
+            font-size: 32px;
             color: #667eea;
-            margin-bottom: 15px;
         }
 
         .course-title {
-            font-size: 22px;
+            font-size: 18px;
             font-weight: 700;
-            margin-bottom: 10px;
+            margin: 0;
             color: #333;
+            flex: 1;
         }
 
         .course-desc {
             color: #666;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             line-height: 1.6;
+            font-size: 14px;
         }
 
         .course-badges {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin-bottom: 15px;
             flex-wrap: wrap;
         }
 
         .badge {
-            padding: 6px 14px;
+            padding: 5px 12px;
             border-radius: 20px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             display: inline-block;
         }
@@ -202,27 +225,55 @@
             color: white;
         }
 
-        .btn-activate {
+        .course-actions {
+            margin-top: 15px;
+        }
+
+        .btn-continue,
+        .btn-activate,
+        .btn-start {
             width: 100%;
             padding: 12px;
-            background: linear-gradient(90deg, #4facfe, #00f2fe);
-            color: white;
             border: none;
             border-radius: 25px;
-            font-weight: 600;
+            font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .btn-continue {
+            background: linear-gradient(90deg, #10b981, #059669);
+            color: white;
+        }
+
+        .btn-continue:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-activate {
+            background: linear-gradient(90deg, #f59e0b, #d97706);
+            color: white;
         }
 
         .btn-activate:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+            box-shadow: 0 5px 15px rgba(245, 158, 11, 0.4);
         }
 
-        .btn-activate:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
+        .btn-start {
+            background: linear-gradient(90deg, #3b82f6, #2563eb);
+            color: white;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
         }
 
         /* Roadmap Section */
@@ -675,6 +726,85 @@
         </div>
     </div>
 
+    <!-- Modal Kích Hoạt Khóa Học -->
+    <div class="modal-overlay hidden" id="activate-modal">
+        <div class="modal-content" style="max-width: 550px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                <i class="fas fa-rocket"></i>
+            </div>
+            <h3 class="modal-title" id="activate-title">Kích hoạt khóa học</h3>
+
+            <!-- Loading State -->
+            <div id="activate-loading" style="display: none; padding: 40px; text-align: center;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 48px; color: #f59e0b; margin-bottom: 20px;"></i>
+                <p style="color: #64748b; font-size: 16px; font-weight: 500;">Đang xử lý thông tin...</p>
+                <p style="color: #94a3b8; font-size: 13px; margin-top: 8px;">Vui lòng chờ trong giây lát</p>
+            </div>
+
+            <div id="activate-body">
+                <!-- Course Info -->
+                <div id="activate-course-info"
+                    style="margin: 20px 0; padding: 15px; background: #f8fafc; border-radius: 8px; text-align: left;">
+                    <h4 style="margin: 0 0 8px 0; color: #1e293b; font-size: 16px;" id="activate-course-name"></h4>
+                    <p style="margin: 0; color: #64748b; font-size: 14px;" id="activate-course-desc"></p>
+                </div>
+
+                <!-- Waiver Info (Miễn cọc) -->
+                <div id="waiver-info"
+                    style="display: none; margin: 20px 0; padding: 20px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px; color: white; text-align: center;">
+                    <i class="fas fa-gift" style="font-size: 32px; margin-bottom: 10px;"></i>
+                    <p style="margin: 0; font-size: 16px; font-weight: 600;">🎉 Bạn được miễn phí cam kết!</p>
+                    <p style="margin: 8px 0 0 0; font-size: 14px; opacity: 0.9;">Vì bạn đã tham gia Lộ trình 86 ngày</p>
+                </div>
+
+                <!-- Deposit Info (Có cọc) -->
+                <div id="deposit-info" style="display: none; margin: 20px 0; text-align: left;">
+                    <div
+                        style="padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; margin-bottom: 15px;">
+                        <p style="margin: 0 0 8px 0; font-weight: 600; color: #92400e;">
+                            <i class="fas fa-coins"></i> Phí cam kết: <span id="deposit-amount"
+                                style="color: #d97706; font-size: 18px;"></span>
+                        </p>
+                        <ul style="margin: 8px 0 0 20px; padding: 0; color: #78350f; font-size: 14px;">
+                            <li><strong>STK:</strong> <span id="deposit-stk"></span></li>
+                            <li><strong>Tên:</strong> <span id="deposit-name"></span></li>
+                            <li><strong>Ngân hàng:</strong> <span id="deposit-bank"></span></li>
+                            <li><strong>Nội dung:</strong> <span id="deposit-content"></span></li>
+                        </ul>
+                    </div>
+
+                    <!-- QR Code -->
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <img id="deposit-qr" src="" alt="QR Code"
+                            style="max-width: 200px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: none;">
+                    </div>
+
+                    <!-- File Upload -->
+                    <div style="margin-top: 15px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1e293b;">
+                            <i class="fas fa-upload"></i> Upload ảnh minh chứng:
+                        </label>
+                        <input type="file" id="activate-receipt" accept="image/*"
+                            style="display: block; width: 100%; padding: 10px; border: 2px dashed #cbd5e1; border-radius: 8px; cursor: pointer;">
+                        <img id="activate-preview" src="" alt="Preview"
+                            style="display: none; max-width: 100%; margin-top: 10px; border-radius: 8px;">
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="modal-buttons" style="margin-top: 20px;">
+                    <button class="modal-btn modal-btn-secondary" onclick="closeActivateModal()">
+                        <i class="fas fa-times"></i> Hủy
+                    </button>
+                    <button class="modal-btn modal-btn-primary" id="confirm-activate-btn" onclick="confirmActivation()"
+                        style="background: linear-gradient(90deg, #f59e0b, #d97706);">
+                        <i class="fas fa-check"></i> Xác nhận
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbwd9qsO3FlcwNMOWBqPm5c7NWb0d5c8hMCd5o2YzeXlFOQMVayvHErqcUcWHrelojIbeA/exec";
 
@@ -682,6 +812,7 @@
         const user = localStorage.getItem('user');
         const isLoggedIn = !!user;
         let userData = null;
+        let courses = []; // Global courses array
 
         if (isLoggedIn) {
             userData = JSON.parse(user);
@@ -753,6 +884,12 @@
             if (confirm('Bạn có chắc muốn đăng xuất?')) {
                 localStorage.removeItem('user');
                 localStorage.removeItem('password');
+                // Clear courses and roadmap cache
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('courses_') || key.startsWith('roadmap_')) {
+                        localStorage.removeItem(key);
+                    }
+                });
                 showToast('Đã đăng xuất thành công!', 'success');
                 setTimeout(() => {
                     window.location.reload();
@@ -772,17 +909,34 @@
             showToast('Tính năng đang phát triển!', 'info');
         }
 
-        // Load Courses
+        // Load Courses with Caching
         async function loadCourses() {
             const loadingEl = document.getElementById('loading-courses');
             const gridEl = document.getElementById('courses-grid');
 
+            const CACHE_KEY = isLoggedIn ? `courses_${userData.email}` : 'courses_public';
+            const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
             try {
-                // Show loading
+                // Check cache first
+                const cachedData = getCachedCourses(CACHE_KEY, CACHE_DURATION);
+
+                if (cachedData) {
+                    // Show cached data immediately (optimistic rendering)
+                    loadingEl.classList.add('hidden');
+                    gridEl.classList.remove('hidden');
+                    renderCourses(cachedData);
+
+                    // Fetch fresh data in background
+                    fetchCoursesInBackground(CACHE_KEY);
+                    return;
+                }
+
+                // No cache, show loading
                 loadingEl.classList.remove('hidden');
                 gridEl.classList.add('hidden');
 
-                let courses = [];
+                courses = []; // Use global variable
 
                 if (isLoggedIn) {
                     // Fetch courses with activation status
@@ -811,6 +965,9 @@
                     }
                 }
 
+                // Cache the result
+                setCachedCourses(CACHE_KEY, courses);
+
                 // Hide loading, show grid
                 loadingEl.classList.add('hidden');
                 gridEl.classList.remove('hidden');
@@ -821,6 +978,87 @@
                 loadingEl.classList.add('hidden');
                 gridEl.classList.remove('hidden');
                 showToast('Lỗi tải danh sách khóa học!', 'error');
+            }
+        }
+
+        // Get cached courses
+        function getCachedCourses(key, duration) {
+            try {
+                const cached = localStorage.getItem(key);
+                if (!cached) return null;
+
+                const { data, timestamp } = JSON.parse(cached);
+                const now = Date.now();
+
+                // Check if cache is still valid
+                if (now - timestamp < duration) {
+                    return data;
+                }
+
+                // Cache expired, remove it
+                localStorage.removeItem(key);
+                return null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Set cached courses
+        function setCachedCourses(key, data) {
+            try {
+                const cacheData = {
+                    data: data,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem(key, JSON.stringify(cacheData));
+            } catch (e) {
+                console.warn('Failed to cache courses:', e);
+            }
+        }
+
+        // Fetch courses in background and update if changed
+        async function fetchCoursesInBackground(cacheKey) {
+            try {
+                let tempCourses = []; // Temporary variable for background fetch
+
+                if (isLoggedIn) {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: "getCourses",
+                            email: userData.email
+                        })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        tempCourses = result.data;
+                    }
+                } else {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: "getAllAvailableCourses"
+                        })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        tempCourses = result.data;
+                    }
+                }
+
+                // Update global courses
+                courses = tempCourses;
+
+                // Update cache
+                setCachedCourses(cacheKey, tempCourses);
+
+                // Check if data changed, update UI silently
+                const currentCache = getCachedCourses(cacheKey, Infinity);
+                if (JSON.stringify(currentCache) !== JSON.stringify(tempCourses)) {
+                    renderCourses(tempCourses);
+                }
+            } catch (e) {
+                console.warn('Background fetch failed:', e);
             }
         }
 
@@ -838,6 +1076,7 @@
                 const card = document.createElement('div');
                 card.className = 'course-card';
 
+                // Badges
                 const badges = [];
                 if (course.isFree) {
                     badges.push('<span class="badge badge-free">MIỄN PHÍ</span>');
@@ -849,22 +1088,55 @@
                     badges.push('<span class="badge badge-activated">ĐÃ KÍCH HOẠT</span>');
                 }
 
-                const showActivateButton = !course.isFree && !course.isActivated;
+                // Action Buttons Logic
+                let actionButton = '';
+                if (course.isActivated) {
+                    // Đã kích hoạt → Nút "Vào học tiếp"
+                    actionButton = `
+                        <button class="btn-continue" onclick="continueLearning('${course.id}')">
+                            <i class="fas fa-play-circle"></i> Vào học tiếp
+                        </button>
+                    `;
+                } else if (!course.isFree) {
+                    // Chưa kích hoạt và có phí → Nút "Kích hoạt"
+                    actionButton = `
+                        <button class="btn-activate" onclick="handleActivate('${course.id}')">
+                            <i class="fas fa-unlock"></i> Kích hoạt
+                        </button>
+                    `;
+                } else {
+                    // Miễn phí → Nút "Học ngay"
+                    actionButton = `
+                        <button class="btn-start" onclick="startCourse('${course.id}')">
+                            <i class="fas fa-rocket"></i> Học ngay
+                        </button>
+                    `;
+                }
+
+                // Image URL with fallback (using data URI to avoid network issues)
+                // Escape % as %25 is already done, but need to escape quotes for HTML attribute
+                const placeholderSVG = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22180%22%3E%3Crect width=%22400%22 height=%22180%22 fill=%22%23667eea%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22Arial, sans-serif%22 font-size=%2224%22 fill=%22%23ffffff%22%3EKhóa Học%3C/text%3E%3C/svg%3E';
+                const imageUrl = course.imageUrl || placeholderSVG;
 
                 card.innerHTML = `
-                    <div class="course-icon">
-                        <i class="fas ${course.icon || 'fa-book'}"></i>
+                    <img src="${imageUrl}" 
+                         alt="${course.title}" 
+                         class="course-image"
+                         loading="lazy"
+                         onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22180%22%3E%3Crect fill=%22%23667eea%22 width=%22400%22 height=%22180%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22 fill=%22white%22 font-size=%2224%22%3EKhóa Học%3C/text%3E%3C/svg%3E';">
+                    <div class="course-content">
+                        <div class="course-header">
+                            <i class="fas ${course.icon || 'fa-book'} course-icon"></i>
+                            <h3 class="course-title">${course.title}</h3>
+                        </div>
+                        <div class="course-badges">
+                            ${badges.join('')}
+                        </div>
+                        <p class="course-desc">${course.desc || 'Mô tả khóa học'}</p>
+                        <div class="course-actions">
+                            ${actionButton}
+                        </div>
                     </div>
-                    <h3 class="course-title">${course.title}</h3>
-                    <p class="course-desc">${course.desc || 'Mô tả khóa học'}</p>
-                    <div class="course-badges">
-                        ${badges.join('')}
-                    </div>
-                    ${showActivateButton ? `
-                        <button class="btn-activate" onclick="handleActivate('${course.id}')">
-                            <i class="fas fa-check-circle"></i> Kích hoạt khóa học
-                        </button>
-                    ` : ''}
                 `;
 
                 grid.appendChild(card);
@@ -873,14 +1145,260 @@
 
         // Handle Activate Button Click
         let countdownInterval = null;
+        let currentCourseId = null;
+        let activateFileData = null;
 
-        function handleActivate(courseId) {
+        async function handleActivate(courseId) {
+            if (!isLoggedIn) {
+                showLoginModal();
+                return;
+            }
+
+            // Lưu courseId hiện tại
+            currentCourseId = courseId;
+
+            // Tìm thông tin khóa học
+            const course = courses.find(c => c.id === courseId);
+            if (!course) {
+                showToast('Không tìm thấy thông tin khóa học!', 'error');
+                return;
+            }
+
+            // Hiển thị modal
+            showActivateModal(course);
+
+
+            // Fetch thông tin cọc từ backend
+            try {
+                // Hiển thị trạng thái loading trong khi fetch
+                document.getElementById('activate-loading').style.display = 'block';
+                document.getElementById('activate-body').style.display = 'none';
+
+                // Check xem học viên có phải 86 ngày không
+                const is86Days = await checkIf86DaysStudent();
+
+                if (is86Days || course.isFree) {
+                    showWaiverUI();
+                } else {
+                    // Gọi backend để lấy thông tin cọc thực
+                    const depositResponse = await fetch(API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: 'getCourseDepositInfo',
+                            courseId: courseId
+                        })
+                    });
+
+                    const depositResult = await depositResponse.json();
+
+                    if (depositResult && depositResult.id) {
+                        // Hiển thị form cọc với thông tin thực từ backend
+                        showDepositUI({
+                            depositFee: depositResult.depositFee || 0,
+                            stk: depositResult.stk || "1903 8297 6140 19",
+                            tenChuTK: depositResult.tenChuTK || "NGUYEN BIEN CUONG",
+                            nganHang: depositResult.nganHang || "TECHCOMBANK",
+                            qrLink: depositResult.qrLink || "https://img.vietqr.io/image/TCB-19038297614019-compact.png",
+                            zaloLink: depositResult.zaloLink || "",
+                            paymentContent: `Coc ${courseId}`
+                        });
+                    } else {
+                        // Fallback nếu không lấy được thông tin
+                        showDepositUI({
+                            depositFee: 0,
+                            stk: "1903 8297 6140 19",
+                            tenChuTK: "NGUYEN BIEN CUONG",
+                            nganHang: "TECHCOMBANK",
+                            qrLink: "https://img.vietqr.io/image/TCB-19038297614019-compact.png",
+                            paymentContent: `Coc ${courseId}`
+                        });
+                    }
+                }
+
+                // Kết thúc loading, hiển thị nội dung
+                document.getElementById('activate-loading').style.display = 'none';
+                document.getElementById('activate-body').style.display = 'block';
+            } catch (error) {
+                console.error('Error fetching deposit info:', error);
+                showToast('Lỗi khi tải thông tin cọc!', 'error');
+            }
+        }
+
+
+        // Handle Continue Learning Button
+        function continueLearning(courseId) {
+            // Redirect to dashboard with course selected
+            window.location.href = `dashboard.html?course=${courseId}`;
+        }
+
+        // Handle Start Course Button (for free courses)
+        function startCourse(courseId) {
             if (!isLoggedIn) {
                 showLoginModal();
             } else {
-                // TODO: Open course registration modal/form
-                showToast('Tính năng đăng ký khóa học đang được phát triển!', 'info');
+                continueLearning(courseId);
             }
+        }
+
+        // === ACTIVATION MODAL FUNCTIONS ===
+
+        function showActivateModal(course) {
+            const modal = document.getElementById('activate-modal');
+            document.getElementById('activate-course-name').textContent = course.title;
+            document.getElementById('activate-course-desc').innerHTML = course.desc || ''; // Use innerHTML to render HTML tags
+
+            // Khởi tạo trạng thái ban đầu: hiện loading, ẩn body
+            document.getElementById('activate-loading').style.display = 'block';
+            document.getElementById('activate-body').style.display = 'none';
+
+            modal.classList.remove('hidden');
+
+            // Reset file input
+            activateFileData = null;
+            document.getElementById('activate-receipt').value = '';
+            document.getElementById('activate-preview').style.display = 'none';
+        }
+
+        function closeActivateModal() {
+            const modal = document.getElementById('activate-modal');
+            modal.classList.add('hidden');
+            currentCourseId = null;
+            activateFileData = null;
+        }
+
+        async function checkIf86DaysStudent() {
+            // Gọi backend để check (tạm thời return false, sau sẽ implement)
+            // TODO: Implement API call
+            return false;
+        }
+
+        function showWaiverUI() {
+            document.getElementById('waiver-info').style.display = 'block';
+            document.getElementById('deposit-info').style.display = 'none';
+        }
+
+        function showDepositUI(depositInfo) {
+            document.getElementById('waiver-info').style.display = 'none';
+            document.getElementById('deposit-info').style.display = 'block';
+
+            // Populate deposit info
+            document.getElementById('deposit-amount').textContent = depositInfo.depositFee.toLocaleString('vi-VN') + 'đ';
+            document.getElementById('deposit-stk').textContent = depositInfo.stk;
+            document.getElementById('deposit-name').textContent = depositInfo.tenChuTK;
+            document.getElementById('deposit-bank').textContent = depositInfo.nganHang;
+            document.getElementById('deposit-content').textContent = depositInfo.paymentContent;
+
+            // Show QR if available
+            if (depositInfo.qrLink) {
+                const qrImg = document.getElementById('deposit-qr');
+                qrImg.src = depositInfo.qrLink;
+                qrImg.style.display = 'block';
+            }
+
+            // Setup file upload handler
+            const fileInput = document.getElementById('activate-receipt');
+            fileInput.addEventListener('change', handleActivateFileUpload);
+        }
+
+        function handleActivateFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('Kích thước file không được vượt quá 5MB!', 'error');
+                event.target.value = '';
+                return;
+            }
+
+            // Convert to base64
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const base64 = e.target.result.split(',')[1];
+                activateFileData = {
+                    base64: base64,
+                    name: file.name,
+                    type: file.type
+                };
+
+                // Show preview
+                const preview = document.getElementById('activate-preview');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function confirmActivation() {
+            if (!currentCourseId) {
+                showToast('Lỗi: Không tìm thấy mã khóa học!', 'error');
+                return;
+            }
+
+            // Check if waived or need file
+            const isWaived = document.getElementById('waiver-info').style.display !== 'none';
+
+            if (!isWaived && !activateFileData) {
+                showToast('Vui lòng upload ảnh minh chứng thanh toán!', 'error');
+                return;
+            }
+
+            // Show loading
+            const btn = document.getElementById('confirm-activate-btn');
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'activateCourse',
+                        email: userData.email,
+                        courseId: currentCourseId,
+                        fileData: activateFileData ? activateFileData.base64 : null,
+                        fileName: activateFileData ? activateFileData.name : null,
+                        fileType: activateFileData ? activateFileData.type : null
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    closeActivateModal();
+
+                    // Clear cache và reload courses
+                    clearCoursesCache();
+                    await loadCourses();
+
+                    // Optionally open Zalo link
+                    if (result.zaloLink) {
+                        setTimeout(() => {
+                            if (confirm('Bạn có muốn tham gia nhóm Zalo của khóa học không?')) {
+                                window.open(result.zaloLink, '_blank');
+                            }
+                        }, 1000);
+                    }
+                } else {
+                    showToast(result.message || 'Có lỗi xảy ra!', 'error');
+                }
+            } catch (error) {
+                console.error('Error activating course:', error);
+                showToast('Lỗi kết nối! Vui lòng thử lại.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+        }
+
+        function clearCoursesCache() {
+            const keys = Object.keys(localStorage);
+            keys.forEach(key => {
+                if (key.startsWith('courses_')) {
+                    localStorage.removeItem(key);
+                }
+            });
         }
 
         // Show Login Modal with Countdown
@@ -930,7 +1448,49 @@
         }
 
         // Load Roadmap (for logged-in users)
+        // Load Roadmap with Caching
         async function loadRoadmap() {
+            const CACHE_KEY = `roadmap_${userData.code}`;
+            const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+            try {
+                // Check cache first
+                const cachedData = getCachedCourses(CACHE_KEY, CACHE_DURATION);
+
+                if (cachedData) {
+                    // Show cached data immediately
+                    renderRoadmap(cachedData);
+                    document.getElementById('roadmap-section').classList.remove('hidden');
+
+                    // Fetch fresh data in background
+                    fetchRoadmapInBackground(CACHE_KEY);
+                    return;
+                }
+
+                // No cache, fetch from server
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: "getRoadmap",
+                        studentCode: userData.code
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    // Cache the result
+                    setCachedCourses(CACHE_KEY, result.data);
+
+                    renderRoadmap(result.data);
+                    document.getElementById('roadmap-section').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error loading roadmap:', error);
+            }
+        }
+
+        // Fetch roadmap in background
+        async function fetchRoadmapInBackground(cacheKey) {
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
@@ -942,11 +1502,17 @@
 
                 const result = await response.json();
                 if (result.success) {
-                    renderRoadmap(result.data);
-                    document.getElementById('roadmap-section').classList.remove('hidden');
+                    // Update cache
+                    setCachedCourses(cacheKey, result.data);
+
+                    // Check if data changed, update UI silently
+                    const currentCache = getCachedCourses(cacheKey, Infinity);
+                    if (JSON.stringify(currentCache) !== JSON.stringify(result.data)) {
+                        renderRoadmap(result.data);
+                    }
                 }
-            } catch (error) {
-                console.error('Error loading roadmap:', error);
+            } catch (e) {
+                console.warn('Background roadmap fetch failed:', e);
             }
         }
 

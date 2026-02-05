@@ -54,9 +54,16 @@ function doPost(e) {
     else if (action === "getReferrerInfo") {
       return returnJSON(getReferrerInfo(content.referralCode));
     }
+    else if (action === "activateCourse") {
+      return returnJSON(activateCourse(content));
+    }
+    else if (action === "getCourseDepositInfo") {
+      return returnJSON(getCourseDepositInfo(content.courseId));
+    }
     else if (action === "getAllAvailableCourses") {
       return returnJSON(getAllAvailableCourses());
     }
+
     
     return returnJSON({ success: false, msg: "Hành động không hợp lệ!" });
     
@@ -454,12 +461,14 @@ function getCourses(email) {
   const courses = courseSheet.getDataRange().getValues();
   const courseList = [];
   
-  // Mapping columns for KH sheet:
+  // Mapping columns for KH sheet (Corrected based on actual sheet structure):
+  const C_ID = 0;       // Cột A: Mã khóa
   const C_TITLE = 1;    // Cột B: Tên khóa học
-  const C_ID = 3;       // Cột D: Mã khóa
   const C_AVAILABLE = 4; // Cột E: Có sẵn (TRUE/FALSE)
   const C_DESC = 5;     // Cột F: Mô tả ngắn
-  const C_IS_FREE = 14; // Cột O: isFree
+  const C_DEPOSIT = 7;  // Cột H: Phí cọc
+  const C_MA_LOP = 15;  // Cột P: Ma_Lop
+  const C_IMAGE_URL = 16; // Cột Q: Link_Anh_Lop
 
   // Bỏ qua header, duyệt từ dòng 2
   for (let i = 1; i < courses.length; i++) {
@@ -467,16 +476,25 @@ function getCourses(email) {
     if (courses[i][C_AVAILABLE] === true && courses[i][C_ID]) {
       const courseId = String(courses[i][C_ID]);
       const courseName = String(courses[i][C_TITLE] || "");
-      const compositeKey = courseName + "|" + courseId;
+      const courseMaLop = String(courses[i][C_MA_LOP] || "").trim();
+      
+      // Logic kích hoạt: Nếu học viên có 86D hoặc mã lớp này đã được duyệt
+      const has86D = activatedCourses.includes("86D");
+      const isActivated = has86D || (courseMaLop && activatedCourses.includes(courseMaLop));
+      
+      const isFree = Number(courses[i][C_DEPOSIT]) === 0;
       
       courseList.push({
         id: courseId,
         title: courseName,
         desc: String(courses[i][C_DESC] || ""),
+        imageUrl: String(courses[i][C_IMAGE_URL] || ""),
         icon: "fa-book",
-        isFree: courses[i][C_IS_FREE] === true,
-        isActivated: activatedCourses.includes(compositeKey)
+        isFree: isFree,
+        isActivated: isActivated,
+        canActivate: !isActivated && !isFree // Có thể kích hoạt nếu chưa kích hoạt và không miễn phí
       });
+
     }
   }
   
@@ -781,11 +799,12 @@ function getAllAvailableCourses() {
   const availableCourses = [];
   
   // Column mapping (adjust based on your actual sheet structure)
-  const COL_ID = 3;        // Cột D: Mã khóa
+  const COL_ID = 0;        // Cột A: Mã khóa
   const COL_TITLE = 1;     // Cột B: Tên khóa học
   const COL_AVAILABLE = 4; // Cột E: Có sẵn (TRUE/FALSE)
   const COL_DESC = 5;      // Cột F: Mô tả ngắn
   const COL_IS_FREE = 14;  // Cột O: isFree (TRUE/FALSE)
+  const COL_IMAGE_URL = 16; // Cột Q: Link_Anh_Lop
   
   for (let i = 1; i < data.length; i++) {
     // Chỉ lấy khóa học có Có sẵn (cột E) = TRUE
@@ -794,6 +813,7 @@ function getAllAvailableCourses() {
         id: String(data[i][COL_ID]),
         title: String(data[i][COL_TITLE] || ""),
         desc: String(data[i][COL_DESC] || ""),
+        imageUrl: String(data[i][COL_IMAGE_URL] || ""),
         icon: "fa-book",
         isFree: data[i][COL_IS_FREE] === true,
         isActivated: false // Public view, không có thông tin kích hoạt
@@ -844,79 +864,25 @@ function getActivatedCoursesFromLS(studentCode) {
   let maLopList = [];
   
   for (let i = 1; i < lsData.length; i++) {
-    // Cột B: MÃ CODE (index 1)
+    // Cột B: MÃ CODE (index 1) - Theo yêu cầu thống nhất
     // Cột O: Ma_Lop (index 14)
     // Cột K: Trạng thái duyệt (index 10)
     const maHocVien = String(lsData[i][1]).trim();
     const maLop = String(lsData[i][14]).trim();
     const trangThaiDuyet = String(lsData[i][10]).trim();
     
-    if (maHocVien === String(studentCode)) {
-      Logger.log("Row " + (i+1) + ": Ma_Lop = '" + maLop + "', Trạng thái = '" + trangThaiDuyet + "'");
-    }
-    
-    // Chấp nhận cả "Đã duyệt" và "Đã duyệt (Dữ liệu cũ)"
+    // Chấp nhận các trạng thái "Đã duyệt..."
     const isDuyet = trangThaiDuyet.startsWith("Đã duyệt");
     
-    if (maHocVien === String(studentCode) && 
-        isDuyet &&
-        maLop) {
-      maLopList.push(maLop);
-    }
-  }
-  
-  Logger.log("Ma_Lop đã duyệt: " + JSON.stringify(maLopList));
-  
-  // Nếu không tìm thấy Ma_Lop nào
-  if (maLopList.length === 0) {
-    Logger.log("Không tìm thấy Ma_Lop đã duyệt");
-    return [];
-  }
-  
-  // Kiểm tra xem có Ma_Lop = "86D" không (kích hoạt tất cả)
-  const hasVIPAccess = maLopList.some(ml => ml === "86D");
-  
-  if (hasVIPAccess) {
-    Logger.log("Phát hiện Ma_Lop = 86D - Kích hoạt TẤT CẢ khóa học");
-    // Kích hoạt TẤT CẢ khóa học
-    const allCourses = [];
-    for (let i = 1; i < khData.length; i++) {
-      const courseId = String(khData[i][3]); // Cột D: Mã khóa (index 3)
-      if (courseId) {
-        allCourses.push(courseId);
-      }
-    }
-    return allCourses;
-  }
-  
-  // Nếu không có 86D, đối chiếu Ma_Lop với sheet KH
-  const activatedCourses = [];
-  
-  Logger.log("=== Đối chiếu với sheet KH ===");
-  
-  for (let i = 1; i < khData.length; i++) {
-    // Cột D: Mã khóa (index 3)
-    // Cột B: Tên khóa (index 1)
-    // Cột P: Ma_Lop (index 15)
-    const courseId = String(khData[i][3]).trim();
-    const courseName = String(khData[i][1]).trim();
-    const courseMaLop = String(khData[i][15]).trim();
-    
-    if (courseId && courseMaLop) {
-      const isActivated = maLopList.includes(courseMaLop);
-      if (isActivated) {
-        Logger.log("✅ Khóa '" + courseName + "' (ID: " + courseId + ") - Ma_Lop: '" + courseMaLop + "' - KÍCH HOẠT");
-        // Sử dụng composite key: courseName + "|" + courseId để tránh trùng lặp
-        activatedCourses.push(courseName + "|" + courseId);
-      } else {
-        Logger.log("❌ Khóa '" + courseName + "' (ID: " + courseId + ") - Ma_Lop: '" + courseMaLop + "' - CHƯA kích hoạt");
+    if (maHocVien === String(studentCode) && isDuyet && maLop) {
+      if (!maLopList.includes(maLop)) {
+        maLopList.push(maLop);
       }
     }
   }
   
-  Logger.log("=== Tổng số khóa kích hoạt: " + activatedCourses.length + " ===");
-  
-  return activatedCourses;
+  Logger.log("Mã lớp đã kích hoạt cho học viên " + studentCode + ": " + JSON.stringify(maLopList));
+  return maLopList;
 }
 
 // ===================================================================
@@ -949,4 +915,257 @@ function checkVersion() {
     logic: "Ma_Lop based",
     timestamp: new Date()
   };
+}
+
+// ------------------------------------------------------------------
+// COURSE ACTIVATION FEATURE
+// ------------------------------------------------------------------
+
+/**
+ * Kiểm tra học viên có đang tham gia lộ trình 86 ngày không
+ * @param {string} studentCode - Mã học viên
+ * @returns {boolean} - true nếu đang tham gia 86 ngày
+ */
+function checkIfStudent86Days(studentCode) {
+  const ss = getDB();
+  const lsSheet = ss.getSheetByName("LS_DangKy");
+  
+  if (!lsSheet) {
+    return false;
+  }
+  
+  const data = lsSheet.getDataRange().getValues();
+  const headers = data[0];
+  
+  // Tìm index các cột cần thiết
+  const codeIndex = headers.indexOf("Mã học viên");
+  const maLopIndex = headers.indexOf("Ma_Lop");
+  const statusIndex = headers.indexOf("Trạng thái");
+  
+  if (codeIndex === -1 || maLopIndex === -1 || statusIndex === -1) {
+    Logger.log("Không tìm thấy cột cần thiết trong LS_DangKy");
+    return false;
+  }
+  
+  // Duyệt qua các dòng để tìm
+  for (let i = 1; i < data.length; i++) {
+    const rowCode = String(data[i][codeIndex] || "").trim();
+    const maLop = String(data[i][maLopIndex] || "").trim();
+    const status = String(data[i][statusIndex] || "").trim();
+    
+    // Kiểm tra: đúng mã học viên, Ma_Lop = "86D", trạng thái đã duyệt
+    if (rowCode === studentCode && 
+        maLop === "86D" && 
+        (status === "Đã duyệt" || status === "Đã duyệt (Dữ liệu cũ)")) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+/**
+ * Lấy thông tin cọc của khóa học từ sheet KH
+ * @param {string} courseId - Mã khóa học
+ * @returns {Object} - Thông tin cọc hoặc null nếu không tìm thấy
+ */
+function getCourseDepositInfo(courseId) {
+  const ss = getDB();
+  const khSheet = ss.getSheetByName("KH");
+  
+  if (!khSheet) {
+    return null;
+  }
+  
+  const data = khSheet.getDataRange().getValues();
+  const headers = data[0];
+  
+  // Mapping columns
+  const idIndex = headers.indexOf("Mã khóa");
+  const titleIndex = headers.indexOf("Tên khóa học");
+  
+  // Try multiple variants for deposit column
+  let depositIndex = headers.indexOf("Phí cọc");
+  if (depositIndex === -1) {
+    depositIndex = headers.indexOf("Phí cam kết");
+  }
+  if (depositIndex === -1) {
+    depositIndex = headers.indexOf("Phi coc");
+  }
+  if (depositIndex === -1) {
+    // Try to find by position (column H = index 7)
+    depositIndex = 7;
+  }
+  
+  const stkIndex = headers.indexOf("STK");
+  const tenChuTKIndex = headers.indexOf("Tên chủ TK");
+  const nganHangIndex = headers.indexOf("Ngân hàng");
+  const qrLinkIndex = headers.indexOf("Link QR");
+  const zaloLinkIndex = headers.indexOf("Link Zalo");
+  const maLopIndex = headers.indexOf("Ma_Lop");
+  
+  if (idIndex === -1) {
+    return null;
+  }
+  
+  
+  // Tìm khóa học
+  for (let i = 1; i < data.length; i++) {
+    const rowId = String(data[i][idIndex] || "").trim();
+    
+    if (rowId === courseId) {
+      // Parse depositFee as number
+      let depositFee = 0;
+      if (depositIndex !== -1 && data[i][depositIndex]) {
+        depositFee = Number(data[i][depositIndex]) || 0;
+      }
+      
+      Logger.log("Parsed depositFee: " + depositFee);
+      
+      return {
+        id: courseId,
+        title: titleIndex !== -1 ? String(data[i][titleIndex] || "") : "",
+        depositFee: depositFee,
+        stk: stkIndex !== -1 ? String(data[i][stkIndex] || "") : "",
+        tenChuTK: tenChuTKIndex !== -1 ? String(data[i][tenChuTKIndex] || "") : "",
+        nganHang: nganHangIndex !== -1 ? String(data[i][nganHangIndex] || "") : "",
+        qrLink: qrLinkIndex !== -1 ? String(data[i][qrLinkIndex] || "") : "",
+        zaloLink: zaloLinkIndex !== -1 ? String(data[i][zaloLinkIndex] || "") : "",
+        maLop: maLopIndex !== -1 ? String(data[i][maLopIndex] || "") : ""
+      };
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Kích hoạt khóa học cho học viên
+ * @param {Object} data - { email, courseId, fileData, fileName, fileType }
+ * @returns {Object} - { success, message, zaloLink }
+ */
+function activateCourse(data) {
+  try {
+    // 1. Validate input
+    if (!data.email || !data.courseId) {
+      return { success: false, message: "Thiếu thông tin email hoặc mã khóa học!" };
+    }
+    
+    // 2. Lấy thông tin học viên
+    const studentCode = getStudentCodeByEmail(data.email);
+    if (!studentCode) {
+      return { success: false, message: "Không tìm thấy thông tin học viên!" };
+    }
+    
+    const studentInfo = getStudentInfo(data.email);
+    if (!studentInfo) {
+      return { success: false, message: "Không tìm thấy thông tin học viên!" };
+    }
+    
+    // 3. Lấy thông tin khóa học
+    const courseInfo = getCourseDepositInfo(data.courseId);
+    if (!courseInfo) {
+      return { success: false, message: "Không tìm thấy thông tin khóa học!" };
+    }
+    
+    // 4. Kiểm tra đã kích hoạt chưa
+    const activatedCourses = getActivatedCoursesFromLS(studentCode);
+    const compositeKey = courseInfo.title + "|" + data.courseId;
+    
+    if (activatedCourses.includes(compositeKey)) {
+      return { success: false, message: "Bạn đã kích hoạt khóa học này rồi!" };
+    }
+    
+    // 5. Kiểm tra miễn cọc (học viên 86 ngày)
+    const is86DaysStudent = checkIfStudent86Days(studentCode);
+    const isWaived = is86DaysStudent || courseInfo.depositFee === 0;
+    
+    // 6. Validate file upload (nếu không miễn cọc)
+    if (!isWaived && (!data.fileData || !data.fileName)) {
+      return { success: false, message: "Vui lòng upload ảnh minh chứng thanh toán!" };
+    }
+    
+    // 7. Upload ảnh lên Drive (nếu có)
+    let imageUrl = "";
+    if (data.fileData && data.fileName) {
+      try {
+        imageUrl = uploadFileToDrive(
+          data.fileData,
+          data.fileName,
+          data.fileType || "image/jpeg",
+          studentCode,
+          studentInfo.name
+        );
+      } catch (uploadError) {
+        Logger.log("Lỗi upload file: " + uploadError);
+        return { success: false, message: "Lỗi upload ảnh: " + uploadError.message };
+      }
+    }
+    
+    // 8. Ghi vào LS_DangKy
+    const ss = getDB();
+    const lsSheet = ss.getSheetByName("LS_DangKy");
+    
+    if (!lsSheet) {
+      return { success: false, message: "Sheet LS_DangKy không tồn tại!" };
+    }
+    
+    const newRow = [
+      "", // STT - để trống, sẽ tự động
+      new Date(), // Ngày đăng ký
+      studentInfo.name, // Tên
+      studentCode, // Mã học viên
+      data.email, // Email
+      studentInfo.phone || "", // SĐT
+      courseInfo.title, // Tên khóa học
+      data.courseId, // Mã khóa
+      isWaived ? 0 : courseInfo.depositFee, // Phí cọc
+      imageUrl, // Link ảnh minh chứng
+      "Chờ duyệt", // Trạng thái
+      "", // Người giới thiệu
+      isWaived ? "Miễn cọc (Học viên 86 ngày)" : "", // Ghi chú
+      "", // Ngày duyệt
+      courseInfo.maLop || "" // Ma_Lop
+    ];
+    
+    lsSheet.appendRow(newRow);
+    
+    // 9. Gửi email xác nhận (optional - có thể bật sau)
+    // sendActivationConfirmationEmail(studentInfo, courseInfo);
+    
+    // 10. Trả về kết quả
+    return {
+      success: true,
+      message: isWaived 
+        ? "Kích hoạt thành công! Bạn được miễn cọc." 
+        : "Gửi yêu cầu kích hoạt thành công! Vui lòng chờ BTC duyệt.",
+      zaloLink: courseInfo.zaloLink || ""
+    };
+    
+  } catch (error) {
+    Logger.log("Lỗi activateCourse: " + error);
+    return { 
+      success: false, 
+      message: "Lỗi hệ thống: " + error.message 
+    };
+  }
+}
+
+/**
+ * Helper: Upload file lên Drive
+ * (Sử dụng lại function có sẵn hoặc tạo mới)
+ */
+function uploadFileToDrive(base64Data, fileName, fileType, studentCode, studentName) {
+  const folder = DriveApp.getFolderById(FOLDER_ID);
+  const blob = Utilities.newBlob(
+    Utilities.base64Decode(base64Data),
+    fileType,
+    fileName
+  );
+  
+  const file = folder.createFile(blob);
+  file.setName(`${studentCode}_${studentName}_${fileName}`);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  
+  return file.getUrl();
 }
