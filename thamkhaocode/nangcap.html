@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nâng cấp Lộ trình</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+      /* --- [NÂNG CẤP] Bảng màu "Bạch Kim" - Sáng, Sang trọng --- */
+      :root {
+        --text-color: #1F2937; /* Xám than */
+        --label-color: #6B7280; /* Xám trung bình */
+        --input-border: #D1D5DB; /* Viền xám nhạt */
+        --input-focus-border: #D97706; /* Vàng hổ phách đậm */
+        --button-bg: #F59E0B; /* Vàng hổ phách */
+        --button-hover-bg: #D97706; /* Vàng đậm hơn */
+        --button-text-color: #FFFFFF;
+        --box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        --note-bg: #F3F4F6; /* Nền ghi chú xám rất nhạt */
+        --input-bg: #F9FAFB;
+        --form-bg: #FFFFFF;
+        --warning-color: #EF4444;
+        --success-color: #10B981;
+        --info-color: #3B82F6;
+        --button-disabled-bg: #E5E7EB;
+        --background-color: #F1F2F6; /* Nền xám ấm */
+        --selected-border: var(--button-bg);
+      }
+      
+      body {
+        font-family: 'Inter', 'Roboto', sans-serif;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        box-sizing: border-box;
+      }
+
+      .form-container, .result-box {
+        max-width: 550px;
+        width: 100%;
+        margin: 40px auto;
+        background: var(--form-bg);
+        border: 1px solid #E5E7EB;
+        padding: 40px;
+        border-radius: 24px;
+        box-shadow: var(--box-shadow);
+      }
+
+      .form-header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--input-border); }
+      .form-header .form-icon { width: 48px; height: 48px; margin-bottom: 12px; stroke: var(--button-bg); stroke-width: 1.5; }
+      .form-header h2 { margin: 0 0 8px 0; font-size: 2em; font-weight: 700; letter-spacing: -0.5px; color: var(--button-bg); }
+      .form-header .subtitle { font-size: 1em; color: var(--label-color); margin: 0; }
+
+      .section-title {
+        display: flex; align-items: center; gap: 10px;
+        font-weight: 600; font-size: 1.1em; color: var(--text-color);
+        margin-top: 30px; margin-bottom: 15px;
+        padding-bottom: 10px; border-bottom: 1px solid var(--input-border);
+      }
+      .section-title svg { width: 22px; height: 22px; stroke: var(--button-bg); stroke-width: 1.5; }
+
+      /* ================================== */
+      /* CSS CHO CHECKBOX */
+      /* ================================== */
+      .choice-group { display: flex; flex-direction: column; gap: 10px; }
+      .choice-group label {
+        display: flex; align-items: center; padding: 15px;
+        border-radius: 10px;
+        border: 1px solid var(--input-border);
+        background-color: var(--input-bg);
+        cursor: pointer; transition: all 0.2s ease;
+        font-weight: 500; color: var(--text-color);
+        font-size: 0.95em;
+      }
+      .choice-group label:hover {
+        border-color: var(--button-hover-bg);
+        background-color: #FEFCE8;
+      }
+      .choice-group input[type="checkbox"], .choice-group input[type="radio"] { display: none; }
+      .choice-group .icon {
+        width: 20px; height: 20px;
+        border: 2px solid var(--input-border);
+        border-radius: 4px; margin-right: 12px;
+        display: flex; justify-content: center; align-items: center;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        background-color: #FFFFFF;
+      }
+      .choice-group input[type="checkbox"]:checked + .icon {
+        background-color: var(--selected-border);
+        border-color: var(--selected-border);
+      }
+      .choice-group .icon svg {
+        width: 14px; height: 14px;
+        stroke: var(--button-text-color); /* Đổi màu tick thành trắng */
+        stroke-width: 3;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+      .choice-group input[type="checkbox"]:checked + .icon svg { opacity: 1; }
+      /* ================================== */
+
+      .deposit-box { background: var(--note-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--input-border); margin-top: 30px; }
+      .deposit-box p, .deposit-box ul { margin: 0 0 12px 0; line-height: 1.6; }
+      .deposit-box ul { padding-left: 20px; list-style-position: inside; }
+      .deposit-box strong { color: var(--text-color); }
+
+      .warning-text { color: var(--warning-color); font-size: 0.88em; margin-top: 8px; display: block; }
+      
+      button { 
+        padding: 14px 20px; 
+        background: var(--button-bg); 
+        color: var(--button-text-color);
+        border: none; border-radius: 10px; cursor: pointer; 
+        font-weight: 700; font-size: 1.1em; width: 100%; 
+        transition: all 0.2s ease-in-out; 
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 4px 12px rgba(245, 158, 11, 0.2);
+        margin-top: 30px;
+      }
+      button:hover:not(:disabled) { 
+        background-color: var(--button-hover-bg); 
+        transform: translateY(-2px); 
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 6px 20px rgba(217, 119, 6, 0.3);
+      }
+      button:disabled { 
+        background-color: var(--button-disabled-bg); 
+        cursor: not-allowed; box-shadow: none; 
+        color: #9CA3AF;
+      }
+      
+      img.qr { display: block; margin: 15px auto 5px auto; max-width: 180px; border-radius: 8px; }
+      
+      /* File Upload */
+      .file-upload-wrapper { margin-top: 20px; }
+      .file-upload-wrapper label { font-weight: 500; display: block; margin-bottom: 8px; color: var(--label-color); font-size: 0.9em; }
+      input[type="file"] { 
+        width: 100%; font-size: 0.9em;
+        border-radius: 8px;
+        border: 1px solid var(--input-border);
+      }
+      input[type="file"]::file-selector-button {
+        background: #F3F4F6; color: var(--text-color);
+        border: none; border-right: 1px solid var(--input-border);
+        padding: 10px 15px; margin-right: 15px;
+        cursor: pointer; transition: background-color 0.2s;
+        font-weight: 500;
+      }
+      input[type="file"]::file-selector-button:hover { background: #E5E7EB; }
+
+      #filePreview { display: none; width: 100%; max-width: 250px; height: auto; max-height: 250px; margin: 15px auto 0; border: 1px solid var(--input-border); border-radius: 8px; object-fit: contain; }
+      
+      /* Result Box */
+      .result-box { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+      .result-box-icon { width: 64px; height: 64px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; animation: pop-in 0.5s ease-out; stroke-width: 2; }
+      .result-box-icon.success { background-color: rgba(16, 185, 129, 0.1); stroke: var(--success-color); }
+      @keyframes pop-in { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+      .result-box-title { font-size: 1.8em; font-weight: 700; margin: 0 0 10px 0; color: var(--text-color); }
+      .result-box-text { font-size: 1em; line-height: 1.6; color: var(--label-color); margin: 0 0 25px 0; }
+      .result-box-button { 
+        display: inline-block; padding: 12px 24px; 
+        background: var(--button-bg); color: var(--button-text-color) !important; 
+        border: none; border-radius: 8px; cursor: pointer; 
+        font-weight: 500; font-size: 1em; text-decoration: none; 
+        transition: all 0.2s ease-in-out; 
+        box-shadow: 0 4px 14px 0 rgba(251, 191, 36, 0.3);
+      }
+      .result-box-button:hover { 
+        background-color: var(--button-hover-bg); 
+        transform: translateY(-2px); 
+        box-shadow: 0 6px 20px 0 rgba(251, 191, 36, 0.2);
+      }
+
+      /* Loading Overlay */
+      #loadingOverlay { 
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+        background-color: rgba(241, 242, 246, 0.8);
+        backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); 
+        display: none; justify-content: center; align-items: center; z-index: 9999; 
+        color: var(--text-color); text-align: center; font-size: 1.1em; 
+      }
+      .loader { 
+        border: 8px solid #E5E7EB; border-top: 8px solid var(--button-bg); 
+        border-radius: 50%; width: 60px; height: 60px; 
+        animation: spin 1s linear infinite; margin: 0 auto 20px auto; 
+      }
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+      /* Media Query cho Responsive */
+      @media (max-width: 480px) {
+        body { padding: 15px; }
+        .form-container, .result-box { padding: 30px 25px; margin: 10px auto; }
+        .form-header h2 { font-size: 1.5em; }
+        .form-header .form-icon { width: 40px; height: 40px; }
+        .section-title { font-size: 1em; }
+        .choice-group label { font-size: 0.9em; padding: 12px; }
+        .deposit-box { padding: 15px; }
+        .deposit-box ul { padding-left: 15px; }
+        img.qr { max-width: 150px; }
+      }
+      /* == BỔ SUNG STYLE CHO CÁC HỘP TRẠNG THÁI == */
+.status-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 30px;
+  border-radius: 16px;
+}
+
+.status-icon {
+  width: 80px; /* Giới hạn chiều rộng */
+  height: 80px; /* Giới hạn chiều cao */
+  border-radius: 50%; /* Bo tròn thành hình tròn */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.status-icon svg {
+  width: 48px; /* Kích thước của icon bên trong */
+  height: 48px;
+}
+
+/* Màu sắc cho từng trạng thái */
+.status-box.pending { background-color: #F9FAFB; } /* Nền xám nhạt */
+.status-box.pending .status-icon { background-color: #E5E7EB; }
+.status-box.pending .status-icon svg { stroke: #4B5563; }
+
+.status-box.upgraded { background-color: #F0FAF7; } /* Nền xanh lá */
+.status-box.upgraded .status-icon { background-color: #DEF7EC; }
+.status-box.upgraded .status-icon svg { stroke: #057A55; }
+
+.status-box.not-found { background-color: #FEF2F2; } /* Nền đỏ */
+.status-box.not-found .status-icon { background-color: #FEE2E2; }
+.status-box.not-found .status-icon svg { stroke: #B91C1C; }
+    </style>
+</head>
+<body>
+    <? if (upgradeStatus === 'ELIGIBLE') { ?>
+      <div class="form-container" id="upgradeFormContainer">
+        <div class="form-header">
+            <svg class="form-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+            <h2>Chào mừng <?= name ?> quay trở lại!</h2>
+            <p class="subtitle">Vui lòng xác nhận nâng cấp lên Lộ trình 86 ngày. Tất cả các mục đều là bắt buộc</p>
+        </div>
+        <form id="upgradeForm">
+          <div class="section-title">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span>Hãy tích vào các ô xác nhận bạn sẵn sàng *</span>
+            </div>
+            <div class="form-group choice-group">
+                <label><input type="checkbox" name="readiness"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span><span>Tôi cần môi trường cùng nhau cam kết làm để có năng lượng và kỷ luật</span></label>
+                <label><input type="checkbox" name="readiness"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span><span>Tôi cam kết làm đều đặn để có kết quả</span></label>
+                <label><input type="checkbox" name="readiness"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span><span>Tôi sẵn sàng giúp đỡ người khác để kết quả được gia tăng</span></label>
+            </div>
+            <small id="readinessWarning" class="warning-text" style="display:none;">⚠️ Vui lòng xác nhận tất cả các mục trên.</small>
+
+            <div class="section-title">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h12M3.75 3.75h16.5M3.75 12h16.5m-16.5 4.5h16.5M3.75 12a2.25 2.25 0 01-2.25-2.25V6.75A2.25 2.25 0 013.75 4.5h16.5a2.25 2.25 0 012.25 2.25v2.25a2.25 2.25 0 01-2.25 2.25m-16.5 0V3.75" /></svg>
+                <span>Nguyên tắc hoạt động khi tham gia *</span>
+            </div>
+            <div class="form-group choice-group">
+                <label><input type="checkbox" name="principles"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span><span>Đóng phí cọc cam kết trước khi tham gia (1.000.000đ)</span></label>
+                <label><input type="checkbox" name="principles"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span><span>Hoàn thành thử thách (86 ngày)</span></label>
+            </div>
+            <small id="principlesWarning" class="warning-text" style="display:none;">⚠️ Vui lòng xác nhận tất cả các mục trên.</small>
+            
+            <div class="section-title">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span>Quyền lợi khi tham gia *</span>
+            </div>
+            <div class="form-group choice-group">
+                <label><input type="checkbox" name="benefits"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span><span>Được hỗ trợ 1:1 từ người nhận hỗ trợ bạn</span></label>
+                <label><input type="checkbox" name="benefits"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span><span>Được tặng gói Coaching 1:1 trực tiếp từ Coach Cương (trị giá 1.500$ nếu có nhu cầu)</span></label>
+            </div>
+            <small id="benefitsWarning" class="warning-text" style="display:none;">⚠️ Vui lòng xác nhận tất cả các mục trên.</small>
+
+            <div class="section-title">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>
+                <span>Cam kết tiền cọc *</span>
+            </div>
+            <div class="form-group choice-group">
+                <label><input type="checkbox" name="refundCommitment"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span><span>Tôi sẽ chỉ nhận lại phần tiền cọc sau khi kết thúc lộ trình 86 ngày với điều kiện đạt chuẩn</span></label>
+                <label><input type="checkbox" name="refundCommitment"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span><span>Tôi tự nguyện gieo hạt trích từ tiền cọc khi không hoàn thành thử thách theo quy định</span></label>
+                <label><input type="checkbox" name="refundCommitment"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span><span>Việc gửi lại số tiền cọc còn lại cho BTC Ngân hàng phước báu để đền đáp tiếp nối do tôi quyết định sau khi hoàn thành lộ trình</span></label>
+            </div>
+            <small id="refundCommitmentWarning" class="warning-text" style="display:none;">⚠️ Vui lòng xác nhận tất cả các mục trên.</small>
+            
+            <div class="deposit-box">
+                <p>Bạn đang thực hiện nâng cấp lên <strong>Lộ trình 86 ngày</strong>. Vui lòng hoàn tất khoản phí cọc là <strong><?= remainingAmount ?>đ</strong> để chính thức ghi danh.</p>
+                <ul>
+                                        <li><strong>STK:</strong> <span id="courseSTK">0912426481</span></li>
+                    <li><strong>Tên:</strong> <span id="courseTenTK">NGUYEN BIEN CUONG</span></li>
+                    <li><strong>Ngân hàng:</strong> <span id="courseNganHang">SACOMBANK - SÀI GÒN THƯƠNG TÍN</span></li>
+                    <li><strong>Nội dung:</strong> <?= code ?> Coc 86 ngay</li>
+                </ul>
+                                <img id="courseQR" src="https://i.postimg.cc/P54WkfFV/qr.jpg" alt="QR chuyển khoản" class="qr">
+                <div class="file-upload-wrapper">
+                    <label for="upgradeReceipt">&#128221; Tải lên ảnh chụp màn hình đã chuyển cọc:</label>
+                    <input type="file" id="upgradeReceipt" accept="image/*" required>
+                    <small id="upgradeReceiptWarning" class="warning-text" style="display:none;">⚠️ Vui lòng tải lên ảnh xác nhận.</small>
+                    <img id="filePreview" src="" alt="Xem trước ảnh"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <button type="submit" id="submitButton">Xác nhận Nâng cấp</button>
+            </div>
+        </form>
+    </div>
+    <? } else if (upgradeStatus === 'PENDING') { ?>
+  <div class="status-box pending"> 
+    <div class="status-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </div>
+    <h2>Yêu Cầu Đang Chờ Duyệt</h2>
+    <p>
+      Chào <strong><?= name ?></strong>, yêu cầu nâng cấp của bạn đã được ghi nhận và đang chờ Ban tổ chức xác nhận.
+      <br><br>
+      Vui lòng không gửi lại yêu cầu. Chúng tôi sẽ thông báo cho bạn qua email ngay khi yêu cầu được duyệt.
+    </p>
+  </div>
+    <? } else if (upgradeStatus === 'ALREADY_UPGRADED') { ?>
+      <div class="result-box" style="display:flex;">
+        <div class="result-box-icon success">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        </div>
+        <h2 class="result-box-title">Bạn đã ở trong Lộ trình 86 ngày!</h2>
+        <p class="result-box-text">Chào mừng <strong><?= name ?></strong>, hệ thống ghi nhận bạn đã là thành viên của Lộ trình 86 ngày. Cảm ơn bạn đã đồng hành cùng chúng tôi!</p>
+        <a href="https://zalo.me/g/sqnxmy667" id="zaloLinkUpgraded" class="result-box-button">Quay lại Cộng đồng Zalo</a>
+      </div>
+
+    <? } else { ?>
+      <div class="result-box" style="display:flex;">
+        <h2 class="result-box-title">Không tìm thấy thông tin</h2>
+        <p class="result-box-text">Mã học viên không hợp lệ hoặc bạn chưa đăng ký. Vui lòng kiểm tra lại link hoặc liên hệ Ban tổ chức.</p>
+      </div>
+    <? } ?>
+
+    <div id="thankYouMessage" class="result-box">
+      <div class="result-box-icon success">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+      </div>
+      <h2 class="result-box-title">Nâng cấp Thành Công!</h2>
+      <p class="result-box-text">
+        Chúc mừng bạn đã chính thức ghi danh vào Lộ trình 86 ngày! Bạn sẽ nhận được email để nhận thông tin xác nhận sau khi được duyệt.
+      </p>
+      <a href="https://zalo.me/g/sqnxmy667" id="zaloLinkThankYou" class="result-box-button">Tham gia CLB 5 SAO</a>
+    </div>
+
+    <div id="loadingOverlay">
+      <div>
+        <div class="loader"></div>
+        <p>Đang xử lý yêu cầu...</p>
+      </div>
+    </div>
+<script>
+  // --- BẮT ĐẦU PHẦN CODE MỚI ---
+
+  // 1. Định nghĩa thông tin tài khoản & Zalo MẶC ĐỊNH (dùng khi KHÔNG tìm thấy trong sheet KH)
+  const DEFAULT_STK = "0912426481";
+  const DEFAULT_TEN_CHU_TK = "NGUYEN BIEN CUONG";
+  const DEFAULT_NGAN_HANG = "SÀI GÒN THƯƠNG TÍN";
+  const DEFAULT_QR_LINK = "https://i.postimg.cc/P54WkfFV/qr.jpg";
+  const DEFAULT_ZALO_LINK = "https://zalo.me/g/sqnxmy667"; // Link Zalo mặc định
+
+  /**
+   * Hàm này được gọi sau khi tải thông tin khóa 86D từ server.
+   * Nó sẽ cập nhật TOÀN BỘ thông tin động (Bank, QR, Zalo).
+   */
+  function onCourseInfoLoaded(courseInfo) {
+      let stk = DEFAULT_STK;
+      let tenChuTK = DEFAULT_TEN_CHU_TK;
+      let nganHang = DEFAULT_NGAN_HANG;
+      let qrLink = DEFAULT_QR_LINK;
+      let zaloLink = DEFAULT_ZALO_LINK;
+
+      // Nếu tải được thông tin từ sheet KH, ưu tiên dùng nó
+      if (courseInfo) {
+          stk = courseInfo.stk || DEFAULT_STK;
+          tenChuTK = courseInfo.tenChuTK || DEFAULT_TEN_CHU_TK;
+          nganHang = courseInfo.nganHang || DEFAULT_NGAN_HANG;
+          qrLink = courseInfo.qrLink || DEFAULT_QR_LINK;
+          zaloLink = courseInfo.zaloLink || DEFAULT_ZALO_LINK; // Lấy Zalo link
+      }
+
+      // Cập nhật thông tin Ngân hàng (chỉ khi form 'ELIGIBLE' hiển thị)
+      const elSTK = document.getElementById("courseSTK");
+      const elTenTK = document.getElementById("courseTenTK");
+      const elNganHang = document.getElementById("courseNganHang");
+      const elQR = document.getElementById("courseQR");
+
+      if (elSTK) elSTK.textContent = stk;
+      if (elTenTK) elTenTK.textContent = tenChuTK;
+      if (elNganHang) elNganHang.textContent = nganHang;
+      if (elQR) elQR.src = qrLink;
+
+      // Cập nhật link Zalo (luôn luôn cập nhật)
+      const elZaloUpgraded = document.getElementById("zaloLinkUpgraded");
+      const elZaloThankYou = document.getElementById("zaloLinkThankYou");
+
+      if (elZaloUpgraded) elZaloUpgraded.href = zaloLink;
+      if (elZaloThankYou) elZaloThankYou.href = zaloLink;
+      
+      // <<< DÒNG GÂY LỖI ĐÃ BỊ XÓA >>>
+      // Logger.log("Đã cập nhật thông tin ngân hàng và Zalo từ sheet KH."); // <-- Lỗi ở đây
+      console.log("Đã cập nhật thông tin ngân hàng và Zalo từ sheet KH."); // Dùng console.log thay thế (an toàn)
+  }
+
+  // 3. Gọi hàm tải dữ liệu từ server NGAY KHI TẢI TRANG
+  // (Chạy cho tất cả các trạng thái: ELIGIBLE, PENDING, UPGRADED)
+  google.script.run
+      .withSuccessHandler(onCourseInfoLoaded)
+      .withFailureHandler(err => {
+          console.error("Lỗi tải thông tin cọc 86D: ", err);
+          onCourseInfoLoaded(null); // Vẫn chạy hàm update để dùng giá trị MẶC ĐỊNH
+      })
+      ._getCourseInfo("86D"); // Mã "86D" là mã cứng cho khóa 86 ngày
+
+  // --- KẾT THÚC PHẦN CODE MỚI ---
+
+
+  // --- CODE GỐC CỦA BẠN (Xử lý form, upload file...) ---
+  // (Đoạn này được giữ nguyên như file của bạn)
+  const upgradeForm = document.getElementById("upgradeForm");
+  const upgradeFormContainer = document.getElementById("upgradeFormContainer");
+  const submitButton = document.getElementById("submitButton");
+  const upgradeReceiptInput = document.getElementById("upgradeReceipt");
+  const filePreview = document.getElementById("filePreview");
+  const upgradeReceiptWarning = document.getElementById("upgradeReceiptWarning");
+  const thankYouMessage = document.getElementById("thankYouMessage");
+  const loadingOverlay = document.getElementById("loadingOverlay");
+  const readinessWarning = document.getElementById("readinessWarning");
+  const principlesWarning = document.getElementById("principlesWarning");
+  const benefitsWarning = document.getElementById("benefitsWarning");
+  const refundCommitmentWarning = document.getElementById("refundCommitmentWarning");
+  
+  let fileData = { base64: null, name: null, type: null }; // <-- Di chuyển khai báo fileData lên đây
+
+  if (upgradeForm) {
+    upgradeReceiptInput.addEventListener("change", function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        if (file.size > 5 * 1024 * 1024) {
+          alert("Lỗi: Kích thước ảnh quá lớn (tối đa 5MB).");
+          upgradeReceiptInput.value = "";
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          fileData.base64 = e.target.result.split(',')[1];
+          fileData.name = file.name;
+          fileData.type = file.type;
+          filePreview.src = e.target.result;
+          filePreview.style.display = 'block';
+          upgradeReceiptWarning.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    upgradeForm.addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      const isReadinessValid = validateCheckboxGroup('input[name="readiness"]', readinessWarning);
+      const isPrinciplesValid = validateCheckboxGroup('input[name="principles"]', principlesWarning);
+      const isBenefitsValid = validateCheckboxGroup('input[name="benefits"]', benefitsWarning);
+      const isRefundCommitmentValid = validateCheckboxGroup('input[name="refundCommitment"]', refundCommitmentWarning);
+      
+      let isFileValid = true;
+      if (!fileData.base64) {
+        upgradeReceiptWarning.style.display = 'block';
+        isFileValid = false;
+      }
+
+      if(!(isReadinessValid && isPrinciplesValid && isBenefitsValid && isRefundCommitmentValid && isFileValid)) {
+          return; 
+      }
+      
+      loadingOverlay.style.display = 'flex';
+      submitButton.disabled = true;
+
+      const upgradeData = {
+        code: '<?= code ?>',
+        fileData: fileData.base64,
+        fileName: fileData.name,
+        fileType: fileData.type
+      };
+
+      google.script.run
+        .withSuccessHandler(function(response) { 
+            loadingOverlay.style.display = 'none';
+            if(response.success){
+                if(upgradeFormContainer) upgradeFormContainer.style.display = 'none';
+                setupThankYouZaloButton();
+                thankYouMessage.style.display = 'flex';
+            } else {
+                alert('Lỗi: ' + response.message);
+                submitButton.disabled = false;
+            }
+         })
+        .withFailureHandler(function(error) { 
+            loadingOverlay.style.display = 'none';
+            alert('Lỗi hệ thống: ' + error.message);
+            submitButton.disabled = false;
+         })
+        .handleUpgradeSubmit(upgradeData);
+    });
+  }
+
+  function validateCheckboxGroup(selector, warningElement) {
+    const checkboxes = document.querySelectorAll(selector);
+    const checkedCount = document.querySelectorAll(selector + ':checked').length;
+    const totalCount = checkboxes.length;
+    const isValid = checkedCount === totalCount;
+    warningElement.style.display = isValid ? "none" : "block";
+    return isValid;
+  }
+function setupThankYouZaloButton() {
+    const zaloLink = document.getElementById("zaloLinkThankYou");
+    
+    // Đảm bảo nút tồn tại và có ID
+    if (zaloLink) {
+        // Lấy link Zalo từ biến toàn cục (DEFAULT_ZALO_LINK) đã được khai báo ở trên
+        const finalZaloUrl = zaloLink.href; 
+        
+        // Gắn action chuyển hướng trực tiếp cho nút
+        zaloLink.href = "javascript:void(0);"; 
+        zaloLink.setAttribute('onclick', `window.location.href='${finalZaloUrl}'`);
+        
+        // Thêm hiệu ứng chìm xuống và đổi chữ (Tương tự nút Nâng cấp)
+        zaloLink.addEventListener('click', function() {
+             zaloLink.textContent = "Đang mở Zalo..."; 
+             zaloLink.style.backgroundColor = 'var(--button-hover-bg)';
+             zaloLink.style.transform = 'translateY(1px)';
+        });
+    }
+}
+</script>
+</body>
+</html>

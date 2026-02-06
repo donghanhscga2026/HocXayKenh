@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Ký Khóa Học Mới</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+      /* --- [ĐỒNG BỘ] Bảng màu và style từ form đăng ký chính --- */
+      :root { --text-color: #1F2937; --label-color: #6B7280; --input-border: #D1D5DB; --input-focus-border: #D97706; --button-bg: #F59E0B; --button-hover-bg: #D97706; --button-text-color: #FFFFFF; --box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.04); --note-bg: #F3F4F6; --input-icon-color: #9CA3AF; --input-bg: #F9FAFB; --form-bg: #FFFFFF; --selected-border: #F59E0B; --warning-color: #EF4444; --success-color: #10B981; --info-color: #3B82F6; --button-disabled-bg: #E5E7EB; --background-color: #F1F2F6; } body { font-family: 'Inter', 'Roboto', sans-serif; background-color: #F1F2F6; color: var(--text-color); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; } .form-container, .result-box { max-width: 550px; width: 100%; margin: 40px auto; background: var(--form-bg); border: 1px solid #E5E7EB; padding: 30px; border-radius: 24px; box-shadow: var(--box-shadow); } .form-header { text-align: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--input-border); } .form-header h2 { margin: 0 0 8px 0; font-size: 2.25em; font-weight: 700; color: var(--text-color); } .form-header .subtitle { font-size: 1em; color: var(--label-color); margin: 0; } .form-group { margin-bottom: 24px; } label { font-weight: 500; display: block; margin-bottom: 8px; color: var(--label-color); font-size: 0.9em; } .input-wrapper { position: relative; display: flex; align-items: center; } .input-wrapper svg { position: absolute; left: 14px; width: 20px; height: 20px; stroke: var(--input-icon-color); pointer-events: none; } input[type="text"], input[type="tel"], input[type="email"], select, textarea { width: 100%; padding: 12px 12px 12px 45px; border: 1px solid var(--input-border); border-radius: 10px; box-sizing: border-box; background-color: var(--input-bg); font-size: 1em; } select { padding-left: 12px; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="%239CA3AF" stroke-width="1.5"><path d="M7 7l3-3 3 3m0 6l-3 3-3-3" /></svg>'); background-repeat: no-repeat; background-position: right 14px center; background-size: 16px; } input:read-only { background-color: #E5E7EB; cursor: not-allowed; } button { padding: 14px 20px; background: var(--button-bg); color: var(--button-text-color); border: none; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 1.1em; width: 100%; } .deposit-box { background: var(--note-bg); padding: 20px; border-radius: 12px; } .warning-text { font-size: 0.88em; margin-top: 8px; display: none; color: var(--warning-color); } .result-box { display: none; flex-direction: column; align-items: center; text-align: center; } #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.8); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 9999; } .loader { border: 8px solid #E5E7EB; border-top: 8px solid var(--button-bg); border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; } @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.result-box-button {
+  display: inline-block; /* Để có thể căn chỉnh padding và margin */
+  padding: 12px 25px; /* Kích thước nút */
+  margin-top: 20px; /* Khoảng cách với văn bản phía trên */
+  background-color: #f59e0b; /* Màu nền nút Zalo */
+  color: #FFFFFF !important; /* Màu chữ trắng, dùng !important để ghi đè */
+  text-decoration: none !important; /* Bỏ gạch chân mặc định của link */
+  font-weight: 600; /* Chữ đậm */
+  font-size: 1.1em; /* Kích thước chữ */
+  border-radius: 10px; /* Bo góc */
+  transition: background-color 0.3s ease; /* Hiệu ứng chuyển màu khi rê chuột */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Tạo đổ bóng nhẹ */
+}
+
+.result-box-button:hover {
+  background-color: #0056e6; /* Màu xanh đậm hơn khi rê chuột */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Đổ bóng mạnh hơn */
+}
+    </style>
+</head>
+<body>
+    <div class="form-container" id="mainContainer">
+        <div id="lookupSection">
+            <div class="form-header">
+                <h2>Đăng Ký Lớp Mới</h2>
+                <p class="subtitle">Dành cho học viên đã đăng ký mã số học tập</p>
+                <div style="font-size: 0.9em; margin-bottom: 20px; text-align: center;">
+  <p style="margin: 5px 0;">
+    ✨ Bạn là học viên mới? Liên hệ người giới thiệu hoặc BTC 
+    <a href="tel:0876473257" target="_self">0876.473.257</a>  để lấy link Đăng ký.
+  </p>
+  <p style="margin: 5px 0;">
+    🚀 Bạn muốn nâng cấp lên Lộ trình 86 ngày? 
+    
+    <a href="javascript:void(0);" 
+       onclick="window.open('https://www.giautoandien.site/dk5sao', '_blank')"
+       style="font-weight: 700; color: var(--button-bg); text-decoration: underline;">
+       Truy cập trang nâng cấp
+    </a>
+</p>
+</div>
+            </div>
+            <div class="form-group">
+                <label for="contactInput">Nhập Email hoặc SĐT đã đăng ký:</label>
+                <div class="input-wrapper">
+                    <input type="text" id="contactInput" placeholder="VD: 0912345678 hoặc email@gmail.com">
+                    <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
+                </div>
+            </div><div id="lookupSection">
+            <button id="findButton">Tìm thông tin của tôi</button>
+            <p id="lookupError" class="warning-text" style="display: none; margin-top: 15px; text-align: center;"></p>
+        </div></div>
+
+        <div id="studentInfoSection" style="display: none;">
+            <div class="form-header">
+                <h2>Chào bạn <span id="studentName" style="color: var(--button-bg);"></span>!</h2>
+                <p class="subtitle">Vui lòng chọn khóa học mới bạn muốn tham gia.</p>
+            </div>
+            <form id="reRegisterForm" novalidate>
+                <input type="hidden" id="studentCode">
+                <input type="hidden" id="studentEmail">
+                <div id="shortTermCourseSelector">
+                    <div class="form-group">
+                        <label for="classTopic">Chọn Lớp học:</label>
+                        <select id="classTopic" required><option value="">Đang tải...</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="courseSession">Chọn Khóa học:</label>
+                        <select id="courseSession" required disabled><option value="">Vui lòng chọn lớp học trước</option></select>
+                        <small id="courseWarning" class="warning-text" style="display: none;">⚠️ Bạn đã đăng ký lớp học này rồi.</small>
+                    </div>
+                </div>
+                <div id="waiverMessage" style="display:none; text-align: center; background: #F0FAF7; padding: 15px; border-radius: 8px; border: 1px solid #10B981; margin-bottom: 20px;">
+                    <span style="font-size: 1.5em; vertical-align: middle;">🎉</span>
+                    <span id="waiverReason" style="color: #057A55; font-weight: bold; vertical-align: middle;"></span>
+                </div>
+                <div class="form-group deposit-box" id="depositBox"></div>
+                <div class="file-upload-wrapper">
+                    <label for="depositReceipt">Tải lên ảnh cọc cho khóa học MỚI:</label>
+                    <input type="file" id="depositReceipt" accept="image/*" required>
+                    <img id="filePreview" alt="Xem trước ảnh" style="display:none; width:100%; max-width:250px; margin:15px auto; border-radius:8px;"/>
+                </div>
+                <div class="form-group" style="margin-top:20px;">
+                    <button type="submit" id="submitButton" disabled>Gửi yêu cầu đăng ký</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="result-box" id="resultMessageContainer" style="display:none;">
+        <h2 id="resultTitle"></h2>
+        <p id="resultText"></p>
+    </div>
+
+    <div id="loadingOverlay"><div class="loader"></div></div>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // --- DOM Elements ---
+    const lookupError = document.getElementById("lookupError");
+    const findButton = document.getElementById("findButton");
+    const contactInput = document.getElementById("contactInput");
+    const mainContainer = document.getElementById("mainContainer");
+    const lookupSection = document.getElementById("lookupSection");
+    const studentInfoSection = document.getElementById("studentInfoSection");
+    const studentNameSpan = document.getElementById("studentName");
+    const studentCodeInput = document.getElementById("studentCode");
+    const studentEmailInput = document.getElementById("studentEmail");
+    const reRegisterForm = document.getElementById("reRegisterForm");
+    const loadingOverlay = document.getElementById("loadingOverlay");
+    const resultMessageContainer = document.getElementById("resultMessageContainer");
+    const resultTitle = document.getElementById("resultTitle");
+    const resultText = document.getElementById("resultText");
+    const classTopicSelect = document.getElementById("classTopic");
+    const courseSessionSelect = document.getElementById("courseSession");
+    const submitButton = document.getElementById("submitButton");
+    const depositBox = document.getElementById('depositBox');
+    const depositReceiptWrapper = document.querySelector('.file-upload-wrapper');
+    const waiverMessage = document.getElementById('waiverMessage');
+    const waiverReason = document.getElementById('waiverReason');
+    const depositReceiptInput = document.getElementById("depositReceipt");
+    const filePreview = document.getElementById("filePreview");
+    
+    // --- State Variables ---
+    let fileData = { base64: null, name: null, type: null };
+    let studentRegisteredTopics = [];
+    let isDepositWaived = false;
+    let allCourseData = {};
+    let studentPendingTopics = []; // [NÂNG CẤP] Biến mới để lưu các lớp chờ duyệt
+
+    // --- Event Listeners ---
+    findButton.addEventListener("click", findStudent);
+    classTopicSelect.addEventListener('change', handleClassTopicChange);
+    courseSessionSelect.addEventListener('change', handleCourseSessionChange);
+    depositReceiptInput.addEventListener("change", handleFileUpload);
+    reRegisterForm.addEventListener("submit", handleSubmitForm);
+
+    // --- Main Functions ---
+    function findStudent() {
+      lookupError.style.display = 'none';
+        const contact = contactInput.value.trim();
+        if (!contact) {
+            // Thay thế alert cũ bằng thông báo mới
+        lookupError.textContent = "Vui lòng nhập Email hoặc SĐT.";
+        lookupError.style.display = 'block';
+            return;
+        }
+        loadingOverlay.style.display = 'flex';
+    google.script.run.withSuccessHandler(onStudentFound).withFailureHandler(onStudentNotFound).findStudentByContact(contact);
+}
+
+    function onStudentFound(studentInfo) {
+        if (studentInfo && studentInfo.code) {
+            studentNameSpan.textContent = studentInfo.name;
+            studentCodeInput.value = studentInfo.code;
+            studentEmailInput.value = studentInfo.email;
+            // [NÂNG CẤP] Lấy cả 2 danh sách
+            studentRegisteredTopics = (studentInfo.registeredCourseTopics || []).map(t => t.toLowerCase().trim());
+            studentPendingTopics = (studentInfo.pendingCourseTopics || []).map(t => t.toLowerCase().trim());
+            
+google.script.run.withSuccessHandler(onAllDataLoaded).withFailureHandler(handleLoadError).getAllCourseDetails(new Date().getTime());
+        } else {
+            onStudentNotFound();
+        }
+    }
+    
+    function onAllDataLoaded(courses) {
+        allCourseData = courses;
+        const allTopics = [...new Set(Object.values(allCourseData).map(c => c.topic))];
+        populateClassTopics(allTopics);
+        loadingOverlay.style.display = 'none';
+        lookupSection.style.display = 'none';
+        studentInfoSection.style.display = 'block';
+    }
+
+    function onStudentNotFound() {
+    loadingOverlay.style.display = 'none';
+    lookupError.textContent = "Không tìm thấy thông tin. Vui lòng kiểm tra lại SĐT/Email hoặc liên hệ người giới thiệu để đăng ký mới.";
+    lookupError.style.display = 'block';
+}
+
+    function handleClassTopicChange() {
+    const selectedTopic = this.value;
+
+    // Reset khóa
+    courseSessionSelect.innerHTML = '<option value="">-- Vui lòng chọn --</option>';
+    courseSessionSelect.disabled = true;
+    submitButton.disabled = true;
+    updateDepositInfo(null);
+    waiverMessage.style.display = 'none';
+
+    if (!selectedTopic) return;
+
+    // Lọc khóa theo lớp
+    const coursesInTopic = Object.values(allCourseData).filter(c => c.topic === selectedTopic);
+
+    populateCourseSessions(coursesInTopic);
+
+    // ✅ Nếu chỉ có 1 khóa thì tự động chọn luôn
+    if (coursesInTopic.length === 1) {
+        const onlyCourse = coursesInTopic[0];
+
+        courseSessionSelect.value = onlyCourse.code;   // Auto chọn
+        courseSessionSelect.disabled = false;
+
+        // ✅ Kích hoạt xử lý thay đổi khóa học
+        handleCourseSessionChange.call(courseSessionSelect);
+    }
+}
+
+    
+    function handleCourseSessionChange() {
+    const selectedCourseCode = this.value;
+    submitButton.disabled = true;
+
+    if (!selectedCourseCode) {
+        updateDepositInfo(null);
+        waiverMessage.style.display = 'none';
+        return;
+    }
+
+    const courseInfo = allCourseData[selectedCourseCode];
+
+    // ✅ Nếu khóa MIỄN PHÍ → Không cần cọc, không cần upload ảnh
+    if (courseInfo.depositFee === 0) {
+
+        isDepositWaived = true;
+
+        waiverMessage.style.display = 'block';
+        waiverReason.textContent = "Khóa học miễn phí — bạn không cần đóng cọc hoặc tải ảnh.";
+
+        // Ẩn phần phí cọc
+        depositBox.style.display = 'none';
+
+        // Ẩn phần upload ảnh
+        depositReceiptWrapper.style.display = 'none';
+
+        submitButton.disabled = false;
+        return;
+    }
+
+    // ✅ Nếu KHÔNG phải khóa miễn phí → kiểm tra miễn cọc như bình thường
+    const waiverResult = checkWaiverStatusLocally(selectedCourseCode);
+
+    if (waiverResult.isWaived) {
+        isDepositWaived = true;
+
+        waiverMessage.style.display = 'block';
+        waiverReason.textContent = waiverResult.reason;
+
+        depositBox.style.display = 'none';
+        depositReceiptWrapper.style.display = 'none';
+    } else {
+        isDepositWaived = false;
+
+        waiverMessage.style.display = 'none';
+
+        updateDepositInfo(courseInfo);
+        depositBox.style.display = 'block';
+        depositReceiptWrapper.style.display = 'block';
+    }
+
+    submitButton.disabled = false;
+}
+
+    // [HÀM MỚI] - Toàn bộ logic kiểm tra miễn cọc chạy trên trình duyệt
+    function checkWaiverStatusLocally(newCourseCode) {
+        const newCourseInfo = allCourseData[newCourseCode];
+        if (!newCourseInfo) return { isWaived: false };
+
+        const newTopic = newCourseInfo.topic.toLowerCase().trim();
+        const registered = studentRegisteredTopics;
+
+        if (registered.includes("86 ngày đồng hành") && newTopic !== "86 ngày đồng hành") {
+            return { isWaived: true, reason: "Bạn được miễn cọc vì đang tham gia Lộ trình 86 ngày." };
+        }
+        if (registered.includes(newTopic)) {
+            return { isWaived: true, reason: `Bạn được miễn cọc vì đã tham gia lớp "${newCourseInfo.topic}" trước đó.` };
+        }
+        if (newTopic === "bản đồ kinh doanh online" && registered.includes("video ra đơn")) {
+            return { isWaived: true, reason: 'Bạn được miễn cọc theo chính sách dành cho học viên lớp "Video ra đơn".' };
+        }
+        return { isWaived: false };
+    }
+    function handleSubmitForm(event) {
+        event.preventDefault();
+        const formData = {
+            studentCode: studentCodeInput.value,
+            studentName: studentNameSpan.textContent,
+            studentEmail: studentEmailInput.value,
+            newCourseCode: courseSessionSelect.value,
+            isWaived: isDepositWaived,
+            fileData: fileData.base64,
+            fileName: fileData.name,
+            fileType: fileData.type
+        };
+
+        if (!formData.newCourseCode || (!isDepositWaived && !formData.fileData)) {
+            alert("Vui lòng chọn khóa học và tải lên ảnh cọc (nếu có yêu cầu).");
+            return;
+        }
+
+        loadingOverlay.style.display = 'flex';
+        submitButton.disabled = true;
+        google.script.run.withSuccessHandler(onReRegisterSuccess).withFailureHandler(onReRegisterFail).handleReRegistrationSubmit(formData);
+    }
+    
+    // --- Helper Functions ---
+    // [NÂNG CẤP] Cập nhật hàm này để xử lý cả lớp đang chờ
+    function populateClassTopics(topics) {
+        classTopicSelect.innerHTML = "<option value=''>-- Vui lòng chọn --</option>";
+        if (topics && topics.length > 0) {
+            topics.forEach(topic => {
+                if (topic && topic.toLowerCase().trim() !== "86 ngày đồng hành") {
+                    const option = document.createElement("option");
+                    const topicLower = topic.toLowerCase().trim();
+                    option.value = topic;
+
+                    if (studentRegisteredTopics.includes(topicLower)) {
+                        option.textContent = topic + " (Đã tham gia)";
+                        option.disabled = true; // Vô hiệu hóa lớp đã học
+                    } else if (studentPendingTopics.includes(topicLower)) {
+                        option.textContent = topic + " (Đang chờ duyệt)";
+                        option.disabled = true; // Vô hiệu hóa lớp đang chờ
+                    } else {
+                        option.textContent = topic;
+                    }
+                    classTopicSelect.appendChild(option);
+                }
+            });
+        } else {
+            classTopicSelect.innerHTML = "<option value=''>Không có lớp học nào</option>";
+        }
+    }
+    function populateCourseSessions(courses) {
+        courseSessionSelect.innerHTML = "<option value=''>-- Vui lòng chọn --</option>";
+        if (courses && courses.length > 0) {
+            courses.forEach(course => {
+                const option = document.createElement("option");
+                option.value = course.code;
+                option.textContent = course.name;
+                courseSessionSelect.appendChild(option);
+            });
+            courseSessionSelect.disabled = false;
+        } else {
+            courseSessionSelect.innerHTML = "<option value=''>Chưa có khóa học cho lớp này</option>";
+        }
+    }
+
+    function updateDepositInfo(courseInfo) {
+         if (courseInfo) {
+            const formattedAmount = new Intl.NumberFormat('vi-VN').format(courseInfo.depositFee);
+            depositBox.innerHTML = `<p>Phí cọc cho khóa học này: <strong>${formattedAmount}đ</strong>.</p><ul style="margin:0 0 6px 18px;"><li><strong>STK:</strong> 1903 8297 6140 19</li><li><strong>Tên:</strong> NGUYEN BIEN CUONG</li><li><strong>Ngân hàng:</strong> TECHCOMBANK</li><li><strong>Nội dung:</strong> ${courseInfo.paymentContent}</li></ul><img src="${courseInfo.qrLink}" alt="QR" style="display:block; max-width:180px; margin:10px auto; border-radius:8px;">`;
+        } else {
+            depositBox.innerHTML = '';
+            depositBox.style.display = 'none';
+        }
+    }
+    
+    function handleFileUpload(event) {
+        const file = event.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            fileData = { base64: e.target.result.split(',')[1], name: file.name, type: file.type };
+            filePreview.src = e.target.result;
+            filePreview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+    
+    // Thay thế toàn bộ hàm onReRegisterSuccess
+
+function onReRegisterSuccess(response) {
+    loadingOverlay.style.display = 'none';
+    if (response.success) {
+        mainContainer.style.display = 'none';
+        resultMessageContainer.style.display = 'flex';
+        resultTitle.innerHTML = "✅ Gửi Yêu Cầu Thành Công!";
+            
+        let zaloLinkHTML = '';
+        if (response.zaloLink) {
+            // <<< GIẢI PHÁP TỐI ƯU HỌC TỪ CODE MỚI >>>
+            // Sử dụng window.open cho href và onclick để ép Zalo mở trình duyệt ngoài
+            const openAction = `window.open('${response.zaloLink}', '_blank')`;
+            
+            zaloLinkHTML = `<a href="javascript:void(0);" 
+                               onclick="${openAction}" 
+                               class="result-box-button">Vào nhóm Zalo chờ duyệt</a>`;
+            // ----------------------------------------
+        } else {
+            zaloLinkHTML = `<a href="tel:0917138286" class="result-box-button" target="_self">Liên hệ BTC</a>`;
+        }
+
+        resultText.innerHTML = `${response.message}<br><br>${zaloLinkHTML}`;
+        
+    } else {
+        onReRegisterFail({message: response.message});
+    }
+}
+
+    function onReRegisterFail(error) {
+        loadingOverlay.style.display = 'none';
+        alert(error.message || "Đã có lỗi xảy ra. Vui lòng thử lại.");
+        submitButton.disabled = false;
+    }
+
+    function handleLoadError(err) {
+        loadingOverlay.style.display = 'none';
+        console.error("Lỗi tải dữ liệu từ server: ", err);
+        alert("Không thể tải dữ liệu. Vui lòng thử lại sau.");
+    }
+
+function setupZaloButtonUI() {
+    const zaloBtn = document.querySelector('#resultMessageContainer .result-box-button');
+    if (zaloBtn) {
+        zaloBtn.addEventListener('click', function() {
+            zaloBtn.textContent = '🔄 Đang mở Zalo...';
+            zaloBtn.style.backgroundColor = 'var(--button-hover-bg)';
+            zaloBtn.style.transform = 'translateY(1px)';
+        });
+    }
+}
+});
+</script>
+</body>
+</html>

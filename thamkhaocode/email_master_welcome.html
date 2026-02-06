@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <p>Chúc mừng <strong><?= name ?></strong>,</p>
+<p>Bạn đã đăng ký thành công lớp: <strong><?= classTopic ?></strong></p>
+<p>Khóa học: <strong><?= courseName ?></strong></p>
+<p>Ngày khai giảng: <strong style="color: #e03e2d; font-size: 16px;"><?= startDate ?></strong></p> 
+    <hr>
+    
+      <?!= courseContent ?>
+
+    
+    <hr>
+
+    <? if (isNewStudent) { ?>
+        <h3>&#128204;Thông tin của bạn:</h3>
+      <p><strong>Mã ID học viên: <strong><?= code ?></strong></p>
+      <p><strong>Chứng nhận tham gia:</strong> (đính kèm trong email này)</p>
+      <p>Hãy lưu lại mã ID & chứng nhận này để xác nhận các quyền lợi đặc biệt trong suốt lộ trình.
+    </p>
+    <hr>
+    <h3>&#129309; Giới thiệu bạn bè – Nhận giá trị cùng nhau</h3>
+        <p>Bạn có thể gửi link giới thiệu cá nhân dưới đây cho bạn bè, người thân để lan tỏa giá trị:</p>
+        <p style="background: #f0f2f5; padding: 15px; border-radius: 8px; text-align: center;">
+            <strong><a href="<?= affiliateLink ?>"><?= affiliateLink ?></a></strong>
+        </p>
+        <p>Bạn cũng có thể dùng quét mã QR sau:</p>
+        <div style="text-align: center;">
+            <img src="cid:qrImage">
+        </div>
+        
+
+    <? } else { ?>
+    <p style="font-family: Arial, sans-serif; font-size:14px;">&#129309; <strong>Giới thiệu bạn bè – Nhận giá trị cùng nhau</strong></p>
+        <p> Link giới thiệu của bạn vẫn không thay đổi. Bạn có thể tiếp tục sử dụng link dưới đây để chia sẻ cho bạn bè:</p>
+        <p style="background: #f0f2f5; padding: 15px; border-radius: 8px; text-align: center;">
+            <strong><a href="<?= affiliateLink ?>"><?= affiliateLink ?></a></strong>
+        </p>
+        <div style="text-align: center;">
+            <img src="cid:qrImage">
+        </div>
+    <? } ?>
+
+    <hr>
+
+    <h3>Việc cần làm ngay:</h3>
+    <p>Tham gia nhóm Zalo lớp học:</p>
+    <p style="background: #f0f2f5; padding: 15px; border-radius: 8px; text-align: center;">
+        <strong><a href="<?= zaloLink ?>"><?= zaloLink ?></a></strong>
+    </p>
+
+    <p>Trân trọng,<br><strong>BTC BRK </strong></p>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+  </head>
+  <body>
+    
+  </body>
+</html>
+<!DOCTYPE html>
+<html>
+  <body>
+    <p style="font-family: Arial, sans-serif; font-size:14px; line-height:1.6;">
+      Xin chào <strong><?= name ?></strong>,<br>Thay mặt Ban Tổ Chức BRK, chúng tôi nồng nhiệt chào mừng bạn đến với <b>Lộ trình Đồng hành Chuyên sâu 86 ngày</b>!
+    </p>
+    <p style="font-family: Arial, sans-serif; font-size:14px;">
+      Đây là một hành trình đặc biệt, nơi chúng ta sẽ cùng nhau đi sâu vào việc xây dựng nền tảng kinh doanh bền vững và kiến tạo nhân hiệu từ gốc.
+    </p>
+    <p style="font-family: Arial, sans-serif; font-size:14px;">
+      &#128204; <strong> Thông tin của bạn:</strong><br>
+      <strong>Mã ID học viên: <?= code ?> </strong><br>
+      <strong>Chứng nhận tham gia:</strong> (đính kèm trong email này)<br>
+      Hãy lưu lại mã ID & chứng nhận này để xác nhận các quyền lợi đặc biệt trong suốt lộ trình.<br>
+    </p>
+    <hr>
+    <p style="font-family: Arial, sans-serif; font-size:14px; font-weight: bold; color: #0056b3;">
+      &#129309; Giới thiệu bạn bè – Nhận giá trị cùng nhau
+    </p>
+    <p style="font-family: Arial, sans-serif; font-size:14px;">
+       Bạn có thể sử dụng link giới thiệu cá nhân dưới đây để lan tỏa các giá trị đến cộng đồng:
+    </p>
+    <p style="font-family: Arial, sans-serif; font-size:14px; text-align: center; background: #f0f2f5; padding: 10px; border-radius: 8px;">
+      <strong>&#128073; Link giới thiệu của bạn:</strong><br>
+      <a href="<?= affiliateLink ?>" style="color: #007BFF; font-weight: bold; text-decoration: none;"><?= affiliateLink ?></a><br>
+      <? if (qrImageBlob) { ?>
+        <br><br><p style="margin:0; padding:0;">Hoặc quét mã QR:</p><img src="cid:qrImage" style="display: block; margin: 10px auto; width: 150px; height: 150px;">
+      <? } ?>
+    </p>
+    <hr>
+    <p style="font-family: Arial, sans-serif; font-size:14px;">
+      &#128222; <strong>Việc cần làm ngay:</strong><br>
+      Tham gia ngay vào nhóm Zalo Dành riêng cho Lộ trình 86 ngày tại đây: https://zalo.me/g/tarygl454
+    </p>
+    <p style="font-family: Arial, sans-serif; font-size:14px;">
+      Trân trọng,<br>
+      <strong>Ban tổ chức BRK</strong>
+    </p>
+  </body>
+</html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>Tra cứu Thông tin Nâng cấp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+      /* --- [NÂNG CẤP] Bảng màu "Bạch Kim" - Sáng, Sang trọng --- */
+      :root {
+        --text-color: #1F2937; /* Xám than */
+        --label-color: #6B7280; /* Xám trung bình */
+        --input-border: #D1D5DB; /* Viền xám nhạt */
+        --input-focus-border: #D97706; /* Vàng hổ phách đậm */
+        --button-bg: #F59E0B; /* Vàng hổ phách */
+        --button-hover-bg: #D97706; /* Vàng đậm hơn */
+        --button-text-color: #FFFFFF;
+        --box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        --note-bg: #F3F4F6; /* Nền ghi chú xám rất nhạt */
+        --input-icon-color: #9CA3AF;
+        --input-bg: #F9FAFB;
+        --form-bg: #FFFFFF;
+        --warning-color: #EF4444;
+        --success-color: #10B981;
+        --info-color: #3B82F6;
+        --button-disabled-bg: #E5E7EB;
+        --background-color: #F1F2F6; /* Nền xám ấm */
+      }
+      
+      body {
+        font-family: 'Inter', 'Roboto', sans-serif;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        box-sizing: border-box;
+      }
+
+      .search-container {
+        max-width: 550px;
+        width: 100%;
+        margin: 40px auto;
+        background: var(--form-bg);
+        border: 1px solid #E5E7EB;
+        padding: 40px;
+        border-radius: 24px;
+        box-shadow: var(--box-shadow);
+      }
+      
+      h2 { 
+        text-align: center; 
+        margin: 0 0 8px 0; 
+        font-size: 2.25em; 
+        font-weight: 700; 
+        letter-spacing: -0.5px;
+        color: #D97706; 
+      }
+      
+      p.subtitle { 
+        text-align: center; 
+        font-size: 1em; 
+        color: var(--label-color); 
+        margin: 0 0 30px 0; 
+      }
+      
+      .input-wrapper { 
+        position: relative; 
+        display: flex; 
+        align-items: center; 
+      }
+      
+      .input-wrapper svg { 
+        position: absolute; 
+        left: 14px; 
+        width: 20px; 
+        height: 20px; 
+        stroke: var(--input-icon-color); 
+        pointer-events: none; 
+      }
+      
+      input {
+        width: 100%; 
+        padding: 12px 12px 12px 45px; 
+        border: 1px solid var(--input-border); 
+        border-radius: 10px; 
+        box-sizing: border-box; 
+        background-color: var(--input-bg); 
+        color: var(--text-color); 
+        font-size: 1em; 
+        transition: all 0.2s ease-in-out;
+      }
+      
+      input:focus { 
+        border-color: var(--input-focus-border); 
+        background-color: #FFFFFF;
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2); 
+        outline: none; 
+      }
+      
+      button { 
+        margin-top: 20px; 
+        padding: 14px 20px; 
+        background: var(--button-bg); 
+        color: var(--button-text-color); 
+        border: none; 
+        border-radius: 10px; 
+        cursor: pointer; 
+        font-weight: 700; 
+        font-size: 1.1em; 
+        width: 100%; 
+        transition: all 0.2s ease-in-out; 
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 4px 12px rgba(245, 158, 11, 0.2);
+      }
+      
+      button:hover:not(:disabled) { 
+        background-color: var(--button-hover-bg); 
+        transform: translateY(-2px); 
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 6px 20px rgba(217, 119, 6, 0.3);
+      }
+      
+      button:disabled { 
+        background-color: var(--button-disabled-bg); 
+        cursor: not-allowed; 
+        box-shadow: none; 
+        color: #9CA3AF;
+      }
+
+      /* CSS cho Vùng Kết quả */
+      #resultArea { 
+          margin-top: 30px; 
+          padding: 25px; 
+          border-radius: 12px; 
+          background-color: var(--note-bg); 
+          text-align: center; 
+          display: none; 
+          border: 1px solid var(--input-border);
+          line-height: 1.6;
+      }
+      
+      .result-title { 
+        font-weight: 700; 
+        font-size: 1.25em; 
+        margin-bottom: 12px; 
+      }
+      
+      .result-detail { 
+        margin: 10px 0; 
+        font-size: 1em; 
+        color: var(--label-color); 
+      }
+      .result-detail strong {
+        color: var(--text-color);
+      }
+
+      .highlight { 
+        color: var(--button-hover-bg); 
+        font-weight: 700; 
+      }
+
+      /* Nút Nâng cấp */
+      .upgrade-button { 
+          margin-top: 20px; 
+          display: inline-block; 
+          padding: 12px 24px; 
+          background: var(--button-bg); 
+          color: var(--button-text-color) !important; 
+          border-radius: 8px; 
+          text-decoration: none; 
+          font-weight: 500; 
+          font-size: 1em; 
+          transition: all 0.2s ease-in-out; 
+          box-shadow: 0 4px 14px 0 rgba(251, 191, 36, 0.3);
+      }
+      
+      .upgrade-button:hover { 
+          background-color: var(--button-hover-bg); 
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px 0 rgba(251, 191, 36, 0.2);
+      }
+      
+      /* Loader */
+      .loader { 
+        border: 4px solid #E5E7EB; 
+        border-top: 4px solid var(--button-bg); 
+        border-radius: 50%; 
+        width: 24px; height: 24px; 
+        animation: spin 1s linear infinite; 
+        margin: 20px auto; 
+        display: none; 
+      }
+      
+      @keyframes spin { 
+        0% { transform: rotate(0deg); } 
+        100% { transform: rotate(360deg); } 
+      }
+
+      /* Media Query cho thiết bị di động */
+      @media (max-width: 480px) {
+        body { padding: 10px; }
+        .search-container { padding: 30px 25px; }
+        h2 { font-size: 1.8em; }
+        .result-title { font-size: 1.15em; }
+        .upgrade-button { padding: 12px 20px; font-size: 1em; }
+      }
+    </style>
+</head>
+<body>
+    <div class="search-container">
+        <h2>Tra cứu & Nâng cấp Lộ trình</h2>
+        <p class="subtitle">Nhập Số điện thoại hoặc Email bạn đã đăng ký để tìm thông tin</p>
+        <div style="font-size: 0.9em; margin-bottom: 20px; text-align: center;">
+  <p style="margin: 5px 0;">✨ Bạn là học viên mới? Liên hệ người giới thiệu hoặc BTC: <a href="tel:0917138286" class="result-box-button" target="_self">0917138286</a> để lấy link đăng ký.</p>
+  <p style="margin: 5px 0;">📚 Bạn muốn học thêm các lớp ngắn ngày khác? <a href="https://www.giautoandien.site/chuyenlop" target="_blank">Truy cập trang đăng ký lớp mới</a>.</p>
+</div>
+        <div class="input-wrapper">
+            <input type="text" id="searchInput" placeholder="Nhập SĐT Zalo hoặc Email..." required>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+        </div>
+        <button id="searchButton">Tìm thông tin của tôi</button>
+        <div class="loader" id="loader"></div>
+        <div id="resultArea"></div>
+    </div>
+
+    <script>
+        // Bỏ qua việc lấy Apps Script URL ở đây vì link đã được tạo sẵn trong Code.gs
+
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const resultArea = document.getElementById('resultArea');
+        const loader = document.getElementById('loader');
+
+        searchButton.addEventListener('click', handleSearch);
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                handleSearch();
+            }
+        });
+
+        function handleSearch() {
+            const contactInfo = searchInput.value.trim();
+            if (!contactInfo) return;
+
+            // 1. Chuẩn bị giao diện chờ
+            resultArea.style.display = 'none';
+            loader.style.display = 'block';
+            searchButton.disabled = true;
+            searchButton.textContent = 'Đang tìm kiếm...';
+
+            // 2. Gọi hàm Apps Script
+            google.script.run
+                .withSuccessHandler(displayResult)
+                .withFailureHandler(displayError)
+                .findStudentInfoByPhoneOrEmail(contactInfo); 
+        }
+// THAY THẾ HÀM NÀY (Để đảm bảo gọi fixZaloLink ở cuối)
+function displayResult(userInfo) {
+    // 3. Khôi phục trạng thái nút/loader
+    loader.style.display = 'none';
+    searchButton.disabled = false;
+    searchButton.textContent = 'Tìm thông tin của tôi';
+    resultArea.style.display = 'block';
+
+    let html = '';
+    let borderColor = '';
+
+    if (userInfo.status === 'ELIGIBLE') {
+        // Trường hợp 1: Đủ điều kiện nâng cấp
+        const upgradeLink = userInfo.upgradeUrl; 
+        borderColor = 'var(--button-bg)';
+        html = `<div class="result-title" style="color: var(--button-bg);">Chào mừng trở lại, ${userInfo.name}!</div>
+                <div class="result-detail">Mã số của bạn là: <span class="highlight">${userInfo.code}</span></div>
+                <div class="result-detail">Hệ thống ghi nhận bạn **đủ điều kiện** nâng cấp lên Lộ trình 86 ngày.</div>
+                <a id="upgradeButton" href="${upgradeLink}" class="upgrade-button" target="_blank">Nâng cấp ngay bây giờ</a>`;
+                
+    } else if (userInfo.status === 'ALREADY_UPGRADED') {
+        // Trường hợp 2: Đã nâng cấp rồi
+        borderColor = 'var(--info-color)';
+        html = `<div class="result-title" style="color: var(--info-color);">Bạn đã là thành viên VIP!</div>
+                <div class="result-detail">Chào <strong>${userInfo.name}</strong>, hệ thống ghi nhận bạn đã là thành viên của Lộ trình **86 ngày đồng hành**. Cảm ơn bạn đã đồng hành!</div>`;
+                
+    } else if (userInfo.status === 'NOT_FOUND') {
+        // Trường hợp 3: Không tìm thấy
+        borderColor = 'var(--warning-color)';
+        html = `<div class="result-title" style="color: var(--warning-color);">Không tìm thấy thông tin</div>
+                <div class="result-detail">Không tìm thấy thông tin đăng ký với SĐT/Email này. Vui lòng kiểm tra lại hoặc liên hệ người giới thiệu hoặc Ban tổ chức</div>`;
+                
+    } else { // status === 'ERROR'
+        // Trường hợp 4: Lỗi hệ thống
+        borderColor = 'var(--warning-color)';
+        html = `<div class="result-title" style="color: var(--warning-color);">Lỗi Hệ Thống</div>
+                <div class="result-detail">Đã có lỗi xảy ra: ${userInfo.message || 'Không xác định'}. Vui lòng thử lại sau.</div>`;
+    }
+
+    resultArea.style.border = `1px solid ${borderColor}`;
+    resultArea.innerHTML = html; // <<< Nút nâng cấp được hiển thị
+
+    // --- GỌI HÀM SỬA LỖI TẠI ĐÂY ---
+    // Chỉ gọi hàm sửa lỗi Zalo/thêm click_feedback nếu trường hợp là 'ELIGIBLE'
+    if (userInfo.status === 'ELIGIBLE') {
+      fixZaloLink(); 
+    }
+}
+// THAY THẾ HÀM NÀY
+function fixZaloLink() {
+    try {
+        const upgradeBtn = document.getElementById('upgradeButton');
+        if (!upgradeBtn) return; // Không tìm thấy nút thì thôi
+
+        // 1. Sửa lỗi Zalo (Giữ nguyên)
+        const isZalo = navigator.userAgent.includes("Zalo");
+        if (isZalo) {
+            console.log("Phát hiện trình duyệt Zalo. Đang sửa target link...");
+            upgradeBtn.target = '_self'; 
+
+            // (Code thêm cảnh báo Zalo của bạn - giữ nguyên)
+            let warning = document.getElementById('zalo-warning');
+            if (!warning) {
+                warning = document.createElement('p');
+                warning.id = 'zalo-warning';
+                warning.style.color = '#D97706';
+                warning.style.fontSize = '0.9em';
+                warning.style.textAlign = 'center';
+                warning.textContent = 'Trình duyệt Zalo không hỗ trợ mở tab mới. Link sẽ mở tại cửa sổ này.';
+                upgradeBtn.parentNode.insertBefore(warning, upgradeBtn.nextSibling);
+            }
+        }
+        
+        // --- BẮT ĐẦU SỬA LỖI (THÊM PHẢN HỒI KHI CLICK) ---
+        // 2. Thêm phản hồi khi nhấn nút
+        upgradeBtn.addEventListener('click', function() {
+            // Thay đổi nút ngay lập tức để người dùng biết là đang tải
+            upgradeBtn.textContent = 'Đang mở, vui lòng chờ...';
+            // Dùng các biến CSS có sẵn của bạn để làm nó trông như bị vô hiệu hóa
+            upgradeBtn.style.backgroundColor = 'var(--button-disabled-bg)';
+            upgradeBtn.style.color = '#9CA3AF';
+            upgradeBtn.style.boxShadow = 'none';
+            upgradeBtn.style.cursor = 'wait'; // Đổi con trỏ chuột thành "chờ"
+            
+            // Không cần preventDefault, để link tự điều hướng đi
+        });
+        // --- KẾT THÚC SỬA LỖI ---
+
+    } catch (e) {
+        console.error("Lỗi khi sửa link Zalo: ", e);
+    }
+}
+
+        function displayError(error) {
+            // 4. Xử lý lỗi Apps Script
+            loader.style.display = 'none';
+            searchButton.disabled = false;
+            searchButton.textContent = 'Tìm thông tin của tôi';
+            resultArea.style.display = 'block';
+            resultArea.style.border = '1px solid var(--warning-color)';
+            resultArea.innerHTML = `<div class="result-title" style="color: var(--warning-color);">Lỗi Kết Nối</div><p class="result-detail">${error.message}. Vui lòng thử lại.</p>`;
+        }
+    </script>
+</body>
+</html>

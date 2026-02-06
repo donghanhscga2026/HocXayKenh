@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Ký Tham Gia Lớp Học</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/css/intlTelInput.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/js/intlTelInput.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/js/utils.js"></script> 
+    <style>
+      /* --- [NÂNG CẤP] Bảng màu "Bạch Kim" - Sáng, Sang trọng --- */
+      :root {
+        --text-color: #1F2937; /* Xám than */
+        --label-color: #6B7280; /* Xám trung bình */
+        --input-border: #D1D5DB; /* Viền xám nhạt */
+        --input-focus-border: #D97706; /* Vàng hổ phách đậm */
+        --button-bg: #F59E0B; /* Vàng hổ phách */
+        --button-hover-bg: #D97706; /* Vàng đậm hơn */
+        --button-text-color: #FFFFFF;
+        --box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        --note-bg: #F3F4F6; /* Nền ghi chú xám rất nhạt */
+        --input-icon-color: #9CA3AF;
+        --input-bg: #F9FAFB;
+        --form-bg: #FFFFFF;
+        --selected-border: #F59E0B;
+        --warning-color: #EF4444;
+        --success-color: #10B981;
+        --info-color: #3B82F6;
+        --button-disabled-bg: #E5E7EB;
+        --background-color: #F1F2F6; /* Nền xám ấm */
+      }
+      
+      body {
+        font-family: 'Inter', 'Roboto', sans-serif;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+        box-sizing: border-box;
+      }
+
+      .form-container, .result-box {
+        max-width: 550px;
+        width: 100%;
+        margin: 40px auto;
+        background: var(--form-bg);
+        border: 1px solid #E5E7EB;
+        padding: 40px;
+        border-radius: 24px;
+        box-shadow: var(--box-shadow);
+      }
+
+      .form-header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--input-border); }
+      .form-header .form-icon { width: 48px; height: 48px; margin-bottom: 12px; stroke: var(--button-bg); stroke-width: 1.5; }
+      .form-header h2 { margin: 0 0 8px 0; font-size: 2.25em; font-weight: 700; letter-spacing: -0.5px; color: var(--text-color); }
+      .form-header .subtitle { font-size: 1em; color: var(--label-color); margin: 0; }
+      
+      .form-group { margin-bottom: 24px; }
+      label { font-weight: 500; display: block; margin-bottom: 8px; color: var(--label-color); font-size: 0.9em; }
+      
+      .input-wrapper { position: relative; display: flex; align-items: center; }
+      .input-wrapper svg { position: absolute; left: 14px; width: 20px; height: 20px; stroke: var(--input-icon-color); pointer-events: none; transition: stroke 0.2s ease; }
+      
+      .form-container select, 
+      .form-container textarea {
+          width: 100%; 
+          padding: 12px 15px; 
+          border: 1px solid var(--input-border); 
+          border-radius: 10px; 
+          box-sizing: border-box; 
+          background-color: var(--input-bg); 
+          color: var(--text-color); 
+          font-size: 1em; 
+          transition: all 0.2s ease-in-out;
+          line-height: 1.5; 
+          min-height: 48px; 
+      }
+      
+      .form-container .input-wrapper input[type="text"],
+      .form-container .input-wrapper input[type="email"] {
+          width: 100%;
+          padding: 12px 15px 12px 45px; 
+          border: 1px solid var(--input-border); 
+          border-radius: 10px; 
+          box-sizing: border-box; 
+          background-color: var(--input-bg); 
+          color: var(--text-color); 
+          font-size: 1em; 
+          transition: all 0.2s ease-in-out;
+          line-height: 1.5; 
+          min-height: 48px;
+      }
+      
+      .form-container .input-wrapper svg {
+        display: block; 
+      }
+
+      .form-container textarea {
+          height: auto; 
+          min-height: 100px;
+          padding: 12px 15px; 
+          line-height: 1.6; 
+      }
+
+      .form-container select {
+          padding-right: 35px; 
+          background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="%239CA3AF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l3-3 3 3m0 6l-3 3-3-3" /></svg>');
+          background-repeat: no-repeat; 
+          background-position: right 14px center; 
+          background-size: 16px;
+          appearance: none; -webkit-appearance: none;
+      }
+
+      .iti--allow-dropdown input[type="tel"]#phone {
+          border: 1px solid var(--input-border); 
+          border-radius: 10px; 
+          background-color: var(--input-bg); 
+          color: var(--text-color); 
+          font-size: 1em; 
+          transition: all 0.2s ease-in-out;
+          line-height: 1.5;
+          padding: 12px 15px 12px 58px; 
+          width: 100%; 
+          box-sizing: border-box;
+          height: auto; 
+          min-height: 48px; 
+          margin: 0; 
+          box-shadow: none; 
+      }
+       .iti {
+        width: 100%;
+        border: none;
+        box-shadow: none;
+        position: relative; 
+        z-index: 10;        
+      }
+      .iti__country-list {
+        z-index: 10000; 
+      }
+
+      .iti__flag-container {
+           border-right: 1px solid var(--input-border); 
+           border-top-left-radius: 10px; 
+           border-bottom-left-radius: 10px; 
+           background-color: var(--input-bg);
+      }
+      .iti__arrow {
+          border-top-color: var(--label-color); 
+      }
+
+      .form-container input[type="text"]:focus, 
+      .iti--allow-dropdown input[type="tel"]#phone:focus, 
+      .form-container input[type="email"]:focus, 
+      .form-container select:focus, 
+      .form-container textarea:focus {
+          border-color: var(--input-focus-border); 
+          background-color: #FFFFFF; 
+          box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2); 
+          outline: none;
+      }
+       .iti--allow-dropdown.iti--focus .iti__flag-container {
+            border-right: 1px solid var(--input-focus-border); 
+       }
+      .form-container .input-wrapper input[type="text"]:focus + svg,
+      .form-container .input-wrapper input[type="email"]:focus + svg {
+           stroke: var(--input-focus-border); 
+      }
+      .form-container input:read-only { 
+           background-color: #E5E7EB; 
+           cursor: not-allowed; 
+      }
+      
+      .section-title {
+        display: flex;
+        align-items: center; 
+        gap: 10px;
+        font-weight: 600;
+        font-size: 1.15em;
+        color: var(--text-color);
+        margin-top: 35px;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--input-border);
+      }
+      .section-title svg { width: 24px; height: 24px; stroke: var(--button-bg); stroke-width: 1.5; }
+      
+      .choice-group { display: flex; flex-direction: column; gap: 12px; }
+      .choice-group label { display: flex; align-items: center; padding: 14px; border-radius: 10px; border: 1px solid var(--input-border); background-color: transparent; cursor: pointer; transition: all 0.2s ease; font-weight: 500; color: var(--text-color); }
+      .choice-group label:hover { border-color: var(--selected-border); background-color: #FFFBEB; }
+      .choice-group input[type="checkbox"], .choice-group input[type="radio"] { display: none; }
+      .choice-group .icon {
+        width: 20px; height: 20px; border: 2px solid var(--input-border); flex-shrink: 0;
+        margin-right: 12px; display: flex; justify-content: center; align-items: center; transition: all 0.2s ease;
+      }
+      .choice-group input[type="checkbox"] + .icon { border-radius: 6px; }
+      .choice-group input[type="radio"] + .icon { border-radius: 50%; }
+      .choice-group .icon svg { width: 14px; height: 14px; stroke: var(--button-text-color); stroke-width: 3; transform: scale(0); transition: transform 0.2s ease; }
+      .choice-group input[type="checkbox"]:checked + .icon, .choice-group input[type="radio"]:checked + .icon { background-color: var(--selected-border); border-color: var(--selected-border); }
+      .choice-group input[type="checkbox"]:checked + .icon svg, .choice-group input[type="radio"]:checked + .icon svg { transform: scale(1); }
+      
+      .course-description-box {
+        background-color: #F0F9FF; 
+        border-left: 5px solid #3B82F6; 
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 15px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        font-size: 0.95em;
+        color: #334155; 
+        line-height: 1.6;
+        display: none; 
+        animation: fadeIn 0.4s ease-out;
+        position: relative;
+      }
+
+      .course-description-box .desc-title {
+        display: flex;
+        align-items: center;
+        color: #1E3A8A; 
+        font-weight: 800; 
+        font-size: 1.1em;
+        margin-bottom: 10px;
+        text-transform: uppercase; 
+        letter-spacing: 0.5px;
+      }
+
+      .course-description-box .desc-title::before {
+        content: "💡";
+        margin-right: 10px;
+        font-size: 1.2em;
+      }
+
+      .course-description-box .desc-content {
+        margin-bottom: 15px;
+        color: #475569;
+      }
+
+      .course-description-box .desc-date {
+        border-top: 1px dashed #BAE6FD; 
+        padding-top: 12px;
+        margin-top: 8px;
+        color: #C2410C; 
+        font-weight: 700;
+        font-size: 1.1em; 
+        display: flex;
+        align-items: center;
+        background: transparent; 
+        padding-bottom: 0;
+      }
+
+      .course-description-box .desc-date::before {
+        content: "📅";
+        margin-right: 10px;
+        font-size: 1.3em; 
+        filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1)); 
+      }
+
+      .deposit-box {
+        background-color: #FFFCF5; 
+        border: 1px solid #FDE68A; 
+        padding: 20px;
+        border-radius: 12px;
+        margin-top: 20px;
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.08); 
+      }
+
+      .deposit-box .section-title {
+        color: #B45309; 
+        border-bottom: 1px dashed #FCD34D;
+      }
+
+      .deposit-box ul { padding-left: 0; margin: 15px 0; list-style-type: none; }
+
+      .deposit-box li {
+        margin-bottom: 10px; display: flex; align-items: flex-start;
+        line-height: 1.5; font-size: 0.95em; color: #44403C; 
+      }
+
+      .deposit-box li::before {
+        content: "•"; color: #F59E0B; font-weight: bold;
+        display: inline-block; width: 15px; flex-shrink: 0; font-size: 1.4em; line-height: 1; position: relative; top: 2px;
+      }
+
+      .deposit-box li strong { margin-right: 8px; white-space: nowrap; color: #1F2937; }
+      
+      button { padding: 14px 20px; background: var(--button-bg); color: var(--button-text-color); border: none; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 1.1em; width: 100%; transition: all 0.2s ease-in-out; box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 4px 12px rgba(245, 158, 11, 0.2); }
+      button:hover:not(:disabled) { background-color: var(--button-hover-bg); transform: translateY(-2px); box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 6px 20px rgba(217, 119, 6, 0.3); }
+      button:disabled { background-color: var(--button-disabled-bg); cursor: not-allowed; box-shadow: none; color: #9CA3AF;}
+      
+      img.qr { display: block; margin: 15px auto 5px auto; max-width: 180px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+      
+      .result-box { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: var(--text-color); }
+      .result-box-icon { width: 64px; height: 64px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; animation: pop-in 0.5s ease-out; }
+      .result-box-icon.success { background-color: rgba(16, 185, 129, 0.1); }
+      .result-box-icon.error { background-color: rgba(239, 68, 68, 0.1); }
+      .result-box-icon svg { width: 36px; height: 36px; }
+      .result-box-icon.success svg { stroke: var(--success-color); }
+      .result-box-icon.error svg { stroke: var(--warning-color); }
+      @keyframes pop-in { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+      .result-box-title { font-size: 1.8em; font-weight: 700; margin: 0 0 10px 0; }
+      .result-box-text { font-size: 1em; line-height: 1.6; color: var(--label-color); margin: 0 0 25px 0; }
+      .result-box-button { display: inline-block; padding: 12px 24px; background: var(--button-bg); color: white !important; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 1em; text-decoration: none; transition: all 0.2s ease-in-out; box-shadow: 0 4px 14px 0 rgba(251, 191, 36, 0.3); }
+      .result-box-button:hover { background-color: var(--button-hover-bg); transform: translateY(-2px); box-shadow: 0 6px 20px 0 rgba(251, 191, 36, 0.2); }
+      .result-box-button.error { background: var(--warning-color); box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.3); color: white !important; }
+
+      #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.8); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 9999; color: #1F2937; text-align: center; font-size: 1.1em; }
+      .loader { border: 8px solid #E5E7EB; border-top: 8px solid var(--button-bg); border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin: 0 auto 20px auto; }
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      
+      #filePreview { display: none; width: 100%; max-width: 250px; height: auto; max-height: 250px; margin: 15px auto 0; border: 1px solid var(--input-border); border-radius: 8px; object-fit: contain; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background-color: #ffffff; }
+      .file-upload-wrapper { margin-top: 8px; }
+      .file-upload-wrapper label {
+          margin-bottom: 4px !important; 
+      }
+      input[type="file"] { border: 1px solid var(--input-border); padding: 8px; border-radius: 6px; width: 100%; font-size: 0.9em; background-color: var(--note-bg); }
+
+      .status-message, .warning-text { font-size: 0.88em; margin-top: 8px; display: none; align-items: center; gap: 6px; }
+      .status-message svg { width: 16px; height: 16px; flex-shrink: 0; }
+      #phoneWarning, #phoneDuplicate, .warning-text { color: var(--warning-color); }
+      #checkingStatus { color: var(--info-color); }
+      #phoneValid { color: var(--success-color); }
+      #checkingStatus svg { animation: spin 1.5s linear infinite; }
+      
+      .tab-container { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--input-border); }
+        .tab-button {
+            padding: 12px 20px; border: none; background: transparent; cursor: pointer;
+            font-size: 1em; font-weight: 500; color: var(--label-color);
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .tab-button.active {
+            color: var(--button-bg);
+            border-bottom-color: var(--button-bg);
+            font-weight: 700;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+    .choice-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .choice-group label { display: flex; align-items: center; padding: 15px; border-radius: 10px; border: 1px solid var(--input-border); background-color: var(--input-bg); cursor: pointer; transition: all 0.2s ease; font-weight: 500; color: var(--text-color); font-size: 0.95em; }
+    .choice-group label:hover { border-color: var(--button-hover-bg); background-color: #FEFCE8; }
+    .choice-group input[type="checkbox"] { display: none; }
+    .choice-group .icon { width: 20px; height: 20px; border: 2px solid var(--input-border); border-radius: 4px; margin-right: 12px; display: flex; justify-content: center; align-items: center; transition: all 0.2s ease; flex-shrink: 0; background-color: #FFFFFF; }
+    .choice-group input[type="checkbox"]:checked + .icon { background-color: var(--selected-border); border-color: var(--selected-border); }
+    .choice-group .icon svg { width: 14px; height: 14px; stroke: var(--button-text-color); stroke-width: 3; opacity: 0; transition: opacity 0.2s ease; }
+    .choice-group input[type="checkbox"]:checked + .icon svg { opacity: 1; }
+
+    .benefit-box {
+        background: linear-gradient(135deg, #FFFCF5 0%, #FEF3C7 100%);
+        border: 1px solid #F59E0B; 
+        border-radius: 12px;
+        padding: 25px 20px; 
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.15);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .benefit-box::after {
+        content: "";
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 60%);
+        pointer-events: none;
+    }
+
+    .benefit-header {
+        font-weight: 800; 
+        color: #92400E; 
+        font-size: 1.15em;
+        margin-bottom: 15px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        text-align: center; 
+        border-bottom: 2px solid #FCD34D;
+        padding-bottom: 10px;
+        display: block; 
+    }
+
+    .benefit-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        position: relative;
+        z-index: 1; 
+    }
+
+    .benefit-list li {
+        position: relative;
+        padding-left: 32px; 
+        margin-bottom: 10px;
+        color: #4B5563; 
+        line-height: 1.6;
+        font-size: 1em;
+    }
+    .benefit-list li:last-child { margin-bottom: 0; }
+
+    .benefit-list li .check {
+        position: absolute;
+        left: 0;
+        top: 0px;
+        color: #059669; 
+        font-weight: 900;
+        font-size: 1.3em;
+        filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));
+    }
+
+    .benefit-list li strong {
+        color: #B45309; 
+    }
+
+    @media (max-width: 992px) {
+        .form-container, .result-box {
+            width: 50%; 
+            max-width: none; 
+            margin: 15px auto; 
+            padding: 20px; 
+            border-radius: 12px; 
+        }
+        
+        body {
+            padding: 0;
+        }
+
+        .iti__country-list {
+            max-height: 300px !important; 
+            overflow-y: auto ;
+            z-index: 99999 ;
+            position: absolute ;
+            top: 15.5% ;
+            left: 27.5% ;
+            transform: translateX(-56px); 
+            -webkit-transform: translateX(-56px) ;
+            width: calc(100% + 56px) ;
+            max-width: 480px ; 
+            background: #FFFFFF ;
+            border: 1px solid var(--input-border) ;
+            border-radius: 8px !important;
+            box-shadow: var(--box-shadow) ;
+            padding: 5px 0 ;
+            margin: 0 ; 
+        }
+
+        .iti__country-list .iti__country {
+            font-size: 1em;
+            padding: 8px 10px;
+        }
+        /* --- [MỚI] CẤU HÌNH POPUP TRÊN MOBILE --- */
+        .modal-overlay {
+            /* 1. Đổi kiểu căn chỉnh từ giữa (center) sang bắt đầu (flex-start) */
+            align-items: flex-start !important; 
+            
+            /* 2. Đẩy hộp thoại xuống một chút để không dính sát mép trên */
+            padding-top: 80px; 
+            
+            /* 3. Cho phép cuộn nếu popup quá dài */
+            overflow-y: auto; 
+        }
+
+        .modal-box {
+            /* Đảm bảo popup không quá rộng sát lề */
+            width: 90% !important;
+            margin: 0 auto; /* Căn giữa theo chiều ngang */
+        }
+    }
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* --- [MỚI] CSS CHO MODAL POPUP --- */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6); /* Nền tối mờ */
+        display: none; /* Ẩn mặc định */
+        justify-content: center;
+        align-items: center;
+        z-index: 99999;
+        backdrop-filter: blur(3px);
+    }
+
+    .modal-box {
+        background: #FFFFFF;
+        border-radius: 16px;
+        padding: 30px;
+        max-width: 450px;
+        width: 90%;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        text-align: center;
+        animation: pop-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-icon {
+        width: 60px;
+        height: 60px;
+        background-color: #FEF3C7; /* Vàng nhạt */
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px auto;
+    }
+    .modal-icon svg {
+        width: 35px;
+        height: 35px;
+        color: #D97706; /* Vàng đậm */
+    }
+
+    .modal-title {
+        font-size: 1.4em;
+        font-weight: 700;
+        color: #1F2937;
+        margin-bottom: 10px;
+    }
+
+    .modal-desc {
+        color: #4B5563;
+        font-size: 1em;
+        line-height: 1.5;
+        margin-bottom: 25px;
+    }
+
+    .modal-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .btn-primary-modal {
+        background-color: #F59E0B;
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1em;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .btn-primary-modal:hover { background-color: #D97706; }
+
+    .btn-secondary-modal {
+        background-color: white;
+        color: #4B5563;
+        border: 1px solid #D1D5DB;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .btn-secondary-modal:hover { background-color: #F3F4F6; }
+
+    </style>
+</head>
+<body>
+    <div id="pendingPaymentModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div class="modal-title">Hồ sơ chưa hoàn tất</div>
+            <div class="modal-desc">
+                Hệ thống tìm thấy hồ sơ của bạn (<b id="modalStudentName"></b>) đang chờ thanh toán. Bạn có muốn tiếp tục không?
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn-primary-modal" id="btnModalPayNow">💳 Đến trang thanh toán ngay</button>
+                <button type="button" class="btn-secondary-modal" id="btnModalCancel">↩️ Không, nhập số điện thoại khác</button>
+            </div>
+        </div>
+    </div>
+    <div class="form-container" id="mainFormContainer"> 
+      <div class="form-header">
+        <svg class="form-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+        </svg>
+        <h2>ĐĂNG KÝ THAM GIA</h2>
+        <p class="subtitle">Hoàn thành các thông tin dưới đây để bắt đầu</p>
+      </div>
+      
+      <form id="registerForm">
+        <input type="hidden" id="referrerId" value="<?= referrerId ?>">
+        
+        <div class="form-group">
+            <label for="phone">Số điện thoại:</label>
+            <input type="tel" id="phone" name="phone" required> 
+            <small id="phoneWarning" class="warning-text" style="display: none;">⚠️ Số điện thoại không hợp lệ</small> 
+            <small id="phoneDuplicate" class="warning-text" style="display: none;">⚠️ Số điện thoại này đã được đăng ký</small>
+            <small id="checkingStatus" class="warning-text" style="display: none;">🔄 Đang kiểm tra...</small>
+            <small id="phoneValid" class="warning-text" style="display: none; color: var(--success-color);">✅ Số điện thoại hợp lệ</small>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email của bạn (vui lòng nhập chính xác để nhận mail):</label>
+          <div class="input-wrapper">
+            <input type="email" name="email" id="email" placeholder="youremail@gmail.com" required>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
+          </div>
+          <small id="emailWarning" class="status-message" style="display: none;">⚠️ Email không hợp lệ, vui lòng kiểm tra lại.</small>
+          <small id="emailDuplicate" class="status-message" style="display: none;">⚠️ Email này đã được đăng ký rồi.</small>
+          <small id="emailChecking" class="status-message" style="display: none;">🔄 Đang kiểm tra...</small>
+          <small id="emailValid" class="status-message" style="display: none; color: var(--success-color);">✅ Email hợp lệ. Bạn có thể đăng ký bằng email này.</small>
+          <small id="emailGmailWarning" class="status-message" style="display: none;">⚠️ Vui lòng sử dụng email có đuôi @gmail.com.</small>
+        </div>
+        
+        <div id="duplicateUserRedirect" style="display: none; text-align: center; font-size: 0.95em; background: #FFFBEB; padding: 20px; border-radius: 12px; border: 1px solid var(--selected-border); margin-top: 15px;">
+          <span style="font-size: 1.5em; display: block; margin-bottom: 10px;">👋</span>
+          <strong style="color: var(--text-color); display: block; margin-bottom: 10px;">Số điện thoại hoặc Email này đã tồn tại!</strong>
+          <p style="color: var(--label-color); margin: 0 0 15px 0;">
+            Có vẻ như bạn đã đăng ký trước đó. Nếu bạn muốn đăng ký một khóa học mới hoặc học lại, vui lòng sử dụng link "Chuyển lớp":
+          </p>
+          <a href="https://www.giautoandien.site/chuyenlop" target="_blank" style="display: inline-block; padding: 10px 20px; background: var(--button-bg); color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">
+            Đi đến trang Chuyển lớp
+          </a>
+        </div>
+        
+        <div id="newRegistrationFields">
+            
+            <div class="form-group">
+              <label for="name">Họ và tên:</label>
+              <div class="input-wrapper">
+                <input type="text" id="name" placeholder="khuyến khích tên giống Zalo" required>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+              </div>
+              <small id="nameWarning" class="warning-text" style="display: none;">⚠️ Vui lòng nhập họ và tên.</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="network">Mã số người giới thiệu:</label>
+              <div class="input-wrapper">
+              <input type="text" id="network" name="network" placeholder="Mã của người giới thiệu bạn" value="<?= referrerInfoText ?>" <? if (referrerInfoText) { ?>readonly<? } ?> >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.5-2.964c.65.205 1.33.322 2.04.322a9.09 9.09 0 002.04-.322m6.36 2.04a9.09 9.09 0 01-2.04.322m-2.04-.322a9.09 9.09 0 00-2.04.322m0 0a4.5 4.5 0 100-8.254 4.5 4.5 0 000 8.254zM12 10.75a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm9 5.25a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" /></svg>
+              </div>
+            </div>
+            
+            <div class="section-title">
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+              <span>Chọn Lộ trình</span>
+            </div>
+            <div class="tab-container">
+                <button type="button" id="shortTermTab" class="tab-button active">Lộ trình Ngắn hạn</button>
+                <button type="button" id="longTermTab" class="tab-button">Lộ trình 86 ngày</button>
+            </div>
+            <div id="shortTermContent" class="tab-content active">
+                <div class="form-group">
+                    <label for="classTopic">Chọn Lớp học:</label>
+                    <select id="classTopic" required><option value="">Đang tải...</option></select>
+                </div>
+                <div class="form-group">
+                    <label for="courseSession">Chọn Khóa học:</label>
+                    <select id="courseSession" required disabled><option value="">Vui lòng chọn lớp học trước</option></select>
+                    <div id="courseDescription" class="course-description-box" style="display:none; margin-top:10px; padding:10px; background:#eef6fc; border-radius:5px; color:#1d4ed8;"></div>
+                </div>
+            </div>
+           <div id="longTermContent" class="tab-content">
+
+    <div class="benefit-box">
+        <div class="benefit-header">💎 ĐẶC QUYỀN THÀNH VIÊN 86 NGÀY</div>
+        <ul class="benefit-list">
+            <li><span class="check">✓</span> Được hỗ trợ <strong>đồng hành trọn đời</strong>.</li>
+            <li><span class="check">✓</span> Tặng gói <strong>Coaching 1:1 trực tiếp</strong> từ <strong>Coach Cương</strong> (Trị giá 1.500$).</li>
+            <li><span class="check">✓</span> Được <strong>hỗ trợ 1:1</strong> từ người nhận hỗ trợ bạn.</li>
+            <li><span class="check">✓</span> Lộ trình <strong>All In One</strong> - Học tất cả các khóa khác <strong>không mất thêm phí cọc</strong>.</li>
+            <li><span class="check">✓</span> Môi trường <strong>kỷ luật cao, thực chiến</strong> ra kết quả.</li>
+        </ul>
+    </div>
+
+    <div class="section-title">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <span>Xác nhận Cam kết tham gia *</span>
+    </div>
+    
+    <div class="form-group choice-group">
+        <label>
+            <input type="checkbox" name="mindsetCommitment">
+            <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
+            <span>Tôi cam kết <strong>KỶ LUẬT - HỌC THẬT - LÀM THẬT</strong> và sẵn sàng hỗ trợ đồng đội.</span>
+        </label>
+        
+        <label>
+            <input type="checkbox" name="financialCommitment">
+            <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
+            <span>Tôi đồng ý đóng cọc <strong>1.686.000đ</strong>. Tiền cọc sẽ được hoàn khi tôi hoàn thành thử thách; nếu bỏ cuộc, số tiền này sẽ sung quỹ gieo hạt.</span>
+        </label>
+    </div>
+    <small id="commitmentWarning86" class="warning-text" style="display:block; color:#666; margin-top:5px; font-style:italic;">
+    👉 Vui lòng tích chọn đủ 2 ô cam kết ở trên để nút Đăng ký có hiệu lực.
+</small>
+</div>
+
+            <div id="paymentSection" style="display:none; margin-top: 10px;">
+              <div class="section-title">
+                  <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" /></svg>
+                  <span>Phí cọc cam kết</span>
+              </div>
+              <div class="form-group deposit-box" id="depositBox"></div>
+              
+              <div class="form-group choice-group" id="paymentStatusChoices">
+                  </div>
+
+              <div class="file-upload-wrapper" id="fileUploadWrapper" style="display: none;"> 
+                  <label for="depositReceipt">Tải lên ảnh chụp màn hình đã chuyển cọc:</label>
+                  <input type="file" id="depositReceipt">
+                  <small id="depositReceiptWarning" class="warning-text" style="display:none;">⚠️ Vui lòng tải lên ảnh.</small>
+                  <img id="filePreview" alt="Xem trước ảnh" style="display:none; width:100%; max-width:250px; margin-top:15px; border-radius:8px;"/>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <div class="section-title">
+                  <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <span>Cam kết *</span>
+              </div>
+              <div class="form-group choice-group">
+                  <label>
+                      <input type="checkbox" name="commitment" value="Tôi cam kết tham gia học và thực hành theo khóa học, và nhận hỗ trợ từ BTC." required> 
+                      <span class="icon"><svg viewBox="0 0 24 24"><path d="M4.5 12.75l6 6 9-13.5" /></svg></span>
+                      <span>Tôi cam kết tham gia học và thực hành theo khóa học, và nhận hỗ trợ từ BTC.</span>
+                  </label>
+              </div>
+              <small id="commitmentWarning" class="warning-text" style="display:none;">⚠️ Vui lòng xác nhận cam kết.</small>
+            </div>
+            
+            <div class="form-group" style="margin-top: 25px; border-top: 1px dashed #D1D5DB; padding-top: 20px;">
+    
+    <div id="feePreviewBox" style="display: none; text-align: center; margin-bottom: 15px; background: #FFFBEB; padding: 10px; border-radius: 8px; border: 1px solid #FCD34D;">
+        <span style="color: #4B5563; font-size: 0.95em;">Cọc cam kết tham gia:</span><br>
+        <strong id="feePreviewAmount" style="color: #B45309; font-size: 1.4em;">0đ</strong>
+    </div>
+
+    <button type="submit" id="submitButton" style="background: #F59E0B; font-size: 1.1em; padding: 15px; width: 100%; border: none; color: white; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(239, 68, 68, 0.3);">
+        TIẾP TỤC ĐẾN BƯỚC THANH TOÁN ➔
+    </button>
+    
+    <p style="text-align: center; font-size: 0.85em; color: #666; margin-top: 12px; font-style: italic;">
+        (Thông tin tài khoản và mã QR sẽ hiển thị ở bước tiếp theo)
+    </p>
+</div>
+        
+        </div> </form>
+    </div>
+<div id="thankYouMessage" class="result-box" style="display: none; padding: 30px 20px;">
+    
+    <div style="text-align: center; margin-bottom: 25px; border-bottom: 1px dashed #eee; padding-bottom: 15px;">
+        <div class="result-box-icon success" style="width: 60px; height: 60px; margin: 0 auto 10px;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        </div>
+        <h2 style="font-size: 1.5em; color: var(--success-color); margin: 0;">Đã Đăng ký Mã số Thành Công!</h2>
+        <p style="color: #666; margin-top: 5px;">Mã học viên của bạn: <strong id="successStudentId" style="color: #F59E0B; font-size: 1.3em;">...</strong></p>
+    </div>
+
+    <div id="paymentResultBox" style="background: #FFFBEB; border: 2px solid #F59E0B; border-radius: 16px; padding: 20px; margin-bottom: 25px; position: relative;">
+    <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #F59E0B; color: white; padding: 2px 15px; border-radius: 20px; font-weight: bold; font-size: 1.2em;">BƯỚC THANH TOÁN</div>
+    
+    <h3 style="color: #92400E; margin: 10px 0 10px 0; text-align: center; font-size: 1.1em;">Chuyển khoản để hoàn tất</h3>
+    
+    <div style="text-align: center; margin-bottom: 15px; color: #4B5563; font-size: 0.95em; line-height: 1.5;">
+        Chuyển khoản hoặc Quét mã QR bằng App Ngân hàng.<br>
+        <span style="font-size: 0.9em; color: #D97706; font-style: italic;">
+            (Nếu đang dùng điện thoại, hãy <strong>chụp màn hình</strong> ảnh mã QR này rồi chọn "Tải ảnh lên" trong App Ngân hàng để thanh toán)
+        </span>
+    </div>
+    <div style="text-align: center; margin-bottom: 15px;">
+        <img id="dynamicQRImage" src="" style="width: 160px; border-radius: 8px; border: 1px solid #ddd; padding: 5px; background: white;">
+    </div>
+        
+        <div style="background: white; padding: 15px; border-radius: 10px; border: 1px solid #FDE68A; text-align: left;">
+                 <div style="margin-bottom: 8px;">💰 Số tiền: <strong id="dynamicAmount" style="color: #DC2626; font-size: 1.2em;">...</strong></div>
+                 <div style="margin-bottom: 8px; display:flex; align-items:center;">
+                    💳 STK: <strong id="dynamicSTK" style="color: #059669; font-size: 1.2em; margin: 0 8px;">...</strong>
+                    <button type="button" id="btnCopySTK" onclick="copySTKToClipboard()" style="width:30px; height:30px; padding:0; background:#ECFDF5; border:1px solid #A7F3D0; color:#059669; border-radius:5px;"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+                 </div>
+                 <div style="margin-bottom: 8px;">🏦 Ngân hàng: <strong id="dynamicBankName">...</strong></div>
+                 <div style="margin-bottom: 8px;">👤 Chủ TK: <strong id="dynamicAccountName">...</strong></div>
+                 <div>📝 Nội dung: <strong id="dynamicContent" style="color: #D97706;">...</strong></div>
+            </div>
+</div>
+    <div id="lateUploadSection" style="text-align: center; margin-bottom: 30px;">
+        <div id="uploadInstructionText" style="background-color: #FEF3C7; border: 2px dashed #F59E0B; border-radius: 12px; padding: 15px; margin-bottom: 20px; color: #92400E;">
+    <div style="font-size: 1.1em; font-weight: 800; text-transform: uppercase; margin-bottom: 5px;">
+        ⚠️ Lưu ý quan trọng:
+    </div>
+    <div style="font-size: 1.0em; line-height: 1.3;">
+        Sau khi chuyển khoản, vui lòng <strong>TẢI ẢNH BIÊN LAI</strong> bên dưới để được hệ thống duyệt vào lớp nhanh nhất! 👇
+    </div>
+</div>
+        
+        <input type="file" id="lateReceiptFile" accept="image/*" style="display: none;" onchange="handleFileSelectForLateUpload()">
+        
+        <button type="button" onclick="document.getElementById('lateReceiptFile').click()" id="btnSelectPhoto" style="background: #10B981; width: 100%; max-width: 300px; margin: 0 auto; display: block; padding: 12px; font-size: 1em;">
+            📸 Tải ảnh xác nhận chuyển khoản
+        </button>
+
+        <div id="previewContainerLate" style="display: none; margin-top: 15px; background: #F3F4F6; padding: 15px; border-radius: 8px;">
+            <p style="font-size: 0.9em; margin-bottom: 5px;">Ảnh đã chọn:</p>
+            <img id="lateFilePreviewImg" src="" style="max-width: 150px; border-radius: 5px; border: 1px solid #ccc; display: block; margin: 0 auto 10px auto;">
+            
+            <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
+    <button type="button" id="btnConfirmUpload" onclick="submitLateEvidence()" 
+            style="background: #10B981; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; width: auto; padding: 10px 25px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3); transition: all 0.2s;">
+        🚀 Gửi ảnh ngay
+    </button>
+
+    <button type="button" onclick="cancelLateUpload()" 
+            style="background: #F3F4F6; color: #4B5563; border: 1px solid #D1D5DB; border-radius: 8px; font-weight: 600; cursor: pointer; width: auto; padding: 10px 20px; transition: all 0.2s;">
+        Hủy
+    </button>
+</div>
+        </div>
+
+        <small id="lateUploadStatus" style="display: none; margin-top: 10px; font-weight: bold;"></small>
+    </div>
+
+    <div style="border-top: 1px solid #E5E7EB; padding-top: 20px; text-align: center;">
+        <p id="zaloSupportText" style="font-size: 0.9em; color: #666; margin-bottom: 10px;">Cần hỗ trợ hoặc Gửi biên lai qua Zalo?</p>
+        <a href="#" id="zaloRedirectButton" target="_blank" style="display: inline-block; padding: 10px 20px; color: #0088FF; border: 1px solid #0088FF; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.95em;">
+            Tham gia Nhóm Zalo hỗ trợ
+        </a>
+    </div>
+</div>
+
+    <div id="errorMessage" class="result-box">
+      <div class="result-box-icon error">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      </div>
+      <h2 class="result-box-title">Đã Có Lỗi Xảy Ra</h2>
+      <p class="result-box-text" id="errorMessageText">
+        Quá trình đăng ký đã gặp sự cố. Vui lòng thử lại hoặc liên hệ hỗ trợ.
+      </p>
+      <a href="#" onclick="window.location.reload(); return false;" class="result-box-button error">Thử lại</a>
+    </div>
+    <div id="loadingOverlay">
+      <div>
+        <div class="loader"></div>
+        <p>Đang gửi yêu cầu...</p>
+      </div>
+    </div>
+    
+    <script>
+    // --- 1. KHAI BÁO BIẾN & HÀM GLOBAL (BẮT BUỘC ĐỂ HTML GỌI ĐƯỢC) ---
+    
+    // Biến lưu dữ liệu ảnh upload sau
+    let lateFileData = null;
+
+    // Hàm xử lý khi chọn file ảnh (Preview)
+    function handleFileSelectForLateUpload() {
+        const fileInput = document.getElementById("lateReceiptFile");
+        const previewContainer = document.getElementById("previewContainerLate");
+        const previewImg = document.getElementById("lateFilePreviewImg");
+        const selectBtn = document.getElementById("btnSelectPhoto");
+
+        if (fileInput.files && fileInput.files[0]) {
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                // Lưu data vào biến toàn cục
+                lateFileData = {
+                    base64: e.target.result.split(',')[1],
+                    name: file.name,
+                    type: file.type
+                };
+                
+                // Hiện preview
+                previewImg.src = e.target.result;
+                previewContainer.style.display = "block";
+                selectBtn.style.display = "none"; // Ẩn nút chọn đi cho gọn
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Hàm hủy upload ảnh
+    function cancelLateUpload() {
+        document.getElementById("previewContainerLate").style.display = "none";
+        document.getElementById("btnSelectPhoto").style.display = "block";
+        document.getElementById("lateReceiptFile").value = ""; // Reset input
+        lateFileData = null;
+    }
+function submitLateEvidence() {
+    const statusText = document.getElementById("lateUploadStatus");
+    const thankYouMsg = document.getElementById("thankYouMessage");
+    const studentId = thankYouMsg ? thankYouMsg.dataset.studentId : null;
+    const btnConfirm = document.getElementById("btnConfirmUpload");
+    
+    const supportTextElement = document.getElementById("zaloSupportText");
+    const paymentBox = document.getElementById("paymentResultBox");
+    const instructionText = document.getElementById("uploadInstructionText");
+
+    if (!lateFileData || !studentId) {
+        alert("Dữ liệu ảnh hoặc mã học viên bị thiếu. Vui lòng tải lại trang.");
+        return;
+    }
+
+    // Hiệu ứng loading
+    btnConfirm.disabled = true;
+    btnConfirm.textContent = "Đang gửi...";
+    statusText.style.display = "block";
+    statusText.style.color = "#2563EB";
+    statusText.textContent = "🔄 Đang tải ảnh lên hệ thống...";
+
+    google.script.run
+        .withSuccessHandler((res) => {
+            if(res.success) {
+                // 1. Ẩn các phần thừa
+                document.getElementById("previewContainerLate").style.display = "none";
+                document.getElementById("btnSelectPhoto").style.display = "none";
+                if (paymentBox) paymentBox.style.display = "none";
+                if (instructionText) instructionText.style.display = "none";
+                
+                // 2. [ĐÃ CHỈNH FONT TO] Hiển thị thông báo
+                statusText.style.display = "block";
+                statusText.style.marginTop = "25px";
+                statusText.innerHTML = `
+                    <div style="background-color: #ECFDF5; border: 2px solid #10B981; border-radius: 16px; padding: 30px 20px; max-width: 450px; margin: 0 auto; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.1);">
+                        <div style="font-size: 3.5em; margin-bottom: 15px;">✅</div>
+                        <h3 style="color: #059669; margin: 0 0 15px 0; font-size: 1.6em; font-weight: 800;">Đã nhận biên lai!</h3>
+                        <div style="font-size: 1.15em; line-height: 1.6; color: #374151;">
+                            Hệ thống đang xử lý đơn của bạn.<br>
+                            <div style="margin-top: 10px; padding: 10px; background: white; border-radius: 8px; border: 1px dashed #10B981;">
+                                📧 Vui lòng kiểm tra <strong>Email</strong> để xác nhận thông tin.
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // 3. Xử lý nút Zalo (Nút vào nhóm)
+                const zaloBtn = document.getElementById("zaloRedirectButton");
+                
+                if (res.zaloGroupLink) {
+                    zaloBtn.href = res.zaloGroupLink;
+                    zaloBtn.innerHTML = "🚀 Bấm vào đây để vào Nhóm Lớp ngay";
+                    
+                    // Style nút to và nổi bật
+                    zaloBtn.style.backgroundColor = "#F59E0B"; 
+                    zaloBtn.style.color = "white";
+                    zaloBtn.style.border = "none";
+                    zaloBtn.style.padding = "18px 30px"; // Tăng padding
+                    zaloBtn.style.fontSize = "1.3em";    // Tăng cỡ chữ nút
+                    zaloBtn.style.fontWeight = "bold";
+                    zaloBtn.style.borderRadius = "12px";
+                    zaloBtn.style.boxShadow = "0 6px 20px rgba(16, 185, 129, 0.4)";
+                    zaloBtn.style.marginTop = "30px";
+                    zaloBtn.style.display = "inline-block";
+                    zaloBtn.style.textDecoration = "none";
+                    
+                    zaloBtn.onclick = function(e) {
+                        e.preventDefault();
+                        window.open(res.zaloGroupLink, '_blank');
+                    };
+
+                    // Đổi dòng text kêu gọi (Cỡ chữ to hơn)
+                    if (supportTextElement) {
+                        supportTextElement.innerHTML = "👇 Bước cuối cùng để bắt đầu học 👇";
+                        supportTextElement.style.color = "#B45309"; 
+                        supportTextElement.style.fontWeight = "bold";
+                        supportTextElement.style.fontSize = "1.2em"; // To hơn
+                        supportTextElement.style.marginTop = "30px";
+                    }
+
+                    // Cuộn màn hình
+                    zaloBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+
+                } else {
+                    statusText.innerHTML += "<br><small style='font-size: 1em;'>Admin sẽ duyệt và thêm bạn vào nhóm sau.</small>";
+                }
+
+            } else {
+                statusText.style.color = "red";
+                statusText.textContent = "Lỗi: " + res.message;
+                btnConfirm.disabled = false;
+                btnConfirm.textContent = "Thử lại";
+            }
+        })
+        .withFailureHandler((err) => {
+            statusText.style.color = "red";
+            statusText.textContent = "Lỗi kết nối: " + err.message;
+            btnConfirm.disabled = false;
+            btnConfirm.textContent = "Thử lại";
+        })
+        .updatePaymentEvidence(studentId, lateFileData.base64, lateFileData.name, lateFileData.type);
+}
+    // Hàm xử lý nút Zalo
+    function activateZaloButton(buttonId, url) {
+        const btn = document.getElementById(buttonId);
+        if (!btn || !url) return;
+        btn.removeAttribute('href');
+        btn.onclick = function(e) {
+            e.preventDefault();
+            btn.textContent = "🔄 Đang mở Zalo...";
+            setTimeout(function() {
+                const newWin = window.open(url, '_blank');
+                if (!newWin || newWin.closed || typeof newWin.closed == 'undefined') {
+                    window.location.href = url;
+                }
+                setTimeout(() => { btn.textContent = "Tham gia Nhóm Zalo"; }, 3000);
+            }, 100);
+        };
+    }
+    // --- HÀM SAO CHÉP SỐ TÀI KHOẢN (PHIÊN BẢN ICON GỌN NHẸ) ---
+function copySTKToClipboard() {
+    const stkElement = document.getElementById("dynamicSTK");
+    const btn = document.getElementById("btnCopySTK");
+    
+    if (!stkElement) return;
+    
+    const textToCopy = stkElement.innerText.trim();
+
+    // SVG của icon Copy (để trả lại sau khi xong)
+    const iconCopySVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>`;
+    
+    // SVG của icon Check (để hiện khi thành công)
+    const iconCheckSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#059669" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`;
+
+    const showSuccessEffect = () => {
+        // Đổi icon sang dấu tích
+        btn.innerHTML = iconCheckSVG;
+        btn.style.backgroundColor = "#D1FAE5"; // Nền đậm hơn chút
+        btn.style.borderColor = "#10B981";
+
+        // Sau 2 giây trả về icon cũ
+        setTimeout(() => {
+            btn.innerHTML = iconCopySVG;
+            btn.style.backgroundColor = "#ECFDF5";
+            btn.style.borderColor = "#A7F3D0";
+        }, 2000);
+    };
+
+    // LOGIC COPY (Vẫn giữ nguyên logic mạnh mẽ cho mobile)
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(textToCopy)
+            .then(showSuccessEffect)
+            .catch(() => fallbackCopyText(textToCopy));
+    } else {
+        fallbackCopyText(textToCopy);
+    }
+
+    function fallbackCopyText(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px"; 
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        textArea.setSelectionRange(0, 99999); 
+
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) showSuccessEffect();
+            else alert("Vui lòng tự chọn số và copy thủ công.");
+        } catch (err) {
+            console.error('Lỗi copy:', err);
+        }
+        document.body.removeChild(textArea);
+    }
+}
+    // Hàm mở trang Học Viên (nếu cần dùng từ HTML)
+    function openHocVienPage(element) {
+         try {
+            const baseUrl = window.location.href.split('?')[0];
+            const hocvienUrl = baseUrl + '?page=hocvien';
+            if(element) {
+                element.textContent = 'Đang tải...';
+            }
+            window.open(hocvienUrl, '_top');
+         } catch(e) {
+            window.location.href = window.location.href.split('?')[0] + '?page=hocvien';
+         }
+    }
+
+    // --- 2. LOGIC CHÍNH (CHẠY KHI DOM ĐÃ TẢI) ---
+    document.addEventListener("DOMContentLoaded", function() {
+        // --- KHAI BÁO BIẾN DOM ---
+        const registerForm = document.getElementById("registerForm");
+        const submitButton = document.getElementById("submitButton");
+        const loadingOverlay = document.getElementById("loadingOverlay");
+        const mainFormContainer = document.getElementById("mainFormContainer");
+        const thankYouMessage = document.getElementById("thankYouMessage");
+        const errorMessage = document.getElementById("errorMessage");
+        const zaloRedirectButton = document.getElementById("zaloRedirectButton");
+        const depositBox = document.getElementById('depositBox');
+        const shortTermTab = document.getElementById("shortTermTab");
+        const longTermTab = document.getElementById("longTermTab");
+        const shortTermContent = document.getElementById("shortTermContent");
+        const longTermContent = document.getElementById("longTermContent");
+        const paymentSection = document.getElementById('paymentSection');
+        const paymentStatusChoices = document.getElementById('paymentStatusChoices'); 
+        const fileUploadWrapper = document.getElementById('fileUploadWrapper'); 
+
+        // Input fields & Dropdowns
+        const phoneInput = document.getElementById("phone");
+        const emailInput = document.getElementById("email");
+        const duplicateUserRedirect = document.getElementById("duplicateUserRedirect");
+        const newRegistrationFields = document.getElementById("newRegistrationFields");
+        const nameInput = document.getElementById("name");
+        const nameWarning = document.getElementById("nameWarning"); 
+        const networkInput = document.getElementById("network");
+        const referrerIdInput = document.getElementById("referrerId");
+        const depositReceiptInput = document.getElementById("depositReceipt");
+        const filePreview = document.getElementById("filePreview");
+        const classTopicSelect = document.getElementById("classTopic");
+        const courseSessionSelect = document.getElementById("courseSession");
+        const commitmentCheckbox = document.querySelector('input[name="commitment"]');
+        const commitmentWarning = document.getElementById("commitmentWarning"); 
+
+        // Warning/Status messages
+        const depositReceiptWarning = document.getElementById("depositReceiptWarning");
+        const phoneWarning = document.getElementById("phoneWarning");
+        const phoneDuplicate = document.getElementById("phoneDuplicate");
+        const checkingStatus = document.getElementById("checkingStatus");
+        const phoneValid = document.getElementById("phoneValid");
+        const emailWarning = document.getElementById("emailWarning");
+        const emailGmailWarning = document.getElementById("emailGmailWarning");
+        const emailDuplicate = document.getElementById("emailDuplicate");
+        const emailChecking = document.getElementById("emailChecking");
+        const emailValid = document.getElementById("emailValid");
+
+        // Biến cục bộ cho logic form
+        let fileData = { base64: null, name: null, type: null };
+        let phoneDebounceTimer;
+        let isPhoneValid = false; 
+        let isEmailValid = false;
+        let isPhoneDuplicate = false; 
+        let isEmailDuplicate = false; 
+        let allCourseData = {}; 
+        let iti; 
+
+        // --- KHỞI TẠO THƯ VIỆN SĐT ---
+        try {
+            const phoneInputField = document.querySelector("#phone");
+            if (window.intlTelInput) {
+                iti = window.intlTelInput(phoneInputField, {
+                    initialCountry: "vn",
+                    separateDialCode: true,
+                    utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/js/utils.js",
+                    preferredCountries: ["vn", "us", "gb", "au", "de", "jp", "kr"],
+                });
+            } else {
+                iti = { isValidNumber: () => /^\d{9,11}$/.test(phoneInputField.value), getNumber: () => phoneInputField.value };
+            }
+        } catch (err) { console.error(err); }
+
+        // --- TẢI DỮ LIỆU TỪ SERVER ---
+        google.script.run
+            .withSuccessHandler(onDataLoaded)
+            .withFailureHandler(function(err) {
+                alert("Lỗi kết nối: Không thể tải danh sách lớp học.\n" + err.message);
+                classTopicSelect.innerHTML = "<option>Lỗi tải dữ liệu</option>";
+            })
+            .getAllCourseDetails();
+
+        function onDataLoaded(courses) {
+            allCourseData = courses || {};
+            const topics = [...new Set(Object.values(allCourseData).map(c => c.topic))];
+            const filteredTopics = topics.filter(t => t && !String(t).toLowerCase().includes("86 ngày"));
+            populateClassTopics(filteredTopics);
+            switchTab('short-term');
+            updateSubmitButtonState();
+        }
+        
+        // --- CÁC SỰ KIỆN (EVENT LISTENERS) ---
+        shortTermTab.addEventListener('click', () => switchTab('short-term'));
+        longTermTab.addEventListener('click', () => switchTab('long-term'));
+        classTopicSelect.addEventListener('change', handleClassTopicChange);
+        courseSessionSelect.addEventListener('change', handleCourseSessionChange);
+        
+        phoneInput.addEventListener("input", handlePhoneInput); 
+        emailInput.addEventListener("blur", handleEmailBlur); 
+        depositReceiptInput.addEventListener("change", handleFileUpload);
+        registerForm.addEventListener("submit", handleSubmitForm);
+        nameInput.addEventListener("blur", validateName);
+        commitmentCheckbox.addEventListener("change", validateCommitment);
+        
+        // --- CÁC HÀM XỬ LÝ LOGIC ---
+// --- SỬA LẠI LOGIC CHECK SĐT ---
+        function handlePhoneInput() {
+            hideAllPhoneMessages();
+            isPhoneValid = false; isPhoneDuplicate = false;
+            updateSubmitButtonState(); 
+            
+            clearTimeout(phoneDebounceTimer);
+            phoneDebounceTimer = setTimeout(() => {
+                const val = phoneInput.value.trim();
+                if (iti && iti.isValidNumber()) { 
+                    checkingStatus.style.display = "flex";
+                    // GỌI HÀM MỚI checkPendingRegistration THAY VÌ checkPhoneDuplicate
+                    google.script.run
+                        .withSuccessHandler(onPendingCheckSuccess) // Handler mới
+                        .withFailureHandler(onCheckFailure)
+                        .checkPendingRegistration(iti.getNumber()); 
+                } else if (val.length > 0) { 
+                    phoneWarning.style.display = "flex"; 
+                }
+            }, 800); 
+        }
+
+// --- CẬP NHẬT HANDLER: SỬ DỤNG POPUP MODAL (KHÔNG LÀM MẤT FORM) ---
+function onPendingCheckSuccess(result) {
+    hideAllPhoneMessages();
+    const phoneValid = document.getElementById("phoneValid");
+    const phoneDuplicate = document.getElementById("phoneDuplicate");
+
+    if (result.found) {
+        if (result.canResume) {
+            // [LOGIC POPUP MỚI]
+            // 1. Hiển thị thông báo hợp lệ ở ô SĐT (để nếu user tắt popup vẫn thấy)
+            if(phoneValid) {
+                phoneValid.style.display = "flex"; 
+                phoneValid.innerHTML = "✅ SĐT này có hồ sơ đang chờ.";
+            }
+            isPhoneValid = true; 
+            isPhoneDuplicate = false;
+
+            // 2. Kích hoạt Popup
+            showPendingModal(result);
+
+        } else {
+            // Đã xong -> Báo lỗi trùng (Logic cũ, vẫn ẩn form để tránh reg lại)
+            if(phoneDuplicate) {
+                phoneDuplicate.style.display = "flex"; 
+                phoneDuplicate.innerHTML = "⚠️ Số điện thoại này đã được đăng ký";
+            }
+            isPhoneValid = false; isPhoneDuplicate = true; 
+            
+            document.getElementById("duplicateUserRedirect").style.display = "block"; 
+            document.getElementById("newRegistrationFields").style.display = "none"; 
+        }
+    } else {
+        // SĐT Mới tinh -> Reset giao diện
+        if(phoneValid) {
+            phoneValid.style.display = "flex"; 
+            phoneValid.innerHTML = "✅ Số điện thoại hợp lệ";
+            phoneValid.style.color = "#10B981";
+        }
+        isPhoneValid = true; isPhoneDuplicate = false;
+        
+        // Đảm bảo form hiện đầy đủ
+        if (!isEmailDuplicate) { 
+            document.getElementById("newRegistrationFields").style.display = "block"; 
+            document.getElementById("submitButton").style.display = "block";
+            document.getElementById("duplicateUserRedirect").style.display = "none";
+        }
+    }
+    updateSubmitButtonState();
+}
+
+function onEmailPendingCheckSuccess(result) {
+    hideAllEmailMessages();
+    const emailValid = document.getElementById("emailValid");
+    const emailDuplicate = document.getElementById("emailDuplicate");
+
+    if (result.found) {
+        if (result.canResume) {
+            // [LOGIC POPUP MỚI]
+            if(emailValid) {
+                emailValid.style.display = "flex"; 
+                emailValid.innerHTML = "✅ Email này có hồ sơ đang chờ.";
+            }
+            isEmailValid = true; isEmailDuplicate = false;
+
+            // Kích hoạt Popup
+            showPendingModal(result);
+
+        } else {
+            // Đã xong -> Báo lỗi trùng
+            if(emailDuplicate) emailDuplicate.style.display = 'flex';
+            
+            isEmailValid = false; isEmailDuplicate = true;
+            
+            document.getElementById("duplicateUserRedirect").style.display = "block";
+            document.getElementById("newRegistrationFields").style.display = "none";
+        }
+    } else {
+        // Email Mới -> Reset giao diện
+        if(emailValid) {
+            emailValid.style.display = 'flex'; 
+            emailValid.innerHTML = "✅ Email hợp lệ";
+            emailValid.style.color = "#10B981";
+        }
+        isEmailValid = true; isEmailDuplicate = false;
+        
+        if (isPhoneValid && !isPhoneDuplicate) {
+            document.getElementById("newRegistrationFields").style.display = "block";
+            document.getElementById("submitButton").style.display = "block";
+            document.getElementById("duplicateUserRedirect").style.display = "none";
+        }
+    }
+    updateSubmitButtonState();
+}
+
+// --- HÀM HIỂN THỊ MODAL POPUP ---
+function showPendingModal(data) {
+    const modal = document.getElementById('pendingPaymentModal');
+    const nameSpan = document.getElementById('modalStudentName');
+    const btnPay = document.getElementById('btnModalPayNow');
+    const btnCancel = document.getElementById('btnModalCancel');
+
+    if (!modal) return;
+
+    // 1. Điền tên
+    if(nameSpan) nameSpan.textContent = data.studentName || "bạn";
+
+    // 2. Hiển thị Modal
+    modal.style.display = 'flex';
+
+    // 3. Xử lý nút Pay (Giả lập response thành công để chuyển bước)
+    btnPay.onclick = function() {
+        // Ẩn modal
+        modal.style.display = 'none';
+        
+        // Ẩn form đăng ký
+        const mainFormContainer = document.getElementById("mainFormContainer");
+        if(mainFormContainer) mainFormContainer.style.display = "none";
+        
+        // Gọi hàm hiển thị màn hình thanh toán
+        const fakeResponse = {
+            success: true,
+            newId: data.newId,
+            qrInfo: data.qrInfo,
+            zaloLink: data.zaloLink
+        };
+        handleSuccess(fakeResponse); 
+    };
+
+    // 4. Xử lý nút Cancel (Đóng popup, người dùng tự sửa)
+    btnCancel.onclick = function() {
+        modal.style.display = 'none';
+        // Focus lại vào ô SĐT để họ sửa
+        document.getElementById('phone').focus();
+    };
+}
+
+       // --- SỬA LẠI LOGIC CHECK EMAIL ---
+        function handleEmailBlur() {
+            const email = emailInput.value.trim().toLowerCase();
+            hideAllEmailMessages();
+            isEmailValid = false; isEmailDuplicate = false;
+            updateSubmitButtonState();
+            
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (email === "") return;
+            if (!emailRegex.test(email)) { emailWarning.style.display = 'flex'; return; }
+            if (!email.endsWith('@gmail.com')) { emailGmailWarning.style.display = 'flex'; return; }
+            
+            emailChecking.style.display = 'flex';
+            
+            // GỌI HÀM CHECK MỚI CỦA EMAIL
+            google.script.run
+                .withSuccessHandler(onEmailPendingCheckSuccess) 
+                .withFailureHandler(onCheckFailure)
+                .checkPendingRegistrationByEmail(email);
+        }
+
+        function onEmailCheckSuccess(isDuplicate) {
+            hideAllEmailMessages();
+            if (isDuplicate) {
+                emailDuplicate.style.display = 'flex'; isEmailValid = false; isEmailDuplicate = true; 
+                duplicateUserRedirect.style.display = 'block'; newRegistrationFields.style.display = 'none';
+            } else {
+                emailValid.style.display = 'flex'; isEmailValid = true; isEmailDuplicate = false; 
+                if (!isPhoneDuplicate) { duplicateUserRedirect.style.display = 'none'; newRegistrationFields.style.display = 'block'; }
+            }
+            updateSubmitButtonState();
+        }
+
+        function onCheckFailure(error) { console.error("Lỗi kiểm tra SĐT/Email:", error); hideAllPhoneMessages(); hideAllEmailMessages(); }
+        
+        function updateSubmitButtonState() { 
+            submitButton.disabled = !(isPhoneValid && isEmailValid); 
+        }
+        
+        function validateName() {
+            if (nameInput.value.trim() === "") {
+                if(nameWarning) nameWarning.style.display = 'block'; return false; 
+            } else {
+                if(nameWarning) nameWarning.style.display = 'none'; return true; 
+            }
+        }
+
+        function validateCommitment() {
+             if (!commitmentCheckbox.checked) {
+                 if(commitmentWarning) commitmentWarning.style.display = 'block'; return false;
+             } else {
+                 if(commitmentWarning) commitmentWarning.style.display = 'none'; return true;
+             }
+        }
+
+        function toggleFileUpload(show) {
+            fileUploadWrapper.style.display = show ? 'block' : 'none';
+            if (!show) {
+                fileData = { base64: null, name: null, type: null };
+                depositReceiptInput.value = null; 
+                filePreview.style.display = 'none';
+            }
+        }
+        // Expose function if needed inside DOM logic
+        window.toggleFileUpload = toggleFileUpload;
+
+        function switchTab(tabName) {
+            if (tabName === 'short-term') {
+                shortTermTab.classList.add('active'); longTermTab.classList.remove('active');
+                shortTermContent.style.display = 'block'; longTermContent.style.display = 'none';
+                classTopicSelect.required = true; courseSessionSelect.required = true; 
+                handleClassTopicChange(); 
+            } else { 
+                shortTermTab.classList.remove('active'); longTermTab.classList.add('active');
+                shortTermContent.style.display = 'none'; longTermContent.style.display = 'block';
+                classTopicSelect.required = false; courseSessionSelect.required = false;
+                
+                const descBox86 = document.getElementById("courseDescription86");
+                const info86 = allCourseData ? allCourseData["86D"] : null;
+                if(descBox86 && info86 && info86.description) {
+                    descBox86.innerHTML = `<strong>💡 Mô tả khóa học:</strong> ${info86.description}`;
+                    descBox86.style.display = 'block';
+                }
+                updateDepositInfo("86D"); 
+            }
+        }
+
+        function handleClassTopicChange() {
+            const selectedTopic = classTopicSelect.value;
+            courseSessionSelect.innerHTML = '<option value="">-- Vui lòng chọn --</option>';
+            paymentSection.style.display = 'none';
+            courseSessionSelect.disabled = true; 
+
+            const descBox = document.getElementById("courseDescription");
+            if(descBox) { descBox.style.display = 'none'; descBox.innerHTML = ""; }
+
+            if (selectedTopic) {
+                const coursesInTopic = Object.values(allCourseData).filter(c => c.topic === selectedTopic);
+                populateCourseSessions(coursesInTopic);
+                
+                if (coursesInTopic.length > 0) {
+                     courseSessionSelect.disabled = false; 
+                     if (coursesInTopic.length === 1) {
+                         courseSessionSelect.value = coursesInTopic[0].code;
+                         handleCourseSessionChange.call(courseSessionSelect);
+                     }
+                }
+            }
+        }
+
+        function handleCourseSessionChange() {
+            const selectedCourseCode = this.value;
+            const descBox = document.getElementById("courseDescription");
+            const courseInfo = allCourseData ? allCourseData[selectedCourseCode] : null;
+
+            if (descBox && courseInfo) {
+                let htmlContent = "";
+                if (courseInfo.description) htmlContent += `<div class="desc-title">Mô tả khóa học</div><div class="desc-content">${courseInfo.description}</div>`;
+                if (courseInfo.startDate) {
+                    if (!htmlContent) htmlContent += `<div class="desc-title">Mô tả khóa học</div>`;
+                    htmlContent += `<div class="desc-date">Khai giảng: ${courseInfo.startDate}</div>`;
+                }
+                if (htmlContent) { descBox.innerHTML = htmlContent; descBox.style.display = 'block'; }
+                else { descBox.style.display = 'none'; }
+            } else if (descBox) {
+                descBox.style.display = 'none';
+            }
+            updateDepositInfo(selectedCourseCode);
+        }
+
+        function updateDepositInfo(courseCode) {
+    // 1. Khai báo các phần tử
+    const paymentSection = document.getElementById('paymentSection'); // Khung to chứa QR
+    const feeBox = document.getElementById('feePreviewBox');          // Hộp nhỏ hiện giá (Mới)
+    const feeText = document.getElementById('feePreviewAmount');      // Chữ số tiền (Mới)
+    const submitBtn = document.getElementById('submitButton');
+    
+    // Reset trạng thái
+    paymentSection.style.display = 'none'; // LUÔN ẨN khung QR ở bước 1
+    if (window.toggleFileUpload) window.toggleFileUpload(false);
+    
+    const courseInfo = allCourseData[courseCode];
+    if (!courseInfo) {
+        feeBox.style.display = 'none';
+        return; 
+    }
+
+    const fee = courseInfo.depositFee;
+    const isFree = !fee || Number(fee) === 0;
+    const isOptional = String(fee).toLowerCase() === 'tùy tâm';
+    const isPaid = !isFree && !isOptional;
+
+    // 2. Xử lý hiển thị dựa trên loại phí
+    if (isFree) {
+        // Miễn phí
+        feeBox.style.display = 'block';
+        feeBox.style.background = '#ECFDF5'; // Màu xanh nhạt
+        feeBox.style.borderColor = '#10B981';
+        feeText.style.color = '#059669';
+        feeText.innerHTML = "MIỄN PHÍ (0đ)";
+        
+        // Đổi nút thành Hoàn tất vì không cần thanh toán
+        submitBtn.innerHTML = "HOÀN TẤT ĐĂNG KÝ (MIỄN PHÍ) ➔";
+        submitBtn.style.background = "#10B981"; // Đổi màu nút sang xanh lá
+        
+    } else {
+        // Có phí hoặc Tùy tâm
+        feeBox.style.display = 'block';
+        
+        // Trả lại màu cam/đỏ cho nút và hộp giá
+        feeBox.style.background = '#FFFBEB';
+        feeBox.style.borderColor = '#FCD34D';
+        feeText.style.color = '#B45309';
+        submitBtn.style.background = "#F59E0B";
+        submitBtn.style.boxShadow = "0 4px 10px rgba(245, 158, 11, 0.4)"; // Bóng đổ màu vàng
+
+        if (isOptional) {
+            feeText.innerHTML = "Gieo hạt tùy tâm";
+            submitBtn.innerHTML = "TIẾP TỤC ĐẾN BƯỚC THANH TOÁN ➔";
+        } else {
+            // Phí cố định
+            const formattedAmount = new Intl.NumberFormat('vi-VN').format(fee);
+            feeText.innerHTML = `${formattedAmount}đ`;
+            submitBtn.innerHTML = "TIẾP TỤC ĐẾN BƯỚC THANH TOÁN ➔";
+        }
+    }
+    
+    // (Phần logic render depositBox cũ bên dưới bạn có thể xóa hoặc comment lại 
+    // vì chúng ta không dùng ở bước này nữa, mà server sẽ trả về sau khi submit)
+}
+
+        function handleSubmitForm(event) {
+            event.preventDefault();
+            
+            let errorMessages = [];
+            if (!validateName()) errorMessages.push("Họ và tên"); 
+            if (!isPhoneValid) errorMessages.push("Số điện thoại");
+            if (!isEmailValid) errorMessages.push("Email");
+
+            const activeTab = document.querySelector('.tab-button.active').id;
+            let courseCodeToSend = "";
+            let courseChoice = "";
+            let commitmentText = "";
+
+            if (activeTab === 'longTermTab') {
+                courseCodeToSend = "86D";
+                courseChoice = "86-day";
+                const mindset = document.querySelector('#longTermContent input[name="mindsetCommitment"]');
+                const financial = document.querySelector('#longTermContent input[name="financialCommitment"]');
+                if (!mindset.checked || !financial.checked) {
+                    alert("Vui lòng tích đủ 2 ô cam kết!"); return;
+                }
+                commitmentText = "Đã cam kết 86 ngày";
+            } else {
+                courseChoice = "short-term";
+                courseCodeToSend = courseSessionSelect.value;
+                if (!classTopicSelect.value || !courseCodeToSend) {
+                    alert("Vui lòng chọn lớp học!"); return;
+                }
+                if (!validateCommitment()) {
+                    alert("Vui lòng xác nhận cam kết!"); return;
+                }
+                commitmentText = commitmentCheckbox.value;
+            }
+
+            if (errorMessages.length > 0) {
+                alert("Vui lòng kiểm tra lại: " + errorMessages.join(", ")); return;
+            }
+
+            // Gửi đi
+            loadingOverlay.style.display = 'flex';
+            submitButton.disabled = true;
+
+            const finalPhone = (typeof iti !== 'undefined' && iti.getNumber) ? iti.getNumber() : phoneInput.value;
+
+            const formData = {
+                name: nameInput.value.trim(), 
+                phone: finalPhone, 
+                email: emailInput.value.trim(),
+                network: networkInput ? networkInput.value.trim() : "",
+                referrerId: referrerIdInput ? referrerIdInput.value.trim() : "",
+                courseChoice: courseChoice, 
+                courseCode: courseCodeToSend,
+                purpose: "", survey: "", 
+                commitment: commitmentText,
+                paymentStatus: "Đã giữ chỗ (Chờ thanh toán)", 
+                fileData: null, 
+                fileName: null, 
+                fileType: null
+            };
+
+            google.script.run
+                .withSuccessHandler(handleSuccess)
+                .withFailureHandler(handleFailure)
+                .handleSubmit(formData);
+        }
+
+        function handleSuccess(response) {
+    loadingOverlay.style.display = 'none';
+    if (response.success) {
+        mainFormContainer.style.display = "none";
+        const resultBox = document.getElementById("thankYouMessage");
+        resultBox.style.display = "block";
+
+        // Lưu ID và Link nhóm (nếu server có trả về trước) vào dataset để dùng sau
+        document.getElementById("successStudentId").textContent = response.newId;
+        resultBox.dataset.studentId = response.newId;
+        
+        // --- SỬA ĐOẠN NÀY: Cấu hình nút Zalo Hỗ Trợ Cá Nhân ---
+        const zaloBtn = document.getElementById("zaloRedirectButton");
+        // Link Zalo cá nhân (dạng https://zalo.me/SĐT)
+        const personalZalo = "https://zalo.me/0876473257"; 
+        
+        zaloBtn.href = personalZalo;
+        zaloBtn.innerHTML = "💬 Chat với Hỗ Trợ (Zalo)";
+        zaloBtn.onclick = function() { window.open(personalZalo, '_blank'); };
+        // -----------------------------------------------------
+
+        const paymentBox = document.getElementById("paymentResultBox");
+        const lateUpload = document.getElementById("lateUploadSection");
+
+        if (response.qrInfo && response.qrInfo.amount > 0) {
+            paymentBox.style.display = "block";
+            lateUpload.style.display = "block";
+
+            document.getElementById("dynamicQRImage").src = response.qrInfo.link;
+            document.getElementById("dynamicAmount").textContent = new Intl.NumberFormat('vi-VN').format(response.qrInfo.amount) + "đ";
+            document.getElementById("dynamicBankName").textContent = response.qrInfo.bank;
+            document.getElementById("dynamicSTK").textContent = response.qrInfo.stk;
+            document.getElementById("dynamicAccountName").textContent = response.qrInfo.accountName;
+            document.getElementById("dynamicContent").textContent = response.qrInfo.content;
+        } else {
+            // Nếu miễn phí -> Có thể cho hiện luôn link nhóm nếu muốn, 
+            // nhưng theo logic của bạn thì cứ để hỗ trợ cá nhân trước.
+            paymentBox.style.display = "none";
+            lateUpload.style.display = "none";
+            resultBox.querySelector("h2").textContent = "🎉 Đăng Ký Thành Công!";
+        }
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+        handleFailure({ message: response.message });
+    }
+}
+
+        function handleFailure(error) {
+            loadingOverlay.style.display = 'none'; 
+            mainFormContainer.style.display = 'none'; 
+            errorMessage.style.display = 'flex'; 
+            const errorText = document.getElementById("errorMessageText");
+            if(errorText) errorText.textContent = error.message || "Đã có lỗi xảy ra.";
+            submitButton.disabled = false; 
+        }
+
+        // Helpers
+        function populateClassTopics(topics) {
+            classTopicSelect.innerHTML = "<option value=''>-- Vui lòng chọn --</option>";
+            if (!topics || topics.length === 0) {
+                 classTopicSelect.innerHTML = "<option value=''>Không có lớp nào khả dụng</option>";
+                 return;
+            }
+            topics.forEach(topic => { 
+                const option = document.createElement("option"); 
+                option.value = topic; 
+                option.textContent = topic; 
+                classTopicSelect.appendChild(option); 
+            });
+        }
+        function populateCourseSessions(courses) {
+            courseSessionSelect.innerHTML = '<option value="">-- Vui lòng chọn --</option>'; 
+            courses.forEach(course => { const option = document.createElement("option"); option.value = course.code; option.textContent = course.name; courseSessionSelect.appendChild(option); });
+        }
+        
+        function handleFileUpload(event) {
+            const file = event.target.files[0]; 
+            if (!file) {
+                 fileData = { base64: null, name: null, type: null };
+                 filePreview.style.display = 'none';
+                 return;
+            };
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                fileData.base64 = e.target.result.split(',')[1];
+                fileData.name = file.name;
+                fileData.type = file.type;
+                filePreview.src = e.target.result;
+                filePreview.style.display = 'block';
+                if(depositReceiptWarning) depositReceiptWarning.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function hideAllEmailMessages() {
+            if(emailWarning) emailWarning.style.display = 'none';
+            if(emailGmailWarning) emailGmailWarning.style.display = 'none';
+            if(emailDuplicate) emailDuplicate.style.display = 'none';
+            if(emailChecking) emailChecking.style.display = 'none';
+            if(emailValid) emailValid.style.display = 'none';
+        }
+        function hideAllPhoneMessages() { 
+            if(phoneWarning) phoneWarning.style.display = "none"; 
+            if(phoneDuplicate) phoneDuplicate.style.display = "none"; 
+            if(checkingStatus) checkingStatus.style.display = "none"; 
+            if(phoneValid) phoneValid.style.display = "none"; 
+        }
+
+        function setupCheckboxListeners() {
+            const mindset = document.querySelector('input[name="mindsetCommitment"]');
+            const financial = document.querySelector('input[name="financialCommitment"]');
+            const warningLabel = document.getElementById("commitmentWarning86");
+
+            if (mindset && financial && warningLabel) {
+                const checkStatus = () => {
+                    if (mindset.checked && financial.checked) {
+                        warningLabel.style.color = "#10B981"; 
+                        warningLabel.style.fontWeight = "normal";
+                        warningLabel.textContent = "✅ Đã xác nhận đủ cam kết.";
+                    } else {
+                        warningLabel.style.color = "#6B7280"; 
+                        warningLabel.style.fontWeight = "normal";
+                        warningLabel.textContent = "👉 Vui lòng tích chọn đủ 2 ô cam kết ở trên để nút Đăng ký có hiệu lực.";
+                    }
+                };
+                mindset.addEventListener('change', checkStatus);
+                financial.addEventListener('change', checkStatus);
+            }
+        }
+        setupCheckboxListeners();
+
+    }); // Kết thúc DOMContentLoaded
+</script>
+</body>
+</html>
