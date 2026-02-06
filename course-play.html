@@ -330,13 +330,24 @@
                 const result = await response.json();
                 if (result.success) {
                     curriculum = result.data;
+                    if (curriculum.length === 0) {
+                        showToast("Khóa học này chưa có nội dung bài học nào!", "warning");
+                        document.getElementById('current-lesson-title').textContent = "Chưa có nội dung";
+                        document.getElementById('lesson-summary').textContent = "Vui lòng liên hệ quản trị viên để cập nhật nội dung cho khóa học này.";
+                        return;
+                    }
+
                     renderLessonList();
                     // Tự động load bài học đầu tiên khả dụng hoặc đang học dở
                     const lastIdx = curriculum.findIndex(l => l.progress.status === "In Progress");
                     playLesson(lastIdx !== -1 ? lastIdx : 0);
+                } else {
+                    console.error("API Error:", result.msg);
+                    showToast("Lỗi API: " + (result.msg || "Không xác định"), "error");
                 }
             } catch (e) {
-                showToast("Lỗi tải nội dung!", "error");
+                console.error("Fetch Error:", e);
+                showToast("Lỗi kết nối: " + e.message, "error");
             }
         }
 
@@ -393,21 +404,29 @@
 
             renderLessonList(); // Update active state
 
+            const videoId = getYouTubeId(lesson.youtubeId);
+            if (!videoId) {
+                showToast("ID Video không hợp lệ! Vui lòng kiểm tra dữ liệu.", "error");
+                return;
+            }
+
             if (player) {
-                player.loadVideoById(lesson.youtubeId, lesson.progress.currentTime || 0);
+                player.loadVideoById(videoId, lesson.progress.currentTime || 0);
             } else {
                 player = new YT.Player('player', {
                     height: '100%',
                     width: '100%',
-                    videoId: lesson.youtubeId,
+                    videoId: videoId,
                     playerVars: {
                         'autoplay': 1,
                         'modestbranding': 1,
                         'rel': 0,
-                        'start': lesson.progress.currentTime || 0
+                        'start': lesson.progress.currentTime || 0,
+                        'origin': window.location.origin
                     },
                     events: {
-                        'onStateChange': onPlayerStateChange
+                        'onStateChange': onPlayerStateChange,
+                        'onError': onPlayerError
                     }
                 });
             }
@@ -415,6 +434,17 @@
             // Start sync
             if (syncInterval) clearInterval(syncInterval);
             syncInterval = setInterval(syncProgress, 15000);
+        }
+
+        function onPlayerError(event) {
+            showToast("Lỗi phát video (Mã: " + event.data + ")", "error");
+        }
+
+        function getYouTubeId(url) {
+            if (!url) return null;
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : url;
         }
 
         function onPlayerStateChange(event) {

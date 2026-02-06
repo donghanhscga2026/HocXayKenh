@@ -478,13 +478,18 @@ function getCourses(email) {
 
   // Bỏ qua header
   for (let i = 1; i < courses.length; i++) {
-    if (courses[i][C_AVAILABLE] === true && courses[i][C_ID]) {
-      const courseId = String(courses[i][C_ID]);
-      const courseName = String(courses[i][C_TITLE] || "");
+    // Chỉ lấy khóa học có Có sẵn (cột E) = TRUE
+    // SỬA: Dùng Ma_Lop (Cột P) làm khóa chính
+    if (courses[i][C_AVAILABLE] === true && courses[i][C_MA_LOP]) {
       const courseMaLop = String(courses[i][C_MA_LOP] || "").trim();
+      const courseId = courseMaLop;
       
+      const courseName = String(courses[i][C_TITLE] || "");
+      
+      // Logic kích hoạt: Nếu học viên có 86D hoặc mã lớp này đã được duyệt
       const has86D = activatedCourses.includes("86D");
-      const isActivated = has86D || (courseMaLop && activatedCourses.includes(courseMaLop));
+      const isActivated = has86D || activatedCourses.includes(courseId);
+      
       const isFree = Number(courses[i][C_DEPOSIT]) === 0;
       
       let percentComplete = 0;
@@ -949,20 +954,26 @@ function getAllAvailableCourses() {
   const COL_AVAILABLE = 4; // Cột E: Có sẵn (TRUE/FALSE)
   const COL_DESC = 5;      // Cột F: Mô tả ngắn
   const COL_IS_FREE = 14;  // Cột O: isFree (TRUE/FALSE)
+  const COL_MA_LOP = 15;   // Cột P: Ma_Lop
   const COL_IMAGE_URL = 16; // Cột Q: Link_Anh_Lop
   
   for (let i = 1; i < data.length; i++) {
-    // Chỉ lấy khóa học có Có sẵn (cột E) = TRUE
-    if (data[i][COL_AVAILABLE] === true && data[i][COL_ID]) {
-      availableCourses.push({
-        id: String(data[i][COL_ID]),
-        title: String(data[i][COL_TITLE] || ""),
-        desc: String(data[i][COL_DESC] || ""),
-        imageUrl: String(data[i][COL_IMAGE_URL] || ""),
-        icon: "fa-book",
-        isFree: data[i][COL_IS_FREE] === true,
-        isActivated: false // Public view, không có thông tin kích hoạt
-      });
+    // Chỉ lấy khóa học có Có sẵn (cột E) = TRUE và có Ma_Lop
+    if (data[i][COL_AVAILABLE] === true && data[i][COL_MA_LOP]) {
+      // SỬA: Dùng Ma_Lop làm ID
+      const courseId = String(data[i][COL_MA_LOP]).trim();
+      
+      if (courseId) {
+        availableCourses.push({
+          id: courseId,
+          title: String(data[i][COL_TITLE] || ""),
+          desc: String(data[i][COL_DESC] || ""),
+          imageUrl: String(data[i][COL_IMAGE_URL] || ""),
+          icon: "fa-book",
+          isFree: data[i][COL_IS_FREE] === true,
+          isActivated: false // Public view, không có thông tin kích hoạt
+        });
+      }
     }
   }
   
@@ -1154,11 +1165,13 @@ function getCourseDepositInfo(courseId) {
   }
   
   
-  // Tìm khóa học
+  // Tìm khóa học theo Ma_Lop (cột P)
   for (let i = 1; i < data.length; i++) {
-    const rowId = String(data[i][idIndex] || "").trim();
+    // const rowId = String(data[i][idIndex] || "").trim(); 
+    const rowMaLop = maLopIndex !== -1 ? String(data[i][maLopIndex] || "").trim() : "";
     
-    if (rowId === courseId) {
+    // So sánh với Ma_Lop 
+    if (rowMaLop === courseId) {
       // Parse depositFee as number
       let depositFee = 0;
       if (depositIndex !== -1 && data[i][depositIndex]) {
