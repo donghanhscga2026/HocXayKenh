@@ -246,6 +246,31 @@
             font-size: 14px;
         }
 
+        /* Course Progress Bar */
+        .course-progress-container {
+            margin: 10px 0;
+            background: #e5e7eb;
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .course-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .percent-text {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: block;
+        }
+
         .btn-continue {
             background: linear-gradient(90deg, #10b981, #059669);
             color: white;
@@ -1090,8 +1115,19 @@
 
                 // Action Buttons Logic
                 let actionButton = '';
+                let progressUI = '';
+
                 if (course.isActivated) {
-                    // Đã kích hoạt → Nút "Vào học tiếp"
+                    // Đã kích hoạt → Hiện % và Nút "Vào học tiếp"
+                    const percent = course.percentComplete || 0;
+                    progressUI = `
+                        <div style="margin-top: 10px;">
+                            <span class="percent-text"><i class="fas fa-chart-line"></i> Tiến độ: ${percent}%</span>
+                            <div class="course-progress-container">
+                                <div class="course-progress-fill" style="width: ${percent}%"></div>
+                            </div>
+                        </div>
+                    `;
                     actionButton = `
                         <button class="btn-continue" onclick="continueLearning('${course.id}')">
                             <i class="fas fa-play-circle"></i> Vào học tiếp
@@ -1132,6 +1168,7 @@
                         <div class="course-badges">
                             ${badges.join('')}
                         </div>
+                        ${progressUI}
                         <p class="course-desc">${course.desc || 'Mô tả khóa học'}</p>
                         <div class="course-actions">
                             ${actionButton}
@@ -1227,8 +1264,8 @@
 
         // Handle Continue Learning Button
         function continueLearning(courseId) {
-            // Redirect to dashboard with course selected
-            window.location.href = `dashboard.html?course=${courseId}`;
+            // Redirect to course player with course ID
+            window.location.href = `course-play.html?id=${courseId}`;
         }
 
         // Handle Start Course Button (for free courses)

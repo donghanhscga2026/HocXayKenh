@@ -57,11 +57,14 @@ function doPost(e) {
     else if (action === "activateCourse") {
       return returnJSON(activateCourse(content));
     }
-    else if (action === "getCourseDepositInfo") {
-      return returnJSON(getCourseDepositInfo(content.courseId));
+    else if (action === "getCourseContent") {
+      return returnJSON(getCourseContent(content.email, content.courseId));
     }
-    else if (action === "getAllAvailableCourses") {
-      return returnJSON(getAllAvailableCourses());
+    else if (action === "updateVideoProgress") {
+      return returnJSON(updateVideoProgress(content.email, content.courseId, content.lessonId, content.currentTime, content.duration));
+    }
+    else if (action === "submitAssignment") {
+      return returnJSON(submitAssignment(content.email, content.courseId, content.lessonId, content.assignmentLink));
     }
 
     
@@ -459,9 +462,12 @@ function getCourses(email) {
   if (!courseSheet) return { success: false, msg: "Chưa có dữ liệu khóa học" };
   
   const courses = courseSheet.getDataRange().getValues();
+  const progressSheet = ss.getSheetByName("KH_TienDo");
+  const progressData = progressSheet ? progressSheet.getDataRange().getValues() : [];
+  
   const courseList = [];
   
-  // Mapping columns for KH sheet (Corrected based on actual sheet structure):
+  // Mapping columns for KH sheet:
   const C_ID = 0;       // Cột A: Mã khóa
   const C_TITLE = 1;    // Cột B: Tên khóa học
   const C_AVAILABLE = 4; // Cột E: Có sẵn (TRUE/FALSE)
@@ -470,19 +476,21 @@ function getCourses(email) {
   const C_MA_LOP = 15;  // Cột P: Ma_Lop
   const C_IMAGE_URL = 16; // Cột Q: Link_Anh_Lop
 
-  // Bỏ qua header, duyệt từ dòng 2
+  // Bỏ qua header
   for (let i = 1; i < courses.length; i++) {
-    // Chỉ lấy khóa học có Có sẵn (cột E) = TRUE
     if (courses[i][C_AVAILABLE] === true && courses[i][C_ID]) {
       const courseId = String(courses[i][C_ID]);
       const courseName = String(courses[i][C_TITLE] || "");
       const courseMaLop = String(courses[i][C_MA_LOP] || "").trim();
       
-      // Logic kích hoạt: Nếu học viên có 86D hoặc mã lớp này đã được duyệt
       const has86D = activatedCourses.includes("86D");
       const isActivated = has86D || (courseMaLop && activatedCourses.includes(courseMaLop));
-      
       const isFree = Number(courses[i][C_DEPOSIT]) === 0;
+      
+      let percentComplete = 0;
+      if (isActivated) {
+        percentComplete = calculateCourseProgress(email, courseId, ss);
+      }
       
       courseList.push({
         id: courseId,
@@ -492,13 +500,150 @@ function getCourses(email) {
         icon: "fa-book",
         isFree: isFree,
         isActivated: isActivated,
-        canActivate: !isActivated && !isFree // Có thể kích hoạt nếu chưa kích hoạt và không miễn phí
+        canActivate: !isActivated && !isFree,
+        percentComplete: percentComplete
       });
-
     }
   }
   
   return { success: true, data: courseList };
+}
+
+function calculateCourseProgress(email, courseId, ss) {
+  const contentSheet = ss.getSheetByName("KH_NoiDung");
+  const progressSheet = ss.getSheetByName("KH_TienDo");
+  if (!contentSheet || !progressSheet) return 0;
+
+  const content = contentSheet.getDataRange().getValues();
+  let totalLessons = 0;
+  for (let i = 1; i < content.length; i++) {
+    if (content[i][0] == courseId) totalLessons++;
+  }
+  if (totalLessons === 0) return 0;
+
+  const progress = progressSheet.getDataRange().getValues();
+  let completedCount = 0;
+  for (let i = 1; i < progress.length; i++) {
+    if (progress[i][0] == email && progress[i][1] == courseId) {
+      const currentStatus = progress[i][5];
+      if (currentStatus == "Completed" || currentStatus == "Approved") {
+        completedCount++;
+      }
+    }
+  }
+
+  return Math.round((completedCount / totalLessons) * 100);
+}
+
+function getCourseContent(email, courseId) {
+  const ss = getDB();
+  const contentSheet = ss.getSheetByName("KH_NoiDung");
+  const progressSheet = ss.getSheetByName("KH_TienDo");
+  
+  if (!contentSheet) return { success: false, msg: "Sheet nội dung không tồn tại" };
+  
+  const contentData = contentSheet.getDataRange().getValues();
+  const progressData = progressSheet ? progressSheet.getDataRange().getValues() : [];
+  
+  const curriculum = [];
+  for (let i = 1; i < contentData.length; i++) {
+    if (contentData[i][0] == courseId) {
+      const lessonId = String(contentData[i][1]);
+      
+      // Tìm tiến độ của học viên cho bài này
+      let userProgress = { currentTime: 0, maxTime: 0, status: "Locked" };
+      for (let j = 1; j < progressData.length; j++) {
+        if (progressData[j][0] == email && progressData[j][1] == courseId && progressData[j][2] == lessonId) {
+          userProgress = {
+            currentTime: Number(progressData[j][3] || 0),
+            maxTime: Number(progressData[j][4] || 0),
+            status: progressData[j][5] || "In Progress"
+          };
+          break;
+        }
+      }
+      
+      curriculum.push({
+        id: lessonId,
+        title: contentData[i][2],
+        youtubeId: contentData[i][3],
+        summary: contentData[i][4],
+        assignmentType: contentData[i][5],
+        order: Number(contentData[i][6] || i),
+        progress: userProgress
+      });
+    }
+  }
+  
+  // Sắp xếp theo order
+  curriculum.sort((a, b) => a.order - b.order);
+  
+  // Logic khóa bài: Bài n+1 chỉ mở khi bài n hoàn thành
+  for (let i = 0; i < curriculum.length; i++) {
+    if (i === 0) {
+      if (curriculum[i].progress.status === "Locked") curriculum[i].progress.status = "Available";
+    } else {
+      const prevLessonStatus = curriculum[i-1].progress.status;
+      if (prevLessonStatus === "Completed" || prevLessonStatus === "Approved") {
+        if (curriculum[i].progress.status === "Locked") curriculum[i].progress.status = "Available";
+      }
+    }
+  }
+  
+  return { success: true, data: curriculum };
+}
+
+function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
+  const ss = getDB();
+  let progressSheet = ss.getSheetByName("KH_TienDo");
+  if (!progressSheet) {
+    progressSheet = ss.insertSheet("KH_TienDo");
+    progressSheet.appendRow(["Email", "Ma_KH", "Ma_Bai", "Thoi_Diem_Hien_Tai", "Diem_Xem_Xa_Nhat", "Trang_Thai"]);
+  }
+  
+  const data = progressSheet.getDataRange().getValues();
+  let foundRow = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] == email && data[i][1] == courseId && data[i][2] == lessonId) {
+      foundRow = i + 1;
+      break;
+    }
+  }
+  
+  const percent = (currentTime / duration) * 100;
+  const isFinishedVideo = percent > 95;
+  
+  if (foundRow > 0) {
+    const lastMax = Number(data[foundRow-1][4] || 0);
+    const newMax = Math.max(lastMax, currentTime);
+    
+    progressSheet.getRange(foundRow, 4).setValue(currentTime);
+    progressSheet.getRange(foundRow, 5).setValue(newMax);
+    
+    // Nếu xem xong video mà chưa có trạng thái hoặc đang "Available" thì chuyển sang "In Progress"
+    const currentStatus = data[foundRow-1][5];
+    if (isFinishedVideo && (currentStatus == "Available" || currentStatus == "Locked" || !currentStatus)) {
+       progressSheet.getRange(foundRow, 6).setValue("In Progress"); 
+    }
+  } else {
+    progressSheet.appendRow([email, courseId, lessonId, currentTime, currentTime, "In Progress"]);
+  }
+  
+  return { success: true };
+}
+
+function submitAssignment(email, courseId, lessonId, assignmentLink) {
+  const ss = getDB();
+  const progressSheet = ss.getSheetByName("KH_TienDo");
+  const data = progressSheet.getDataRange().getValues();
+  
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] == email && data[i][1] == courseId && data[i][2] == lessonId) {
+      progressSheet.getRange(i + 1, 6).setValue("Submitted");
+      return { success: true, message: "Đã nộp bài tập thành công!" };
+    }
+  }
+  return { success: false, message: "Vui lòng xem video trước khi nộp bài tập!" };
 }
 
 // Hàm giả định kiểm tra đăng ký (Sau này sẽ check sheet "DangKy")

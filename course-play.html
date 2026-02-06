@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đang tải khóa học... | Học viện BRK</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --bg: #f8fafc;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: white;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .back-btn {
+            text-decoration: none;
+            color: var(--text);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar - Lesson List */
+        .sidebar {
+            width: 350px;
+            background: white;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .lesson-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .lesson-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .lesson-item:hover {
+            background: #f8fafc;
+        }
+
+        .lesson-item.active {
+            background: #eff6ff;
+            border-left: 4px solid var(--primary);
+        }
+
+        .lesson-item.locked {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .lesson-status {
+            font-size: 18px;
+            margin-top: 2px;
+        }
+
+        .status-done {
+            color: var(--success);
+        }
+
+        .status-lock {
+            color: #94a3b8;
+        }
+
+        .status-play {
+            color: var(--primary);
+        }
+
+        .lesson-info {
+            flex: 1;
+        }
+
+        .lesson-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .lesson-meta {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        /* Content Area - Video Player */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: black;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        #player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .lesson-detail {
+            margin-top: 30px;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .course-title-main {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 0;
+            font-weight: 600;
+            cursor: pointer;
+            color: #64748b;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .assignment-box {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fffbeb;
+            border: 1px solid #fef3c7;
+            border-radius: 8px;
+        }
+
+        .submit-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .submit-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        .btn-submit {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        @media (max-width: 1024px) {
+            .main-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: 300px;
+                border-right: none;
+                border-top: 1px solid var(--border);
+                order: 2;
+            }
+
+            .content {
+                order: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Quay lại trang chủ</a>
+        <div id="course-header-title" style="font-weight: bold; color: var(--primary);">Khóa học</div>
+        <div id="user-display"></div>
+    </header>
+
+    <div class="main-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3 id="sidebar-title">Nội dung khóa học</h3>
+                <p id="progress-summary" style="font-size: 13px; color: #64748b; margin-top: 5px;">0/0 bài học đã hoàn
+                    thành</p>
+            </div>
+            <div class="lesson-list" id="lesson-list">
+                <!-- Lessons dynamic -->
+            </div>
+        </aside>
+
+        <main class="content">
+            <div class="video-wrapper">
+                <div id="player"></div>
+            </div>
+
+            <div class="lesson-detail">
+                <h1 class="course-title-main" id="current-lesson-title">Đang tải...</h1>
+
+                <div class="tabs">
+                    <div class="tab active">Tổng quan</div>
+                    <div class="tab">Tài liệu</div>
+                    <div class="tab">Bài tập</div>
+                </div>
+
+                <div id="tab-content">
+                    <div id="lesson-summary" style="line-height: 1.6; color: #475569;">
+                        Vui lòng chọn bài học để xem nội dung.
+                    </div>
+
+                    <div id="assignment-section" class="assignment-box hidden">
+                        <h4 style="color: #92400e;"><i class="fas fa-tasks"></i> Yêu cầu bài tập:</h4>
+                        <p id="assignment-desc" style="margin-top: 8px; font-size: 14px;"></p>
+                        <div class="submit-group">
+                            <input type="text" id="assignment-link" class="submit-input"
+                                placeholder="Dán link bài làm (Google Drive, Canvas...)">
+                            <button class="btn-submit" onclick="submitWork()">Nộp bài</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast UI -->
+    <div id="toast"
+        style="position: fixed; top: 20px; right: 20px; padding: 15px 25px; background: #333; color: white; border-radius: 8px; display: none; z-index: 9999;">
+    </div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbwd9qsO3FlcwNMOWBqPm5c7NWb0d5c8hMCd5o2YzeXlFOQMVayvHErqcUcWHrelojIbeA/exec";
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseId = urlParams.get('id');
+        const user = JSON.parse(localStorage.getItem('user'));
+
+        if (!user || !courseId) {
+            window.location.href = "index.html";
+        }
+
+        let player;
+        let curriculum = [];
+        let currentLessonIdx = -1;
+        let syncInterval;
+
+        window.onYouTubeIframeAPIReady = function () {
+            loadCurriculum();
+        };
+
+        async function loadCurriculum() {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: "getCourseContent",
+                        email: user.email,
+                        courseId: courseId
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    curriculum = result.data;
+                    renderLessonList();
+                    // Tự động load bài học đầu tiên khả dụng hoặc đang học dở
+                    const lastIdx = curriculum.findIndex(l => l.progress.status === "In Progress");
+                    playLesson(lastIdx !== -1 ? lastIdx : 0);
+                }
+            } catch (e) {
+                showToast("Lỗi tải nội dung!", "error");
+            }
+        }
+
+        function renderLessonList() {
+            const listEl = document.getElementById('lesson-list');
+            listEl.innerHTML = '';
+
+            let completed = 0;
+            curriculum.forEach((lesson, idx) => {
+                const item = document.createElement('div');
+                const isLocked = lesson.progress.status === "Locked";
+                const isDone = lesson.progress.status === "Completed" || lesson.progress.status === "Approved";
+
+                if (isDone) completed++;
+
+                item.className = `lesson-item ${isLocked ? 'locked' : ''} ${idx === currentLessonIdx ? 'active' : ''}`;
+
+                let icon = '<i class="far fa-circle status-lock"></i>';
+                if (isDone) icon = '<i class="fas fa-check-circle status-done"></i>';
+                else if (!isLocked) icon = '<i class="fas fa-play-circle status-play"></i>';
+
+                item.innerHTML = `
+                    <div class="lesson-status">${icon}</div>
+                    <div class="lesson-info">
+                        <div class="lesson-title">${lesson.title}</div>
+                        <div class="lesson-meta">${isLocked ? 'Đang khóa' : (isDone ? 'Đã hoàn thành' : 'Sẵn sàng học')}</div>
+                    </div>
+                `;
+
+                if (!isLocked) {
+                    item.onclick = () => playLesson(idx);
+                }
+                listEl.appendChild(item);
+            });
+
+            document.getElementById('progress-summary').textContent = `${completed}/${curriculum.length} bài học đã hoàn thành`;
+        }
+
+        function playLesson(idx) {
+            if (idx === currentLessonIdx) return;
+            const lesson = curriculum[idx];
+            currentLessonIdx = idx;
+
+            document.getElementById('current-lesson-title').textContent = lesson.title;
+            document.getElementById('lesson-summary').innerHTML = lesson.summary || "Không có tóm tắt.";
+
+            const assignBox = document.getElementById('assignment-section');
+            if (lesson.assignmentType) {
+                assignBox.classList.remove('hidden');
+                document.getElementById('assignment-desc').textContent = lesson.assignmentType;
+            } else {
+                assignBox.classList.add('hidden');
+            }
+
+            renderLessonList(); // Update active state
+
+            if (player) {
+                player.loadVideoById(lesson.youtubeId, lesson.progress.currentTime || 0);
+            } else {
+                player = new YT.Player('player', {
+                    height: '100%',
+                    width: '100%',
+                    videoId: lesson.youtubeId,
+                    playerVars: {
+                        'autoplay': 1,
+                        'modestbranding': 1,
+                        'rel': 0,
+                        'start': lesson.progress.currentTime || 0
+                    },
+                    events: {
+                        'onStateChange': onPlayerStateChange
+                    }
+                });
+            }
+
+            // Start sync
+            if (syncInterval) clearInterval(syncInterval);
+            syncInterval = setInterval(syncProgress, 15000);
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data == YT.PlayerState.PLAYING) {
+                // Anti-cheat: Check if trying to fast forward
+                const checkSkip = setInterval(() => {
+                    const currentTime = player.getCurrentTime();
+                    const maxTime = curriculum[currentLessonIdx].progress.maxTime || 0;
+
+                    if (currentTime > maxTime + 5) { // Allow 5s buffer
+                        player.seekTo(maxTime, true);
+                        showToast("Vui lòng không tua nhanh qua đoạn chưa học!", "warning");
+                    }
+                }, 1000);
+
+                // Clear interval when not playing
+                const stopCheck = () => {
+                    clearInterval(checkSkip);
+                    event.target.removeEventListener('onStateChange', stopCheck);
+                };
+            }
+
+            if (event.data == YT.PlayerState.ENDED) {
+                syncProgress(true); // Finish video
+            }
+        }
+
+        async function syncProgress(isFinished = false) {
+            if (!player || currentLessonIdx === -1) return;
+
+            const currentTime = Math.floor(player.getCurrentTime());
+            const duration = Math.floor(player.getDuration());
+            const lesson = curriculum[currentLessonIdx];
+
+            // Update local max time
+            if (currentTime > (lesson.progress.maxTime || 0)) {
+                lesson.progress.maxTime = currentTime;
+            }
+
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: "updateVideoProgress",
+                        email: user.email,
+                        courseId: courseId,
+                        lessonId: lesson.id,
+                        currentTime: currentTime,
+                        duration: duration
+                    })
+                });
+            } catch (e) { }
+        }
+
+        async function submitWork() {
+            const link = document.getElementById('assignment-link').value;
+            if (!link) {
+                showToast("Vui lòng nhập link bài làm!", "warning");
+                return;
+            }
+
+            const lesson = curriculum[currentLessonIdx];
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: "submitAssignment",
+                        email: user.email,
+                        courseId: courseId,
+                        lessonId: lesson.id,
+                        assignmentLink: link
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showToast(result.message, "success");
+                    loadCurriculum(); // Reload to update status and locks
+                }
+            } catch (e) {
+                showToast("Lỗi nộp bài!", "error");
+            }
+        }
+
+        function showToast(msg, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.background = type === 'error' ? '#ef4444' : (type === 'warning' ? '#f59e0b' : '#10b981');
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+
+        window.onbeforeunload = () => {
+            syncProgress();
+        };
+    </script>
+</body>
+
+</html>
