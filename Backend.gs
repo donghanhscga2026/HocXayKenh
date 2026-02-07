@@ -971,7 +971,8 @@ function getAllAvailableCourses() {
           imageUrl: String(data[i][COL_IMAGE_URL] || ""),
           icon: "fa-book",
           isFree: data[i][COL_IS_FREE] === true,
-          isActivated: false // Public view, không có thông tin kích hoạt
+          isActivated: false, // Public view, không có thông tin kích hoạt
+          percentComplete: 0
         });
       }
     }
@@ -1260,70 +1261,104 @@ function activateCourse(data) {
       }
     }
     
-    // 8. Ghi vào LS_DangKy
-    const ss = getDB();
-    const lsSheet = ss.getSheetByName("LS_DangKy");
+/**
+ * Cập nhật tiến độ xem video
+ */
+function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
+  const ss = getDB();
+  const sheet = ss.getSheetByName("KH_TienDo");
+  if (!sheet) return { success: false, msg: "Sheet KH_TienDo không tồn tại" };
+  
+  const data = sheet.getDataRange().getValues();
+  let rowIndex = -1;
+  
+  // Tìm dòng tương ứng: Email + CourseId + LessonId
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === email && 
+        String(data[i][1]) === courseId && 
+        String(data[i][2]) === lessonId) {
+      rowIndex = i;
+      break;
+    }
+  }
+  
+  const progressRatio = duration > 0 ? (currentTime / duration) : 0;
+  // Nếu > 95% coi như hoàn thành Video (nhưng chưa xong bài học nếu có bài tập)
+  // Logic: Nếu chưa có Status -> "In Progress"
+  // Nếu đã Completed/Pending -> Giữ nguyên
+  
+  let newStatus = "In Progress";
+  
+  if (rowIndex === -1) {
+    // Thêm mới
+    sheet.appendRow([
+      email, 
+      courseId, 
+      lessonId, 
+      currentTime, 
+      currentTime, // Max time
+      newStatus,
+      "" // Link bài tập
+    ]);
+  } else {
+    // Cập nhật
+    // Cột D (index 3): Thời điểm hiện tại
+    // Cột E (index 4): Điểm xem xa nhất
+    // Cột F (index 5): Trạng thái
     
-    if (!lsSheet) {
-      return { success: false, message: "Sheet LS_DangKy không tồn tại!" };
+    // Update current time
+    sheet.getRange(rowIndex + 1, 4).setValue(currentTime);
+    
+    // Update max time if greater
+    const currentMax = Number(data[rowIndex][4]) || 0;
+    if (currentTime > currentMax) {
+      sheet.getRange(rowIndex + 1, 5).setValue(currentTime);
     }
     
-    const newRow = [
-      "", // STT - để trống, sẽ tự động
-      new Date(), // Ngày đăng ký
-      studentInfo.name, // Tên
-      studentCode, // Mã học viên
-      data.email, // Email
-      studentInfo.phone || "", // SĐT
-      courseInfo.title, // Tên khóa học
-      data.courseId, // Mã khóa
-      isWaived ? 0 : courseInfo.depositFee, // Phí cọc
-      imageUrl, // Link ảnh minh chứng
-      "Chờ duyệt", // Trạng thái
-      "", // Người giới thiệu
-      isWaived ? "Miễn cọc (Học viên 86 ngày)" : "", // Ghi chú
-      "", // Ngày duyệt
-      courseInfo.maLop || "" // Ma_Lop
-    ];
-    
-    lsSheet.appendRow(newRow);
-    
-    // 9. Gửi email xác nhận (optional - có thể bật sau)
-    // sendActivationConfirmationEmail(studentInfo, courseInfo);
-    
-    // 10. Trả về kết quả
-    return {
-      success: true,
-      message: isWaived 
-        ? "Kích hoạt thành công! Bạn được miễn cọc." 
-        : "Gửi yêu cầu kích hoạt thành công! Vui lòng chờ BTC duyệt.",
-      zaloLink: courseInfo.zaloLink || ""
-    };
-    
-  } catch (error) {
-    Logger.log("Lỗi activateCourse: " + error);
-    return { 
-      success: false, 
-      message: "Lỗi hệ thống: " + error.message 
-    };
+    // Update Status logic handled mainly by frontend or completion check? - Keep simple here
   }
+  
+  return { success: true };
 }
 
 /**
- * Helper: Upload file lên Drive
- * (Sử dụng lại function có sẵn hoặc tạo mới)
+ * Nộp bài tập
  */
-function uploadFileToDrive(base64Data, fileName, fileType, studentCode, studentName) {
-  const folder = DriveApp.getFolderById(FOLDER_ID);
-  const blob = Utilities.newBlob(
-    Utilities.base64Decode(base64Data),
-    fileType,
-    fileName
-  );
+function submitAssignment(email, courseId, lessonId, link) {
+  const ss = getDB();
+  const sheet = ss.getSheetByName("KH_TienDo");
+  if (!sheet) return { success: false, msg: "Sheet KH_TienDo không tồn tại" };
   
-  const file = folder.createFile(blob);
-  file.setName(`${studentCode}_${studentName}_${fileName}`);
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  const data = sheet.getDataRange().getValues();
+  let rowIndex = -1;
   
-  return file.getUrl();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === email && 
+        String(data[i][1]) === courseId && 
+        String(data[i][2]) === lessonId) {
+      rowIndex = i;
+      break;
+    }
+  }
+  
+  const status = "Completed"; // Tạm thời auto-complete khi nộp, hoặc "Pending" nếu cần duyệt
+  
+  if (rowIndex === -1) {
+    // Nếu chưa có dòng tiến độ (trường hợp hiếm, thường đã xem video rồi)
+    sheet.appendRow([
+      email, 
+      courseId, 
+      lessonId, 
+      0, 
+      0, 
+      status, 
+      link
+    ]);
+  } else {
+    // Cập nhật trạng thái và link
+    sheet.getRange(rowIndex + 1, 6).setValue(status); // Cột F: Trạng thái
+    sheet.getRange(rowIndex + 1, 7).setValue(link);   // Cột G: Link bài tập
+  }
+  
+  return { success: true, message: "Nộp bài thành công! Bạn có thể chuyển sang bài tiếp theo." };
 }

@@ -262,6 +262,19 @@
         <main class="content">
             <div class="video-wrapper">
                 <div id="player"></div>
+                <!-- Video Overlay -->
+                <div id="video-overlay"
+                    style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 20px;">
+                    <div style="font-size: 50px; color: #10b981; margin-bottom: 20px;"><i
+                            class="fas fa-check-circle"></i></div>
+                    <h2 style="margin-bottom: 15px; font-size: 24px;">Chúc mừng bạn đã xem hết video bài học!</h2>
+                    <p style="margin-bottom: 30px; color: #cbd5e1; max-width: 600px; line-height: 1.5;">Hãy làm bài tập
+                        và ghi nhận nộp bài phía dưới đây để hoàn thành bài học trước khi học bài tiếp theo!</p>
+                    <button onclick="replayVideo()"
+                        style="padding: 10px 20px; background: transparent; border: 1px solid white; color: white; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                        <i class="fas fa-redo"></i> Xem lại
+                    </button>
+                </div>
             </div>
 
             <div class="lesson-detail">
@@ -536,7 +549,15 @@
 
             if (event.data == YT.PlayerState.ENDED) {
                 syncProgress(true);
+                // Show Overlay
+                document.getElementById('video-overlay').style.display = 'flex';
             }
+        }
+
+        function replayVideo() {
+            document.getElementById('video-overlay').style.display = 'none';
+            player.seekTo(0);
+            player.playVideo();
         }
 
         async function syncProgress(isFinished = false) {
