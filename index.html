@@ -1043,10 +1043,12 @@
 
         // Fetch courses in background and update if changed
         async function fetchCoursesInBackground(cacheKey) {
+            console.log("🚀 Starting fetchCoursesInBackground...");
             try {
                 let tempCourses = []; // Temporary variable for background fetch
 
                 if (isLoggedIn) {
+                    console.log("User is logged in. Fetching personal courses...");
                     const response = await fetch(API_URL, {
                         method: 'POST',
                         body: JSON.stringify({
@@ -1059,15 +1061,33 @@
                         tempCourses = result.data;
                     }
                 } else {
+                    console.log("User is Guest. Fetching all available courses...");
                     const response = await fetch(API_URL, {
                         method: 'POST',
                         body: JSON.stringify({
                             action: "getAllAvailableCourses"
                         })
                     });
+                    console.log("Response received from Backend.");
+
                     const result = await response.json();
+                    console.log("JSON parsed successfully:", result);
+
+                    // --- DEBUG LOGGING ---
+                    if (result.debug) {
+                        console.group("🔥 BACKEND DEBUG: getAllAvailableCourses");
+                        console.log(result.debug.join('\n'));
+                        console.groupEnd();
+                    } else {
+                        console.warn("⚠️ No 'debug' field in response. Did you redeploy Backend?");
+                    }
+                    // ---------------------
+
                     if (result.success) {
                         tempCourses = result.data;
+                        console.log(`Fetched ${tempCourses.length} courses.`);
+                    } else {
+                        console.error("Backend error:", result.message);
                     }
                 }
 
@@ -1077,13 +1097,11 @@
                 // Update cache
                 setCachedCourses(cacheKey, tempCourses);
 
-                // Check if data changed, update UI silently
-                const currentCache = getCachedCourses(cacheKey, Infinity);
-                if (JSON.stringify(currentCache) !== JSON.stringify(tempCourses)) {
-                    renderCourses(tempCourses);
-                }
+                // Re-render
+                renderCourses();
+
             } catch (e) {
-                console.warn('Background fetch failed:', e);
+                console.error("❌ Error in fetchCoursesInBackground:", e);
             }
         }
 

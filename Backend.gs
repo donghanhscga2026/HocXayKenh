@@ -66,6 +66,9 @@ function doPost(e) {
     else if (action === "submitAssignment") {
       return returnJSON(submitAssignment(content.email, content.courseId, content.lessonId, content.assignmentLink));
     }
+    else if (action === "getAllAvailableCourses") {
+      return returnJSON(getAllAvailableCourses());
+    }
 
     
     return returnJSON({ success: false, msg: "Hành động không hợp lệ!" });
@@ -950,68 +953,75 @@ function getAllAvailableCourses() {
   
   const headers = data[0];
   const availableCourses = [];
+  const debugLog = []; // Array to store debug info
   
-  // Helper to find column index case-insensitively with aliases
-  const findCol = (aliases) => {
-    const lowerHeaders = headers.map(h => String(h).toLowerCase().trim());
-    for (const alias of aliases) {
-      const idx = lowerHeaders.indexOf(alias.toLowerCase());
-      if (idx !== -1) return idx;
-    }
-    return -1;
+  debugLog.push("Headers found: " + JSON.stringify(headers));
+
+  // Helper: Find column index by name (case-insensitive, trimmed)
+  const findIndex = (name) => {
+    return headers.findIndex(h => String(h).trim().toLowerCase() === name.toLowerCase());
   };
 
-  // 1. Title (Column B - Index 1)
-  let COL_TITLE = findCol(["Tên khóa học", "Ten khoa hoc", "Title"]);
-  if (COL_TITLE === -1) COL_TITLE = 1; // Fallback
+  // Map columns based on User's provided structure
+  const COL_MA_LOP = findIndex("Ma_Lop");
+  const COL_TEN_KHOA_HOC = findIndex("Tên khóa học");
+  const COL_CO_SAN = findIndex("Có sẵn");
+  const COL_MO_TA = findIndex("Mô tả ngắn");
+  const COL_PHI_COC = findIndex("Phí cọc");
+  const COL_LINK_ANH = findIndex("Link_Anh_Lop");
+  const COL_LINK_ANH_ALT = findIndex("Link_Anh");
 
-  // 2. Available (Column E - Index 4)
-  let COL_AVAILABLE = findCol(["Có sẵn", "Co san", "Available", "Active"]);
-  if (COL_AVAILABLE === -1) COL_AVAILABLE = 4; // Fallback
+  debugLog.push(`Indices: Ma_Lop=${COL_MA_LOP}, Ten=${COL_TEN_KHOA_HOC}, CoSan=${COL_CO_SAN}, PhiCoc=${COL_PHI_COC}`);
 
-  // 3. Description (Column F - Index 5)
-  let COL_DESC = findCol(["Mô tả ngắn", "Mo ta ngan", "Description"]);
-  if (COL_DESC === -1) COL_DESC = 5; // Fallback
-
-  // 4. Image URL (Column Q - Index 16 or Link_Anh)
-  let COL_IMAGE_URL = findCol(["Link_Anh_Lop", "Link_Anh", "Image"]);
-  if (COL_IMAGE_URL === -1) COL_IMAGE_URL = 16; // Fallback
-
-  // 5. Ma_Lop (Column P - Index 15)
-  let COL_MA_LOP = findCol(["Ma_Lop", "Ma Lop", "CourseID", "ID"]);
-  if (COL_MA_LOP === -1) COL_MA_LOP = 15; // Fallback
-
-  // 6. Is Free (Column O - Index 14)
-  let COL_IS_FREE = findCol(["Miễn phí", "Mien phi", "Is_Free", "Free"]);
-  if (COL_IS_FREE === -1) COL_IS_FREE = 14; // Fallback
-  
   for (let i = 1; i < data.length; i++) {
-    // Check Available
-    const availableVal = data[i][COL_AVAILABLE];
-    const isAvailable = availableVal === true || String(availableVal).toUpperCase() === "TRUE" || availableVal === 1;
+    const row = data[i];
+    const logPrefix = `Row ${i + 1}: `;
     
-    // Check Ma_Lop
-    const courseId = data[i][COL_MA_LOP] ? String(data[i][COL_MA_LOP]).trim() : "";
+    // 1. Check Availability
+    let isAvailable = false;
+    if (COL_CO_SAN !== -1) {
+       const val = row[COL_CO_SAN];
+       isAvailable = (val === true || String(val).toUpperCase() === "TRUE" || val === 1);
+    } else {
+        debugLog.push(logPrefix + "Cot 'Co san' khong tim thay");
+    }
     
-    // Logic: Must be Available AND have a Course ID
-    // Note: If COL_MA_LOP was missing/wrong and fallback used index 15 which might be empty, we skip.
-    // Safety check: if fallback index is out of bounds, data[i][COL] is undefined.
+    // 2. Get ID (Ma_Lop)
+    const courseId = (COL_MA_LOP !== -1) ? String(row[COL_MA_LOP] || "").trim() : "";
     
+    // Debug logic failure
+    if (!isAvailable) debugLog.push(logPrefix + `Skipped (Not Available: ${row[COL_CO_SAN]})`);
+    else if (!courseId) debugLog.push(logPrefix + `Skipped (No Ma_Lop)`);
+    else debugLog.push(logPrefix + `OK (ID: ${courseId})`);
+
     if (isAvailable && courseId) {
-       availableCourses.push({
-          id: courseId,
-          title: String(data[i][COL_TITLE] || "Khóa học chưa đặt tên"),
-          desc: String(data[i][COL_DESC] || ""),
-          imageUrl: String(data[i][COL_IMAGE_URL] || ""),
-          icon: "fa-book",
-          isFree: (data[i][COL_IS_FREE] === true || String(data[i][COL_IS_FREE]).toUpperCase() === "TRUE" || data[i][COL_IS_FREE] === 1),
-          isActivated: false, // Public view
-          percentComplete: 0
-        });
+      // 3. Determine isFree
+      let isFree = false;
+      if (COL_PHI_COC !== -1) {
+        const fee = Number(row[COL_PHI_COC]);
+        isFree = (isNaN(fee) || fee <= 0);
+      }
+      
+      // 4. Get Image
+      let imageUrl = "";
+      if (COL_LINK_ANH !== -1) imageUrl = String(row[COL_LINK_ANH] || "");
+      else if (COL_LINK_ANH_ALT !== -1) imageUrl = String(row[COL_LINK_ANH_ALT] || "");
+
+      availableCourses.push({
+        id: courseId,
+        title: (COL_TEN_KHOA_HOC !== -1) ? String(row[COL_TEN_KHOA_HOC] || "") : "Khóa học",
+        desc: (COL_MO_TA !== -1) ? String(row[COL_MO_TA] || "") : "",
+        imageUrl: imageUrl,
+        icon: "fa-book",
+        isFree: isFree,
+        isActivated: false,
+        percentComplete: 0
+      });
     }
   }
   
-  return { success: true, data: availableCourses };
+  // Return debug log in response
+  return { success: true, data: availableCourses, debug: debugLog };
 }
 
 // Helper: Lấy mã học viên từ email
