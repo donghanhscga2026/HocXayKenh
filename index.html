@@ -1155,10 +1155,10 @@
                 } else {
                     // Chưa kích hoạt hoặc chưa đăng nhập
                     if (course.isFree) {
-                        // Miễn phí -> Nút "Học thử ngay" (Khách hc được nhưng ko lưu)
+                        // Miễn phí -> Nút "Học luôn" (Học được nhưng không lưu)
                         actionButton = `
                             <button class="btn-start" onclick="handlePublicCourseInteract('${course.id}', true)">
-                                <i class="fas fa-eye"></i> Học thử ngay
+                                <i class="fas fa-eye"></i> Học luôn
                             </button>
                         `;
                     } else {
