@@ -523,7 +523,7 @@ function getCourses(email) {
   const COL_TEN_KHOA_HOC = findIndex("Tên khóa học");
   const COL_TEN_LOP_HOC = findIndex("Tên lớp học"); // Prioritized Title
   const COL_CO_SAN = findIndex("Có sẵn");
-  const COL_MO_TA = findIndex("Mô tả ngắn");
+  const COL_MO_TA = findIndex("Mo_Ta_Ngan");
   const COL_PHI_COC = findIndex("Phí cọc");
   const COL_LINK_ANH = findIndex("Link_Anh_Lop");
   
