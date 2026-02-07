@@ -405,13 +405,22 @@
             renderLessonList(); // Update active state
 
             const videoId = getYouTubeId(lesson.youtubeId);
+            const defaultStartTime = getStartTimeFromUrl(lesson.youtubeId);
+
+            // Ưu tiên currentTime đã lưu (tiến độ học)
+            // Nếu chưa học (0) thì lấy start time từ URL (nếu có)
+            let startSeconds = lesson.progress.currentTime || 0;
+            if (startSeconds === 0 && defaultStartTime > 0) {
+                startSeconds = defaultStartTime;
+            }
+
             if (!videoId) {
                 showToast("ID Video không hợp lệ! Vui lòng kiểm tra dữ liệu.", "error");
                 return;
             }
 
             if (player) {
-                player.loadVideoById(videoId, lesson.progress.currentTime || 0);
+                player.loadVideoById(videoId, startSeconds);
             } else {
                 player = new YT.Player('player', {
                     height: '100%',
@@ -421,7 +430,7 @@
                         'autoplay': 1,
                         'modestbranding': 1,
                         'rel': 0,
-                        'start': lesson.progress.currentTime || 0,
+                        'start': startSeconds,
                         'origin': window.location.origin
                     },
                     events: {
@@ -471,9 +480,16 @@
 
         function getYouTubeId(url) {
             if (!url) return null;
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+            // Handle /live/ URLs
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|\/live\/|watch\?v=|&v=)([^#&?]*).*/;
             const match = url.match(regExp);
             return (match && match[2].length === 11) ? match[2] : url;
+        }
+
+        function getStartTimeFromUrl(url) {
+            if (!url) return 0;
+            const match = url.match(/[?&]t=([0-9]+)/);
+            return match ? parseInt(match[1]) : 0;
         }
 
         // Biến theo dõi max time cục bộ để xử lý trơn tru hơn
