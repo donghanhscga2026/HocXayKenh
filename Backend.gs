@@ -1520,16 +1520,13 @@ function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
       sheet.getRange(rowIndex + 1, 5).setValue(currentTime);
     }
     
-    // --- NEW GRADING LOGIC (Video Score: Max 5) ---
+    // --- NEW GRADING LOGIC (Video Score: Max 2) ---
     // Col 8 (Index 7): Diem_Video
     let videoScore = 0;
     if (duration > 0) {
       const watchedPercent = (maxTime / duration) * 100;
-      if (watchedPercent >= 100 || (duration - maxTime < 10)) videoScore = 5; // Hoàn thành quy đổi 100%
-      else if (watchedPercent > 80) videoScore = 4;
-      else if (watchedPercent > 60) videoScore = 3;
-      else if (watchedPercent > 40) videoScore = 2;
-      else if (watchedPercent > 20) videoScore = 1;
+      if (watchedPercent >= 100 || (duration - maxTime < 10)) videoScore = 2; // Xem hết = 2đ
+      else if (watchedPercent >= 50) videoScore = 1; // >50% = 1đ
       else videoScore = 0;
     }
     
@@ -1550,8 +1547,9 @@ function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
 /**
  * Nộp bài tập
  */
-// Xử lý nộp bài tập (Assignment Submission)
-function submitAssignment(email, courseId, lessonId, reflection, link1, link2, link3) {
+// Xử lý nộp bài tập (Assignment Submission) - Daily Discipline Grading
+// Xử lý nộp bài tập (Assignment Submission) - Daily Discipline Grading
+function submitAssignment(email, courseId, lessonId, reflection, link1, link2, link3, disciplineSupport, disciplineLeadership, videoMaxTime, duration) {
   const ss = getDB();
   const sheet = ss.getSheetByName("KH_TienDo");
   
@@ -1574,9 +1572,24 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
     return { success: false, message: "Bạn chưa bắt đầu học bài này (chưa có dữ liệu xem video)." };
   }
   
-  // --- GRADING LOGIC ---
-  // 1. Video Score (Already verified/stored in Col 8/Index 7)
-  const videoScore = Number(data[rowIndex][7]) || 0;
+  const rowNum = rowIndex + 1;
+
+  // --- GRADING LOGIC (10 Point Scale) ---
+  
+  // 1. Video Score (Max 2)
+  // Force update if data provided
+  let videoScore = Number(data[rowIndex][7]) || 0;
+  
+  if (duration > 0) {
+    const watchedPercent = (videoMaxTime / duration) * 100;
+    if (watchedPercent >= 100 || (duration - videoMaxTime < 10)) videoScore = 2;
+    else if (watchedPercent >= 50) videoScore = 1;
+    else videoScore = 0; // Or keep existing? Let's update to be accurate to current state
+    
+    // Save new video score immediately
+    sheet.getRange(rowNum, 5).setValue(videoMaxTime); // Update Max Time
+    sheet.getRange(rowNum, 8).setValue(videoScore);   // Update Score
+  }
   
   // 2. Reflection Score (Max 2)
   let reflectionScore = 0;
@@ -1590,49 +1603,53 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
   if (link2 && String(link2).trim().length > 5) practiceScore++;
   if (link3 && String(link3).trim().length > 5) practiceScore++;
   
-  const totalScore = videoScore + reflectionScore + practiceScore;
+  // 4. Discipline Score (Max 3)
+  let disciplineScore = 1; // Time (+1 default)
+  if (disciplineSupport) disciplineScore++;
+  if (disciplineLeadership) disciplineScore++;
   
-  // 4. Classification
+  // 5. Calculate Gross Total
+  let totalScore = videoScore + reflectionScore + practiceScore + disciplineScore;
+  
+  // Cap at 10
+  if (totalScore > 10) totalScore = 10; 
+  
+  // 6. Classification
   let grade = "Chưa hoàn thành";
-  if (totalScore >= 10) grade = "Xuất sắc"; 
-  else if (totalScore >= 8) grade = "Hoàn thành Tốt";
-  else if (totalScore >= 5) grade = "Hoàn thành Khá";
+  if (totalScore >= 10) grade = "Xuất sắc"; // 10
+  else if (totalScore >= 8) grade = "Hoàn thành Tốt"; // 8-9
+  else if (totalScore >= 6) grade = "Hoàn thành Khá"; // 6-7
+  else if (totalScore >= 5) grade = "Hoàn thành"; // 5
   
   const status = (totalScore >= 5) ? "Completed" : "Pending";
+  const timestamp = new Date().toLocaleString("vi-VN", {timeZone: "Asia/Ho_Chi_Minh"});
   
   // --- UPDATE SHEET ---
-  const rowNum = rowIndex + 1;
-  
-  // Col 6 (Index 5): Status
   sheet.getRange(rowNum, 6).setValue(status);
-  
-  // Col 7 (Index 6): Link 1 (Legacy/Primary Link)
   sheet.getRange(rowNum, 7).setValue(link1 || "");
-  
-  // Col 8 (Index 7): Video Score (Preserved)
-  
-  // Col 9 (Index 8): Reflection
+  // Col 8 (Video Score) updated above
   sheet.getRange(rowNum, 9).setValue(reflection || "");
-  
-  // Col 10 (Index 9): Link 2
   sheet.getRange(rowNum, 10).setValue(link2 || "");
-  
-  // Col 11 (Index 10): Link 3
   sheet.getRange(rowNum, 11).setValue(link3 || "");
-  
-  // Col 12 (Index 11): Total Score
   sheet.getRange(rowNum, 12).setValue(totalScore);
-  
-  // Col 13 (Index 12): Grade
   sheet.getRange(rowNum, 13).setValue(grade);
-  
+  sheet.getRange(rowNum, 14).setValue(timestamp);
+
   return { 
     success: true, 
-    message: `Đã nộp bài! Tổng điểm: ${totalScore}/10 (${grade}).`,
+    message: `Đã nộp bài! Điểm: ${totalScore}/10 (${grade}).`,
     score: totalScore,
-    grade: grade
+    grade: grade,
+    details: {
+      video: videoScore,
+      reflection: reflectionScore,
+      practice: practiceScore,
+      discipline: disciplineScore,
+      total: totalScore
+    }
   };
 }
+
 
 // ------------------------------------------------------------------
 // DEBUGGING / TESTING AREA
