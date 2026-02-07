@@ -1165,7 +1165,7 @@
                         // Có phí -> Nút "Kích hoạt ngay"
                         actionButton = `
                             <button class="btn-activate" onclick="handlePublicCourseInteract('${course.id}', false)">
-                                <i class="fas fa-bolt"></i> Kích hoạt ngay
+                                <i class="fas fa-bolt"></i> Kích hoạt ngay 🚀
                             </button>
                         `;
                     }
@@ -1208,6 +1208,8 @@
         let activateFileData = null;
 
         async function handleActivate(courseId) {
+            console.log("🚀 START handleActivate for:", courseId);
+
             if (!isLoggedIn) {
                 showLoginModal();
                 return;
@@ -1226,7 +1228,6 @@
             // Hiển thị modal
             showActivateModal(course);
 
-
             // Fetch thông tin cọc từ backend
             try {
                 // Hiển thị trạng thái loading trong khi fetch
@@ -1235,6 +1236,8 @@
 
                 // Check xem học viên có phải 86 ngày không
                 const is86Days = await checkIf86DaysStudent();
+
+                console.log("🧐 Check Logic -> is86Days:", is86Days, "| isFree:", course.isFree);
 
                 if (is86Days || course.isFree) {
                     showWaiverUI();
@@ -1249,6 +1252,7 @@
                     });
 
                     const depositResult = await depositResponse.json();
+                    console.log("🔥 ACTIVATION DEBUG: Received deposit info:", depositResult);
 
                     if (depositResult && depositResult.id) {
                         // Hiển thị form cọc với thông tin thực từ backend

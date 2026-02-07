@@ -17,10 +17,49 @@ function doGet(e) {
   });
 }
 
-function doPost(e) {
+// ------------------------------------------------------------------
+// LOGGING SYSTEM
+// ------------------------------------------------------------------
+
+function logErrorToSheet(action, errorMsg, data) {
   try {
-    var content = JSON.parse(e.postData.contents);
-    var action = content.action;
+    const ss = getDB();
+    let sheet = ss.getSheetByName("System_Logs");
+    
+    // Nếu chưa có sheet logs, tự tạo và thêm header
+    if (!sheet) {
+      sheet = ss.insertSheet("System_Logs");
+      sheet.appendRow(["Timestamp", "Action", "Error Message", "Input Data"]);
+      sheet.setColumnWidth(1, 150);
+      sheet.setColumnWidth(2, 150);
+      sheet.setColumnWidth(3, 300);
+      sheet.setColumnWidth(4, 300);
+    }
+    
+    // Ghi log
+    sheet.appendRow([
+      new Date(),
+      action || "Unknown",
+      errorMsg,
+      JSON.stringify(data || {})
+    ]);
+    
+  } catch (e) {
+    // Nếu lỗi khi ghi log thì... chịu, chỉ console.log
+    Logger.log("Failed to write to System_Logs: " + e.toString());
+  }
+}
+
+function doPost(e) {
+  var content = {};
+  var action = "";
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+        return returnJSON({ success: false, msg: "No post data received" });
+    }
+    
+    content = JSON.parse(e.postData.contents);
+    action = content.action;
     
     if (action === "login") {
       return returnJSON(loginUser(content.loginInput, content.password));
@@ -57,6 +96,9 @@ function doPost(e) {
     else if (action === "activateCourse") {
       return returnJSON(activateCourse(content));
     }
+    else if (action === "getCourseDepositInfo") {
+      return returnJSON(getCourseDepositInfo(content.courseId));
+    }
     else if (action === "getCourseContent") {
       return returnJSON(getCourseContent(content.email, content.courseId));
     }
@@ -70,10 +112,12 @@ function doPost(e) {
       return returnJSON(getAllAvailableCourses());
     }
 
-    
-    return returnJSON({ success: false, msg: "Hành động không hợp lệ!" });
+    // Nếu không khớp action nào
+    logErrorToSheet(action, "Invalid Action (Action not found in doPost)", content);
+    return returnJSON({ success: false, msg: "Hành động không hợp lệ: " + action });
     
   } catch (error) {
+    logErrorToSheet(action, "System Error: " + error.toString(), content);
     return returnJSON({ success: false, msg: "Lỗi hệ thống: " + error.toString() });
   }
 }
@@ -1169,6 +1213,11 @@ function checkIfStudent86Days(studentCode) {
  * @param {string} courseId - Mã khóa học
  * @returns {Object} - Thông tin cọc hoặc null nếu không tìm thấy
  */
+/**
+ * Láy thông tin cọc của khóa học từ sheet KH
+ * @param {string} courseId - Mã khóa học
+ * @returns {Object} - Thông tin cọc hoặc null nếu không tìm thấy
+ */
 function getCourseDepositInfo(courseId) {
   const ss = getDB();
   const khSheet = ss.getSheetByName("KH");
@@ -1178,62 +1227,56 @@ function getCourseDepositInfo(courseId) {
   }
   
   const data = khSheet.getDataRange().getValues();
+  if (data.length < 2) return null;
+
   const headers = data[0];
   
-  // Mapping columns
-  const idIndex = headers.indexOf("Mã khóa");
-  const titleIndex = headers.indexOf("Tên khóa học");
+  // Helper: Find column index by name (case-insensitive, trimmed)
+  const findIndex = (name) => {
+    return headers.findIndex(h => String(h).trim().toLowerCase() === name.toLowerCase());
+  };
   
-  // Try multiple variants for deposit column
-  let depositIndex = headers.indexOf("Phí cọc");
-  if (depositIndex === -1) {
-    depositIndex = headers.indexOf("Phí cam kết");
-  }
-  if (depositIndex === -1) {
-    depositIndex = headers.indexOf("Phi coc");
-  }
-  if (depositIndex === -1) {
-    // Try to find by position (column H = index 7)
-    depositIndex = 7;
-  }
+  // Map columns based on Verified User Schema
+  const COL_MA_LOP = findIndex("Ma_Lop");
+  const COL_TITLE = findIndex("Tên khóa học");
   
-  const stkIndex = headers.indexOf("STK");
-  const tenChuTKIndex = headers.indexOf("Tên chủ TK");
-  const nganHangIndex = headers.indexOf("Ngân hàng");
-  const qrLinkIndex = headers.indexOf("Link QR");
-  const zaloLinkIndex = headers.indexOf("Link Zalo");
-  const maLopIndex = headers.indexOf("Ma_Lop");
-  
-  if (idIndex === -1) {
-    return null;
+  const COL_PHI_COC = findIndex("Phí cọc");
+  const COL_STK = findIndex("STK");
+  const COL_TEN_CHU_TK = findIndex("Tên chủ TK");
+  const COL_NGAN_HANG = findIndex("Ngân hàng");
+  const COL_QR_LINK = findIndex("Link QR Code"); // Corrected from 'Link QR'
+  const COL_ZALO_LINK = findIndex("Link Zalo");
+  const COL_CONTENT_CK = findIndex("Nội dung CK"); // Optional, for dynamic content
+
+  if (COL_MA_LOP === -1) {
+    return null; // Cannot verify course ID
   }
   
-  
-  // Tìm khóa học theo Ma_Lop (cột P)
+  // Tìm khóa học theo Ma_Lop
   for (let i = 1; i < data.length; i++) {
-    // const rowId = String(data[i][idIndex] || "").trim(); 
-    const rowMaLop = maLopIndex !== -1 ? String(data[i][maLopIndex] || "").trim() : "";
+    const row = data[i];
+    const rowMaLop = String(row[COL_MA_LOP] || "").trim();
     
-    // So sánh với Ma_Lop 
     if (rowMaLop === courseId) {
-      // Parse depositFee as number
+      // Parse depositFee
       let depositFee = 0;
-      if (depositIndex !== -1 && data[i][depositIndex]) {
-        depositFee = Number(data[i][depositIndex]) || 0;
+      if (COL_PHI_COC !== -1) {
+        let rawFee = String(row[COL_PHI_COC]);
+        // Remove non-numeric characters (keep digits)
+        let cleanFee = rawFee.replace(/[^0-9]/g, "");
+        depositFee = Number(cleanFee) || 0;
       }
-      
-      Logger.log("Parsed depositFee: " + depositFee);
       
       return {
         id: courseId,
-        title: titleIndex !== -1 ? String(data[i][titleIndex] || "") : "",
+        title: COL_TITLE !== -1 ? String(row[COL_TITLE] || "") : "",
         depositFee: depositFee,
-        stk: stkIndex !== -1 ? String(data[i][stkIndex] || "") : "",
-        tenChuTK: tenChuTKIndex !== -1 ? String(data[i][tenChuTKIndex] || "") : "",
-        nganHang: nganHangIndex !== -1 ? String(data[i][nganHangIndex] || "") : "",
-        qrLink: qrLinkIndex !== -1 ? String(data[i][qrLinkIndex] || "") : "",
-        zaloLink: zaloLinkIndex !== -1 ? String(data[i][zaloLinkIndex] || "") : "",
-        maLop: maLopIndex !== -1 ? String(data[i][maLopIndex] || "") : ""
+        stk: COL_STK !== -1 ? String(row[COL_STK] || "") : "",
+        tenChuTK: COL_TEN_CHU_TK !== -1 ? String(row[COL_TEN_CHU_TK] || "") : "",
+        nganHang: COL_NGAN_HANG !== -1 ? String(row[COL_NGAN_HANG] || "") : "",
+        qrLink: COL_QR_LINK !== -1 ? String(row[COL_QR_LINK] || "") : "",
+        zaloLink: COL_ZALO_LINK !== -1 ? String(row[COL_ZALO_LINK] || "") : "",
+        paymentContent: COL_CONTENT_CK !== -1 ? String(row[COL_CONTENT_CK] || "") : `Coc ${courseId}`
       };
     }
   }
@@ -1472,4 +1515,38 @@ function submitAssignment(email, courseId, lessonId, link) {
   }
   
   return { success: true, message: "Nộp bài thành công! Bạn có thể chuyển sang bài tiếp theo." };
+}
+
+// ------------------------------------------------------------------
+// DEBUGGING / TESTING AREA
+// ------------------------------------------------------------------
+// Hướng dẫn: 
+// 1. Chọn hàm 'debug_testDepositInfo' trên thanh công cụ bên trên.
+// 2. Nhấn nút 'Run' (Chạy).
+// 3. Xem kết quả ở phần 'Execution Log' (Nhật ký thực thi) phía dưới.
+
+function debug_testDepositInfo() {
+  const courseId = "NH"; // Thay bằng mã khóa học bạn muốn test (ví dụ: 86D, NH, AF...)
+  
+  Logger.log("🚀 Bắt đầu test lấy thông tin cọc cho khóa: " + courseId);
+  
+  const result = getCourseDepositInfo(courseId);
+  
+  if (result) {
+    Logger.log("✅ KẾT QUẢ TÌM THẤY:");
+    Logger.log("--------------------------------");
+    Logger.log("Mã: " + result.id);
+    Logger.log("Tên: " + result.title);
+    Logger.log("Phí cọc (Số tiền): " + result.depositFee);
+    Logger.log("Chủ TK: " + result.tenChuTK);
+    Logger.log("STK: " + result.stk);
+    Logger.log("Ngân hàng: " + result.nganHang);
+    Logger.log("Nội dung CK: " + result.paymentContent);
+    Logger.log("Link QR: " + result.qrLink);
+    Logger.log("Link Zalo: " + result.zaloLink);
+    Logger.log("--------------------------------");
+  } else {
+    Logger.log("❌ KHÔNG TÌM THẤY thông tin cho khóa: " + courseId);
+    Logger.log("Nguyên nhân có thể: Mã khóa sai, hoặc Sheet KH chưa đúng cấu trúc cột.");
+  }
 }
