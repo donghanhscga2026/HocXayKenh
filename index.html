@@ -1106,16 +1106,17 @@
         }
 
         // Render Courses
-        function renderCourses(courses) {
+        function renderCourses(data) {
+            const list = data || courses; // Use argument or global courses
             const grid = document.getElementById('courses-grid');
             grid.innerHTML = '';
 
-            if (courses.length === 0) {
+            if (!list || list.length === 0) {
                 grid.innerHTML = '<p style="text-align: center; color: #666;">Chưa có khóa học nào.</p>';
                 return;
             }
 
-            courses.forEach(course => {
+            list.forEach(course => {
                 const card = document.createElement('div');
                 card.className = 'course-card';
 
@@ -1447,6 +1448,31 @@
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = originalHTML;
+            }
+        }
+
+        // Handle Public User Interactions (Try or Activate)
+        function handlePublicCourseInteract(courseId, isFree) {
+            if (!isLoggedIn) {
+                if (isFree) {
+                    // Nếu là khóa miễn phí -> Cho phép học thử nhưng cảnh báo
+                    showToast('Bạn đang học thử với tư cách khách. Tiến độ sẽ không được lưu!', 'warning');
+                    setTimeout(() => {
+                        window.location.href = `course-play.html?id=${courseId}`;
+                    }, 1500);
+                } else {
+                    // Nếu là khóa có phí -> Yêu cầu đăng nhập để kích hoạt
+                    showToast('Vui lòng đăng nhập để kích hoạt khóa học này!', 'info');
+                    showLoginModal();
+                }
+            } else {
+                // Đã đăng nhập (lý thuyết thì nút này không hiện nếu đã đăng nhập và kích hoạt, 
+                // nhưng nếu chưa kích hoạt thì xử lý như nút kích hoạt)
+                if (!isFree) {
+                    handleActivate(courseId); // Gọi hàm kích hoạt
+                } else {
+                    continueLearning(courseId);
+                }
             }
         }
 
