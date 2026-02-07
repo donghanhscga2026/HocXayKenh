@@ -333,25 +333,39 @@
                                 <textarea id="reflection-input" class="submit-input" rows="3"
                                     style="width: 100%; font-family: inherit;"
                                     placeholder="Viết chia sẻ của bạn (trên 10 ký tự)..."></textarea>
+                                placeholder="Viết chia sẻ của bạn (trên 10 ký tự)..."
+                                oninput="calculateLiveScore()"></textarea>
                             </div>
 
                             <!-- Links -->
                             <div>
-                                <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 5px;">2.
-                                    Link Video trả bài (Mỗi link 1đ - Tối đa 3đ):</label>
-                                <input type="text" id="link-1" class="submit-input"
-                                    style="width: 100%; margin-bottom: 8px;" placeholder="Link Video 1...">
-                                <input type="text" id="link-2" class="submit-input"
-                                    style="width: 100%; margin-bottom: 8px;" placeholder="Link Video 2...">
-                                <input type="text" id="link-3" class="submit-input" style="width: 100%;"
-                                    placeholder="Link Video 3...">
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                    <label style="font-weight: 600; font-size: 13px;">2. Link Video trả bài (Mỗi link 1đ
+                                        - Tối đa 3đ):</label>
+                                    <span id="live-score-links"
+                                        style="font-size: 12px; font-weight: bold; color: #d97706; background: #fffbeb; padding: 2px 6px; border-radius: 4px; border: 1px solid #fcd34d;">0/3</span>
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <input type="text" id="link-1" placeholder="Link Video 1..." class="submit-input"
+                                        oninput="calculateLiveScore()">
+                                    <input type="text" id="link-2" placeholder="Link Video 2..." class="submit-input"
+                                        oninput="calculateLiveScore()">
+                                    <input type="text" id="link-3" placeholder="Link Video 3..." class="submit-input"
+                                        oninput="calculateLiveScore()">
+                                </div>
                             </div>
 
                             <!-- Discipline -->
                             <div
                                 style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px dashed #cbd5e1;">
-                                <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 8px;">3.
-                                    Tự giác kỷ luật (Tự đánh giá):</label>
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <label style="font-weight: 600; font-size: 13px;">3. Tự giác kỷ luật (Tự đánh
+                                        giá):</label>
+                                    <span id="live-score-discipline"
+                                        style="font-size: 12px; font-weight: bold; color: #d97706; background: #fffbeb; padding: 2px 6px; border-radius: 4px; border: 1px solid #fcd34d;">0/3</span>
+                                </div>
                                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                                     <label
                                         style="display: flex; align-items: center; gap: 5px; font-size: 13px; cursor: pointer;">
@@ -361,25 +375,33 @@
                                     <label
                                         style="display: flex; align-items: center; gap: 5px; font-size: 13px; cursor: pointer;">
                                         <input type="checkbox" id="discipline-leadership"
-                                            onchange="calculateLiveScore()"> Đồng đội đã nhắc người dưới (+1đ)
+                                            onchange="calculateLiveScore()">
+                                        Đồng đội đã nhắc người dưới (+1đ)
                                     </label>
                                 </div>
-                                <div style="font-size: 12px; color: #64748b; margin-top: 5px;">* Nộp trước 23:59: Hệ
-                                    thống tự động +1đ. Nộp muộn: -1đ.</div>
+                                <div
+                                    style="font-size: 12px; color: #64748b; margin-top: 5px; display: flex; align-items: center; gap: 5px;">
+                                    <span>* Nộp trước 23:59:</span>
+                                    <span id="time-bonus-badge"
+                                        style="color: #15803d; font-weight: bold; background: #dcfce7; padding: 1px 5px; border-radius: 3px;">+1đ
+                                        (Đúng hạn)</span>
+                                </div>
                             </div>
 
-                            <!-- Live Score -->
-                            <div id="live-score-area"
-                                style="margin-top: 10px; padding: 10px; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-size: 14px; color: #92400e; font-weight: 600;">Điểm hiển thị tạm
+                            <!-- TOTAL Live Score Floating or Bottom -->
+                            <div id="live-total-area"
+                                style="margin-top: 15px; text-align: right; border-top: 2px solid #e2e8f0; padding-top: 10px;">
+                                <span style="font-size: 16px; font-weight: 600; color: #334155;">Tổng điểm tạm
                                     tính:</span>
-                                <span id="live-score-value"
-                                    style="font-size: 18px; font-weight: bold; color: #d97706;">0/10</span>
+                                <span id="live-total-score"
+                                    style="font-size: 24px; font-weight: bold; color: #ea580c; margin-left: 10px;">0/10</span>
+                                <div id="live-grade" style="font-size: 14px; font-weight: 500; color: #64748b;">(Chưa
+                                    hoàn thành)</div>
                             </div>
 
                             <button class="btn-submit" onclick="submitWork()"
-                                style="width: 100%; margin-top: 5px; background: linear-gradient(to right, #2563eb, #3b82f6);">
-                                <i class="fas fa-check-circle"></i> Ghi nhận hoàn thành (Chốt bài)
+                                style="margin-top: 10px; width: 100%; background: #ea580c; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 16px;">
+                                <i class="fas fa-paper-plane"></i> Nộp bài
                             </button>
                         </div>
 
@@ -440,25 +462,31 @@
             </button>
         </div>
     </div>
-    <h3 style="margin-top: 0; color: #b45309;">Quy tắc chấm điểm (Thang 10)</h3>
-    <ul style="padding-left: 20px; font-size: 14px; line-height: 1.6; color: #334155;">
-        <li><strong>Video (Max 2đ)</strong>: Xem >50% (+1đ), Xem hết (+2đ).</li>
-        <li><strong>Ghi nhận bài học (Max 2đ)</strong>: Có chia sẻ (+1đ), Sâu sắc/Quiz (+1đ).</li>
-        <li><strong>Thực hành (Max 3đ)</strong>: Mỗi link video (+1đ).</li>
-        <li><strong>Kỷ luật (Max 3đ)</strong>:
-            <ul style="margin: 5px 0;">
-                <li>Nộp trước 23:59 (+1đ).</li>
-                <li>Nhắc 2 đồng đội (+1đ).</li>
-                <li>Đồng đội nhắc người dưới (+1đ).</li>
+
+    <!-- Rules Modal -->
+    <div id="rules-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+        <div
+            style="background: white; padding: 25px; border-radius: 12px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
+            <h3 style="margin-top: 0; color: #b45309;">Quy tắc chấm điểm (Thang 10)</h3>
+            <ul style="padding-left: 20px; font-size: 14px; line-height: 1.6; color: #334155;">
+                <li><strong>Video (Max 2đ)</strong>: Xem >50% (+1đ), Xem hết (+2đ).</li>
+                <li><strong>Ghi nhận bài học (Max 2đ)</strong>: Có chia sẻ (+1đ), Sâu sắc/Quiz (+1đ).</li>
+                <li><strong>Thực hành (Max 3đ)</strong>: Mỗi link video (+1đ).</li>
+                <li><strong>Kỷ luật (Max 3đ)</strong>:
+                    <ul style="margin: 5px 0;">
+                        <li>Nộp trước 23:59 (+1đ).</li>
+                        <li>Nhắc 2 đồng đội (+1đ).</li>
+                        <li>Đồng đội nhắc người dưới (+1đ).</li>
+                    </ul>
+                </li>
+                <li style="color: #ef4444;"><strong>Trừ điểm</strong>: Nộp muộn sau 23:59 (-1đ).</li>
             </ul>
-        </li>
-        <li style="color: #ef4444;"><strong>Trừ điểm</strong>: Nộp muộn sau 23:59 (-1đ).</li>
-    </ul>
-    <div style="margin-top: 15px; text-align: right;">
-        <button onclick="document.getElementById('rules-modal').style.display='none'"
-            style="padding: 8px 15px; background: #e2e8f0; border: none; border-radius: 4px; cursor: pointer;">Đóng</button>
-    </div>
-    </div>
+            <div style="margin-top: 15px; text-align: right;">
+                <button onclick="document.getElementById('rules-modal').style.display='none'"
+                    style="padding: 8px 15px; background: #e2e8f0; border: none; border-radius: 4px; cursor: pointer;">Đóng</button>
+            </div>
+        </div>
     </div>
 
     <div id="toast"
@@ -674,16 +702,48 @@
                 if (document.getElementById('link-2')) document.getElementById('link-2').value = lesson.progress.link2 || "";
                 if (document.getElementById('link-3')) document.getElementById('link-3').value = lesson.progress.link3 || "";
 
-                // Show Result Immediately
+                // Populate Discipline Checkboxes
+                if (document.getElementById('discipline-support')) {
+                    document.getElementById('discipline-support').checked = !!lesson.progress.disciplineSupport;
+                }
+                if (document.getElementById('discipline-leadership')) {
+                    document.getElementById('discipline-leadership').checked = !!lesson.progress.disciplineLeadership;
+                }
+
                 const resultBox = document.getElementById('grading-result');
                 const gradeColor = lesson.progress.totalScore >= 10 ? '#15803d' : (lesson.progress.totalScore >= 5 ? '#0369a1' : '#b91c1c');
 
+                // Calculate component scores for display
+                const vidScore = lesson.progress.videoScore || 0;
+
+                let refScore = 0;
+                if ((lesson.progress.reflection || "").length >= 10) refScore = 2;
+
+                let pracScore = 0;
+                if (lesson.progress.link1) pracScore++;
+                if (lesson.progress.link2) pracScore++;
+                if (lesson.progress.link3) pracScore++;
+
+                let supportScore = 0;
+                if (lesson.progress.disciplineSupport) supportScore++;
+                if (lesson.progress.disciplineLeadership) supportScore++;
+
+                // Calculate Time Score (The rest)
+                // Total = Vid + Ref + Prac + Support + Time
+                // Time = Total - (Vid + Ref + Prac + Support)
+                let timeScore = lesson.progress.totalScore - (vidScore + refScore + pracScore + supportScore);
+                if (timeScore < 0) timeScore = 0;
+                if (timeScore > 1) timeScore = 1; // Should be max 1
+
                 resultBox.innerHTML = `
-                        <h4 style="margin: 0 0 10px 0; font-size: 16px;">📊 Kết quả bài làm cũ:</h4>
+                        <h4 style="margin: 0 0 10px 0; font-size: 16px;">📊 Kết quả bài làm chi tiết:</h4>
                         <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 10px;">
-                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">Xem Video:</td><td style="text-align: right; font-weight: bold;">${lesson.progress.videoScore}/2</td></tr>
-                            <!-- Note: Other details not fully saved in columns, showing total mainly -->
-                            <tr style="background: #f0f9ff;"><td style="padding: 8px; font-weight: bold; color: ${gradeColor};">TỔNG CỘNG:</td><td style="text-align: right; font-weight: bold; color: ${gradeColor}; font-size: 16px;">${lesson.progress.totalScore}/10</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">1. Xem Video (Max 2):</td><td style="text-align: right; font-weight: bold;">${vidScore}/2</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">2. Tâm đắc ngộ (Max 2):</td><td style="text-align: right; font-weight: bold;">${refScore}/2</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">3. Bài tập Links (Max 3):</td><td style="text-align: right; font-weight: bold;">${pracScore}/3</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">4. Hỗ trợ đồng đội (Max 2):</td><td style="text-align: right; font-weight: bold;">${supportScore}/2</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">5. Đúng hạn (Max 1):</td><td style="text-align: right; font-weight: bold;">${timeScore}/1</td></tr>
+                            <tr style="background: #f0f9ff; border-top: 2px solid #bae6fd;"><td style="padding: 8px; font-weight: bold; color: ${gradeColor};">TỔNG CỘNG:</td><td style="text-align: right; font-weight: bold; color: ${gradeColor}; font-size: 16px;">${lesson.progress.totalScore}/10</td></tr>
                         </table>
                         <p style="margin: 5px 0; text-align: center;"><strong>Xếp loại:</strong> <span style="font-weight: bold; color: ${gradeColor}; transform: uppercase;">${lesson.progress.grade}</span></p>
                     `;
@@ -1003,6 +1063,7 @@
 
         function calculateLiveScore() {
             let score = 0;
+            let vidScore = 0;
 
             // 1. Video (Assume 1pt for simplicity in live view as we can't easily check >50% without player state, but let's try)
             // If completed in previous session -> 2pts
@@ -1034,7 +1095,6 @@
                     pct = currentMax / duration;
                 }
 
-                let vidScore = 0;
                 if (prog.status === 'Completed' || prog.status === 'Approved') vidScore = 2;
                 else if (pct >= 0.95) vidScore = 2; // >95% ~ 100%
                 else if (pct >= 0.5) vidScore = 1;
@@ -1070,9 +1130,13 @@
             if (document.getElementById('link-3').value.trim().length > 5) score += 1;
 
             // 4. Discipline
-            score += 1; // Time (Auto)
-            if (document.getElementById('discipline-support').checked) score += 1;
-            if (document.getElementById('discipline-leadership').checked) score += 1;
+            let supportScore = 0;
+            if (document.getElementById('discipline-support').checked) supportScore += 1;
+            if (document.getElementById('discipline-leadership').checked) supportScore += 1;
+            score += supportScore;
+
+            // 5. Time (Auto +1)
+            score += 1;
 
             if (score > 10) score = 10;
 
@@ -1082,10 +1146,40 @@
             else if (score >= 5) grade = "Hoàn thành Khá";
             else if (score >= 5) grade = "Hoàn thành";
 
-            const scoreEl = document.getElementById('live-score-value');
-            if (scoreEl) {
-                scoreEl.textContent = `${score}/10 (${grade})`;
-                scoreEl.style.color = score >= 5 ? '#15803d' : '#d97706';
+            const scoreArea = document.getElementById('live-score-area');
+            if (scoreArea) {
+                // Determine current status of inputs
+                const vidText = `${vidScore}/2`;
+                const refText = (ref && ref.trim().length > 10) ? "2/2" : "0/2";
+
+                let pracCount = 0;
+                if (document.getElementById('link-1').value.trim().length > 5) pracCount++;
+                if (document.getElementById('link-2').value.trim().length > 5) pracCount++;
+                if (document.getElementById('link-3').value.trim().length > 5) pracCount++;
+                const pracText = `${pracCount}/3`;
+
+                const supportText = `${supportScore}/2`;
+                const timeText = "1/1"; // Fixed for live view
+
+                scoreArea.style.display = 'block';
+                // scoreArea.style.flexDirection = 'column'; // Keep default block or flex
+
+                scoreArea.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px dashed #fcd34d; padding-bottom: 5px;">
+                        <span style="font-size: 14px; color: #92400e; font-weight: 600;">Điểm hiển thị tạm tính:</span>
+                        <span style="font-size: 18px; font-weight: bold; color: ${score >= 5 ? '#15803d' : '#d97706'};">${score}/10</span>
+                    </div>
+                    <div style="font-size: 13px; color: #78350f; display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                        <div style="display: flex; justify-content: space-between;"><span>1. Video:</span> <b>${vidText}</b></div>
+                        <div style="display: flex; justify-content: space-between;"><span>2. Tâm đắc:</span> <b>${refText}</b></div>
+                        <div style="display: flex; justify-content: space-between;"><span>3. Links:</span> <b>${pracText}</b></div>
+                        <div style="display: flex; justify-content: space-between;"><span>4. Hỗ trợ:</span> <b>${supportText}</b></div>
+                        <div style="display: flex; justify-content: space-between; grid-column: span 2;"><span>5. Đúng hạn:</span> <b>${timeText}</b></div>
+                    </div>
+                    <div style="text-align: right; font-size: 12px; font-style: italic; color: ${score >= 5 ? '#15803d' : '#d97706'}; margin-top: 5px;">
+                        (${grade})
+                    </div>
+                `;
             }
         }
 

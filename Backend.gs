@@ -662,7 +662,9 @@ function getCourseContent(email, courseId) {
             link2: progressData[j][9] || "",
             link3: progressData[j][10] || "",
             totalScore: Number(progressData[j][11] || 0),
-            grade: progressData[j][12] || ""
+            grade: progressData[j][12] || "",
+            disciplineSupport: progressData[j][14] === true || progressData[j][14] === "true" || progressData[j][14] === 1,
+            disciplineLeadership: progressData[j][15] === true || progressData[j][15] === "true" || progressData[j][15] === 1
           };
           break;
         }
@@ -1657,6 +1659,9 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
   sheet.getRange(rowNum, 12).setValue(totalScore);
   sheet.getRange(rowNum, 13).setValue(grade);
   sheet.getRange(rowNum, 14).setValue(timestamp);
+  // Save Discipline Checkboxes
+  sheet.getRange(rowNum, 15).setValue(disciplineSupport ? 1 : 0);
+  sheet.getRange(rowNum, 16).setValue(disciplineLeadership ? 1 : 0);
 
   return { 
     success: true, 
