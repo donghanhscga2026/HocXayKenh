@@ -412,6 +412,10 @@
             let startSeconds = lesson.progress.currentTime || 0;
             if (startSeconds === 0 && defaultStartTime > 0) {
                 startSeconds = defaultStartTime;
+                // Cập nhật maxTime để anti-cheat không chặn
+                if ((lesson.progress.maxTime || 0) < startSeconds) {
+                    lesson.progress.maxTime = startSeconds;
+                }
             }
 
             if (!videoId) {
