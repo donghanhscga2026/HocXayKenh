@@ -1511,10 +1511,35 @@ function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
     sheet.getRange(rowIndex + 1, 4).setValue(currentTime);
     
     // Update max time if greater
+    // Update max time if greater
     const currentMax = Number(data[rowIndex][4]) || 0;
+    let maxTime = currentMax;
+    
     if (currentTime > currentMax) {
+      maxTime = currentTime;
       sheet.getRange(rowIndex + 1, 5).setValue(currentTime);
     }
+    
+    // --- NEW GRADING LOGIC (Video Score: Max 5) ---
+    // Col 8 (Index 7): Diem_Video
+    let videoScore = 0;
+    if (duration > 0) {
+      const watchedPercent = (maxTime / duration) * 100;
+      if (watchedPercent >= 100 || (duration - maxTime < 10)) videoScore = 5; // Hoàn thành quy đổi 100%
+      else if (watchedPercent > 80) videoScore = 4;
+      else if (watchedPercent > 60) videoScore = 3;
+      else if (watchedPercent > 40) videoScore = 2;
+      else if (watchedPercent > 20) videoScore = 1;
+      else videoScore = 0;
+    }
+    
+    // Update Video Score
+    sheet.getRange(rowIndex + 1, 8).setValue(videoScore);
+    
+    // Recalculate Total Score
+    // Index 7: Diem_Video, 8: Tam_Dac, 9: Link2, 10: Link3 => Total = Col 7 + 8 + 9 + 10 ???
+    // Wait, let's standardize columns first.
+    // 0:Email, 1:Ma_KH, 2:Ma_Bai, 3:Hien_Tai, 4:Xa_Nhat, 5:Status, 6:Link1(Old), 7:VideoScore, 8:Reflection, 9:Link2, 10:Link3, 11:Total, 12:Grade
     
     // Update Status logic handled mainly by frontend or completion check? - Keep simple here
   }
@@ -1525,14 +1550,17 @@ function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
 /**
  * Nộp bài tập
  */
-function submitAssignment(email, courseId, lessonId, link) {
+// Xử lý nộp bài tập (Assignment Submission)
+function submitAssignment(email, courseId, lessonId, reflection, link1, link2, link3) {
   const ss = getDB();
   const sheet = ss.getSheetByName("KH_TienDo");
-  if (!sheet) return { success: false, msg: "Sheet KH_TienDo không tồn tại" };
+  
+  if (!sheet) return { success: false, message: "Lỗi hệ thống: Không tìm thấy Sheet tiến độ." };
   
   const data = sheet.getDataRange().getValues();
   let rowIndex = -1;
   
+  // Find row
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]) === email && 
         String(data[i][1]) === courseId && 
@@ -1542,26 +1570,68 @@ function submitAssignment(email, courseId, lessonId, link) {
     }
   }
   
-  const status = "Completed"; // Tạm thời auto-complete khi nộp, hoặc "Pending" nếu cần duyệt
-  
   if (rowIndex === -1) {
-    // Nếu chưa có dòng tiến độ (trường hợp hiếm, thường đã xem video rồi)
-    sheet.appendRow([
-      email, 
-      courseId, 
-      lessonId, 
-      0, 
-      0, 
-      status, 
-      link
-    ]);
-  } else {
-    // Cập nhật trạng thái và link
-    sheet.getRange(rowIndex + 1, 6).setValue(status); // Cột F: Trạng thái
-    sheet.getRange(rowIndex + 1, 7).setValue(link);   // Cột G: Link bài tập
+    return { success: false, message: "Bạn chưa bắt đầu học bài này (chưa có dữ liệu xem video)." };
   }
   
-  return { success: true, message: "Nộp bài thành công! Bạn có thể chuyển sang bài tiếp theo." };
+  // --- GRADING LOGIC ---
+  // 1. Video Score (Already verified/stored in Col 8/Index 7)
+  const videoScore = Number(data[rowIndex][7]) || 0;
+  
+  // 2. Reflection Score (Max 2)
+  let reflectionScore = 0;
+  if (reflection && String(reflection).trim().length > 10) {
+    reflectionScore = 2;
+  }
+  
+  // 3. Practice Score (Max 3)
+  let practiceScore = 0;
+  if (link1 && String(link1).trim().length > 5) practiceScore++;
+  if (link2 && String(link2).trim().length > 5) practiceScore++;
+  if (link3 && String(link3).trim().length > 5) practiceScore++;
+  
+  const totalScore = videoScore + reflectionScore + practiceScore;
+  
+  // 4. Classification
+  let grade = "Chưa hoàn thành";
+  if (totalScore >= 10) grade = "Xuất sắc"; 
+  else if (totalScore >= 8) grade = "Hoàn thành Tốt";
+  else if (totalScore >= 5) grade = "Hoàn thành Khá";
+  
+  const status = (totalScore >= 5) ? "Completed" : "Pending";
+  
+  // --- UPDATE SHEET ---
+  const rowNum = rowIndex + 1;
+  
+  // Col 6 (Index 5): Status
+  sheet.getRange(rowNum, 6).setValue(status);
+  
+  // Col 7 (Index 6): Link 1 (Legacy/Primary Link)
+  sheet.getRange(rowNum, 7).setValue(link1 || "");
+  
+  // Col 8 (Index 7): Video Score (Preserved)
+  
+  // Col 9 (Index 8): Reflection
+  sheet.getRange(rowNum, 9).setValue(reflection || "");
+  
+  // Col 10 (Index 9): Link 2
+  sheet.getRange(rowNum, 10).setValue(link2 || "");
+  
+  // Col 11 (Index 10): Link 3
+  sheet.getRange(rowNum, 11).setValue(link3 || "");
+  
+  // Col 12 (Index 11): Total Score
+  sheet.getRange(rowNum, 12).setValue(totalScore);
+  
+  // Col 13 (Index 12): Grade
+  sheet.getRange(rowNum, 13).setValue(grade);
+  
+  return { 
+    success: true, 
+    message: `Đã nộp bài! Tổng điểm: ${totalScore}/10 (${grade}).`,
+    score: totalScore,
+    grade: grade
+  };
 }
 
 // ------------------------------------------------------------------

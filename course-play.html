@@ -304,12 +304,39 @@
                     </div>
 
                     <div id="assignment-section" class="assignment-box hidden">
-                        <h4 style="color: #92400e;"><i class="fas fa-tasks"></i> Yêu cầu bài tập:</h4>
-                        <p id="assignment-desc" style="margin-top: 8px; font-size: 14px;"></p>
-                        <div class="submit-group">
-                            <input type="text" id="assignment-link" class="submit-input"
-                                placeholder="Dán link bài làm (Google Drive, Canvas...)">
-                            <button class="btn-submit" onclick="submitWork()">Nộp bài</button>
+                        <h4 style="color: #92400e;"><i class="fas fa-tasks"></i> Bài tập thực hành (Thang điểm 10):</h4>
+                        <p id="assignment-desc" style="margin-top: 8px; font-size: 14px; margin-bottom: 15px;"></p>
+
+                        <div class="submit-group" style="flex-direction: column; gap: 15px;">
+                            <!-- Reflection -->
+                            <div>
+                                <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 5px;">1.
+                                    Chia sẻ bài học tâm đắc ngộ (Quan trọng - 2đ):</label>
+                                <textarea id="reflection-input" class="submit-input" rows="3"
+                                    style="width: 100%; font-family: inherit;"
+                                    placeholder="Viết chia sẻ của bạn (trên 10 ký tự)..."></textarea>
+                            </div>
+
+                            <!-- Links -->
+                            <div>
+                                <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 5px;">2.
+                                    Link Video trả bài (Mỗi link 1đ - Tối đa 3đ):</label>
+                                <input type="text" id="link-1" class="submit-input"
+                                    style="width: 100%; margin-bottom: 8px;" placeholder="Link Video 1...">
+                                <input type="text" id="link-2" class="submit-input"
+                                    style="width: 100%; margin-bottom: 8px;" placeholder="Link Video 2...">
+                                <input type="text" id="link-3" class="submit-input" style="width: 100%;"
+                                    placeholder="Link Video 3...">
+                            </div>
+
+                            <button class="btn-submit" onclick="submitWork()" style="width: 100%; margin-top: 5px;">
+                                <i class="fas fa-paper-plane"></i> Nộp bài & Chấm điểm
+                            </button>
+                        </div>
+
+                        <!-- Grading Result -->
+                        <div id="grading-result"
+                            style="display: none; margin-top: 20px; padding: 15px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; color: #0369a1;">
                         </div>
                     </div>
                 </div>
@@ -616,13 +643,25 @@
         }
 
         async function submitWork() {
-            const link = document.getElementById('assignment-link').value;
-            if (!link) {
-                showToast("Vui lòng nhập link bài làm!", "warning");
+            const reflection = document.getElementById('reflection-input').value;
+            const link1 = document.getElementById('link-1').value;
+            const link2 = document.getElementById('link-2').value;
+            const link3 = document.getElementById('link-3').value;
+
+            // Validate: Must have reflection OR at least one link
+            if (!reflection && !link1 && !link2 && !link3) {
+                showToast("Vui lòng nhập ít nhất một nội dung (Tâm đắc ngộ hoặc Link video)!", "warning");
                 return;
             }
 
             const lesson = curriculum[currentLessonIdx];
+
+            // Show loading state
+            const btn = document.querySelector('.btn-submit');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang chấm điểm...';
+
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
@@ -631,16 +670,44 @@
                         email: user.email,
                         courseId: courseId,
                         lessonId: lesson.id,
-                        assignmentLink: link
+                        reflection: reflection,
+                        link1: link1,
+                        link2: link2,
+                        link3: link3
                     })
                 });
                 const result = await response.json();
+
                 if (result.success) {
-                    showToast(result.message, "success");
+                    showToast("Đã nộp bài thành công!", "success");
+
+                    // Display Grade Result
+                    const resultBox = document.getElementById('grading-result');
+                    const score = result.score || 0;
+                    const grade = result.grade || "Chưa xác định";
+
+                    let gradeColor = '#0369a1'; // Blue
+                    if (score >= 10) gradeColor = '#15803d'; // Green
+                    else if (score < 5) gradeColor = '#b91c1c'; // Red
+
+                    resultBox.innerHTML = `
+                        <h4 style="margin: 0 0 10px 0; font-size: 16px;">📊 Kết quả bài làm:</h4>
+                        <p style="margin: 5px 0;"><strong>Điểm tổng kết:</strong> <span style="font-size: 18px; color: ${gradeColor}; font-weight: bold;">${score}/10</span></p>
+                        <p style="margin: 5px 0;"><strong>Xếp loại:</strong> <span style="font-weight: bold; color: ${gradeColor};">${grade}</span></p>
+                        <p style="margin-top: 10px; font-size: 13px; font-style: italic;">(Hệ thống đã tự động cập nhật tiến độ)</p>
+                    `;
+                    resultBox.style.display = 'block';
+
                     loadCurriculum(); // Reload to update status and locks
+                } else {
+                    showToast(result.message || "Có lỗi xảy ra!", "error");
                 }
             } catch (e) {
-                showToast("Lỗi nộp bài!", "error");
+                showToast("Lỗi nộp bài: " + e.message, "error");
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
             }
         }
 
