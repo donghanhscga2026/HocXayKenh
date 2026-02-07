@@ -393,30 +393,72 @@
         </main>
     </div>
 
-    <!-- Rules Modal -->
-    <div id="rules-modal"
-        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+    </div>
+    </div>
+
+    <!-- Graduation Modal -->
+    <div id="grad-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10001; align-items: center; justify-content: center;">
         <div
-            style="background: white; padding: 25px; border-radius: 12px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
-            <h3 style="margin-top: 0; color: #b45309;">Quy tắc chấm điểm (Thang 10)</h3>
-            <ul style="padding-left: 20px; font-size: 14px; line-height: 1.6; color: #334155;">
-                <li><strong>Video (Max 2đ)</strong>: Xem >50% (+1đ), Xem hết (+2đ).</li>
-                <li><strong>Ghi nhận bài học (Max 2đ)</strong>: Có chia sẻ (+1đ), Sâu sắc/Quiz (+1đ).</li>
-                <li><strong>Thực hành (Max 3đ)</strong>: Mỗi link video (+1đ).</li>
-                <li><strong>Kỷ luật (Max 3đ)</strong>:
-                    <ul style="margin: 5px 0;">
-                        <li>Nộp trước 23:59 (+1đ).</li>
-                        <li>Nhắc 2 đồng đội (+1đ).</li>
-                        <li>Đồng đội nhắc người dưới (+1đ).</li>
-                    </ul>
-                </li>
-                <li style="color: #ef4444;"><strong>Trừ điểm</strong>: Nộp muộn sau 23:59 (-1đ).</li>
-            </ul>
-            <div style="margin-top: 15px; text-align: right;">
-                <button onclick="document.getElementById('rules-modal').style.display='none'"
-                    style="padding: 8px 15px; background: #e2e8f0; border: none; border-radius: 4px; cursor: pointer;">Đóng</button>
+            style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90%; text-align: center; position: relative; max-height: 90vh; overflow-y: auto;">
+            <button onclick="document.getElementById('grad-modal').style.display='none'"
+                style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b;">&times;</button>
+
+            <div style="font-size: 60px; margin-bottom: 20px;">🎓</div>
+            <h2 style="color: #ea580c; margin-bottom: 10px; font-size: 28px;">CHÚC MỪNG TỐT NGHIỆP!</h2>
+            <p style="color: #475569; font-size: 16px; margin-bottom: 25px;">Bạn đã xuất sắc hoàn thành tất cả bài học
+                trong khóa.</p>
+
+            <div
+                style="background: #fff7ed; padding: 20px; border-radius: 10px; margin-bottom: 25px; border: 1px solid #fed7aa;">
+                <div style="font-size: 14px; color: #9a3412;">Tổng điểm toàn khóa</div>
+                <div id="grad-total-score" style="font-size: 40px; font-weight: bold; color: #ea580c;">0/0</div>
             </div>
+
+            <h3 style="text-align: left; font-size: 16px; color: #334155; margin-bottom: 15px;">Bảng điểm chi tiết:</h3>
+            <div
+                style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 25px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px; text-align: left;">
+                    <thead style="background: #f1f5f9; position: sticky; top: 0;">
+                        <tr>
+                            <th style="padding: 10px; border-bottom: 1px solid #cbd5e1;">Bài học</th>
+                            <th style="padding: 10px; border-bottom: 1px solid #cbd5e1; text-align: center;">Điểm số
+                            </th>
+                            <th style="padding: 10px; border-bottom: 1px solid #cbd5e1; text-align: center;">Xếp loại
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="grad-score-table">
+                        <!-- Rows -->
+                    </tbody>
+                </table>
+            </div>
+
+            <button onclick="document.getElementById('grad-modal').style.display='none'"
+                style="background: #ea580c; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(234, 88, 12, 0.3);">
+                Đóng bảng vàng
+            </button>
         </div>
+    </div>
+    <h3 style="margin-top: 0; color: #b45309;">Quy tắc chấm điểm (Thang 10)</h3>
+    <ul style="padding-left: 20px; font-size: 14px; line-height: 1.6; color: #334155;">
+        <li><strong>Video (Max 2đ)</strong>: Xem >50% (+1đ), Xem hết (+2đ).</li>
+        <li><strong>Ghi nhận bài học (Max 2đ)</strong>: Có chia sẻ (+1đ), Sâu sắc/Quiz (+1đ).</li>
+        <li><strong>Thực hành (Max 3đ)</strong>: Mỗi link video (+1đ).</li>
+        <li><strong>Kỷ luật (Max 3đ)</strong>:
+            <ul style="margin: 5px 0;">
+                <li>Nộp trước 23:59 (+1đ).</li>
+                <li>Nhắc 2 đồng đội (+1đ).</li>
+                <li>Đồng đội nhắc người dưới (+1đ).</li>
+            </ul>
+        </li>
+        <li style="color: #ef4444;"><strong>Trừ điểm</strong>: Nộp muộn sau 23:59 (-1đ).</li>
+    </ul>
+    <div style="margin-top: 15px; text-align: right;">
+        <button onclick="document.getElementById('rules-modal').style.display='none'"
+            style="padding: 8px 15px; background: #e2e8f0; border: none; border-radius: 4px; cursor: pointer;">Đóng</button>
+    </div>
+    </div>
     </div>
 
     <div id="toast"
@@ -445,6 +487,7 @@
         let syncInterval;
         let isYouTubeReady = false;
         let pendingLessonIdx = -1;
+        let videoProgressInterval;
 
         window.onYouTubeIframeAPIReady = function () {
             isYouTubeReady = true;
@@ -452,6 +495,11 @@
                 playLesson(pendingLessonIdx);
             }
         };
+
+        // Safety check: If API is already ready (cached), set flag
+        if (window.YT && window.YT.Player) {
+            isYouTubeReady = true;
+        }
 
         async function loadCurriculum() {
             try {
@@ -476,6 +524,10 @@
                     renderLessonList();
                     // Tự động load bài học đầu tiên khả dụng hoặc đang học dở
                     const lastIdx = curriculum.findIndex(l => l.progress.status === "In Progress");
+
+                    // Check graduation FIRST
+                    checkGraduation();
+
                     playLesson(lastIdx !== -1 ? lastIdx : 0);
                 } else {
                     console.error("API Error:", result.msg);
@@ -546,8 +598,12 @@
 
             const vProg = document.getElementById('video-prog-text');
             const vScore = document.getElementById('video-score-text');
+            const liveScoreEl = document.getElementById('live-score-value'); // Find the total live score element
+
             if (vProg) { vProg.textContent = "0%"; vProg.style.color = "#0f172a"; }
             if (vScore) { vScore.textContent = "0/2 điểm"; vScore.style.color = "#0284c7"; }
+            if (liveScoreEl) { liveScoreEl.innerHTML = `0/10`; liveScoreEl.style.color = "#d97706"; }
+
             // --------------------------------------
 
             const lesson = curriculum[idx];
@@ -560,6 +616,8 @@
             if (lesson.assignmentType) {
                 assignBox.classList.remove('hidden');
                 document.getElementById('assignment-desc').textContent = lesson.assignmentType;
+                // Recalculate live score immediately with new lesson data (which should be 0 or saved progress)
+                calculateLiveScore();
             } else {
                 assignBox.classList.add('hidden');
             }
@@ -579,6 +637,67 @@
                     lesson.progress.maxTime = startSeconds;
                 }
             }
+
+            // --- REVIEW MODE LOGIC ---
+            const isDone = lesson.progress.status === "Completed" || lesson.progress.status === "Approved";
+            const btnSubmit = document.querySelector('.btn-submit');
+
+            // Handle "Re-learn" button (Add if missing)
+            let btnRelearn = document.getElementById('btn-relearn');
+            if (!btnRelearn) {
+                btnRelearn = document.createElement('button');
+                btnRelearn.id = 'btn-relearn';
+                btnRelearn.innerHTML = '<i class="fas fa-redo"></i> Học lại bài này';
+                btnRelearn.style.cssText = "width: 100%; margin-top: 5px; background: white; border: 1px solid #cbd5e1; color: #64748b; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; display: none;";
+                btnRelearn.onclick = () => {
+                    if (confirm("Bạn muốn học lại? Điểm số cũ vẫn được lưu cho đến khi bạn nộp bài mới.")) {
+                        // Reset UI for re-learning
+                        document.getElementById('reflection-input').value = "";
+                        document.getElementById('link-1').value = "";
+                        document.getElementById('link-2').value = "";
+                        document.getElementById('link-3').value = "";
+                        document.getElementById('discipline-support').checked = false;
+                        document.getElementById('discipline-leadership').checked = false;
+                        document.getElementById('grading-result').style.display = 'none';
+                        btnSubmit.innerHTML = '<i class="fas fa-check-circle"></i> Ghi nhận hoàn thành (Chốt bài)';
+                        btnRelearn.style.display = 'none';
+                        window.scrollTo(0, 0);
+                    }
+                };
+                btnSubmit.parentNode.insertBefore(btnRelearn, btnSubmit.nextSibling);
+            }
+
+            if (isDone && lesson.progress.totalScore !== undefined) {
+                // Populate Form
+                if (document.getElementById('reflection-input')) document.getElementById('reflection-input').value = lesson.progress.reflection || "";
+                if (document.getElementById('link-1')) document.getElementById('link-1').value = lesson.progress.link1 || "";
+                if (document.getElementById('link-2')) document.getElementById('link-2').value = lesson.progress.link2 || "";
+                if (document.getElementById('link-3')) document.getElementById('link-3').value = lesson.progress.link3 || "";
+
+                // Show Result Immediately
+                const resultBox = document.getElementById('grading-result');
+                const gradeColor = lesson.progress.totalScore >= 10 ? '#15803d' : (lesson.progress.totalScore >= 5 ? '#0369a1' : '#b91c1c');
+
+                resultBox.innerHTML = `
+                        <h4 style="margin: 0 0 10px 0; font-size: 16px;">📊 Kết quả bài làm cũ:</h4>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 10px;">
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">Xem Video:</td><td style="text-align: right; font-weight: bold;">${lesson.progress.videoScore}/2</td></tr>
+                            <!-- Note: Other details not fully saved in columns, showing total mainly -->
+                            <tr style="background: #f0f9ff;"><td style="padding: 8px; font-weight: bold; color: ${gradeColor};">TỔNG CỘNG:</td><td style="text-align: right; font-weight: bold; color: ${gradeColor}; font-size: 16px;">${lesson.progress.totalScore}/10</td></tr>
+                        </table>
+                        <p style="margin: 5px 0; text-align: center;"><strong>Xếp loại:</strong> <span style="font-weight: bold; color: ${gradeColor}; transform: uppercase;">${lesson.progress.grade}</span></p>
+                    `;
+                resultBox.style.display = 'block';
+
+                // Update Buttons
+                btnSubmit.innerHTML = '<i class="fas fa-save"></i> Cập nhật bài làm';
+                btnRelearn.style.display = 'block';
+            } else {
+                // Not done
+                if (btnRelearn) btnRelearn.style.display = 'none';
+                btnSubmit.innerHTML = '<i class="fas fa-check-circle"></i> Ghi nhận hoàn thành (Chốt bài)';
+            }
+            // ---------------------
 
             if (!videoId) {
                 showToast("ID Video không hợp lệ! Vui lòng kiểm tra dữ liệu.", "error");
@@ -662,8 +781,15 @@
         let currentLocalMaxTime = 0;
 
         function onPlayerStateChange(event) {
-            if (event.data == YT.PlayerState.PLAYING) {
-                // Khi bắt đầu play, lấy maxTime từ dữ liệu bài học
+            if (event.data === YT.PlayerState.PLAYING) {
+                // Start tracking progress
+                if (videoProgressInterval) clearInterval(videoProgressInterval);
+                videoProgressInterval = setInterval(() => {
+                    updateVideoProgress();
+                    calculateLiveScore(); // Update UI
+                }, 1000);
+
+                // When starting to play, get maxTime from lesson data
                 if (curriculum[currentLessonIdx]) {
                     currentLocalMaxTime = Number(curriculum[currentLessonIdx].progress.maxTime) || 0;
                 }
@@ -674,26 +800,31 @@
 
                     const currentTime = player.getCurrentTime();
 
-                    // Logic mới: Nếu đang xem bình thường (currentTime gần với localMaxTime)
-                    // thì cập nhật localMaxTime luôn.
+                    // New logic: If watching normally (currentTime close to localMaxTime)
+                    // then update localMaxTime.
                     if (currentTime > currentLocalMaxTime && currentTime < currentLocalMaxTime + 5) {
                         currentLocalMaxTime = currentTime;
-                        // Cập nhật ngược lại vào object để sync sau này
+                        // Update back into the object for later sync
                         curriculum[currentLessonIdx].progress.maxTime = currentLocalMaxTime;
                     }
 
-                    // Chỉ chặn nếu currentTime vượt quá xa so với localMaxTime (cho phép buffer 10s)
+                    // Only block if currentTime exceeds localMaxTime by too much (allow 10s buffer)
                     if (currentTime > currentLocalMaxTime + 10) {
                         console.log(`Seek attempt: Current ${currentTime} > Max ${currentLocalMaxTime}`);
                         player.seekTo(currentLocalMaxTime, true);
                         showToast("Vui lòng học lần lượt, không tua nhanh!", "warning");
                     }
-                }, 1000); // Check mỗi 1s
+                }, 1000); // Check every 1s
 
-                // Gán tạm vào window để có thể clear nếu cần (dù logic này hơi lỏng lẻo nhưng đủ cho demo)
+                // Assign to window temporarily so it can be cleared if needed (though this logic is a bit loose but sufficient for demo)
                 window.currentCheckInterval = checkSkip;
             } else {
                 if (window.currentCheckInterval) clearInterval(window.currentCheckInterval);
+                if (videoProgressInterval) clearInterval(videoProgressInterval);
+                if (event.data === YT.PlayerState.ENDED) {
+                    updateVideoProgress();
+                    calculateLiveScore();
+                }
             }
 
             if (event.data == YT.PlayerState.ENDED) {
@@ -709,23 +840,33 @@
             player.playVideo();
         }
 
-        async function syncProgress(isFinished = false) {
+        // New function to update video progress locally
+        function updateVideoProgress() {
             if (!player || currentLessonIdx === -1) return;
 
             const currentTime = Math.floor(player.getCurrentTime());
             const duration = Math.floor(player.getDuration());
             const lesson = curriculum[currentLessonIdx];
 
-            // Cập nhật ngay biến local để anti-cheat không chặn nhầm
+            // Update local variables for anti-cheat and live score
             if (currentTime > (lesson.progress.maxTime || 0)) {
                 lesson.progress.maxTime = currentTime;
             }
+            lesson.progress.currentTime = currentTime;
+            lesson.progress.duration = duration;
+        }
 
-            // Nếu đã xem hết video (>95%)
-            if (isFinished || (duration > 0 && currentTime / duration > 0.95)) {
+        async function syncProgress(isFinished = false) {
+            if (!player || currentLessonIdx === -1) return;
+
+            updateVideoProgress(); // Ensure local progress is up-to-date before syncing
+            const lesson = curriculum[currentLessonIdx];
+
+            // If video is finished (>95%)
+            if (isFinished || (lesson.progress.duration > 0 && lesson.progress.currentTime / lesson.progress.duration > 0.95)) {
                 if (lesson.progress.status !== "Completed" && lesson.progress.status !== "Approved") {
-                    // Nếu không có bài tập -> Completed luôn
-                    // Nếu có bài tập -> Đợi nộp -> In Progress (nhưng backend sẽ xử lý logic này)
+                    // If no assignment -> Completed immediately
+                    // If there is an assignment -> Wait for submission -> In Progress (but backend will handle this logic)
                 }
             }
 
@@ -737,8 +878,8 @@
                         email: user.email,
                         courseId: courseId,
                         lessonId: lesson.id,
-                        currentTime: currentTime,
-                        duration: duration
+                        currentTime: lesson.progress.currentTime,
+                        duration: lesson.progress.duration
                     })
                 });
             } catch (e) { }
@@ -825,7 +966,21 @@
                     `;
                     resultBox.style.display = 'block';
 
-                    loadCurriculum(); // Reload to update status and locks
+                    await loadCurriculum(); // Reload to update status and locks
+
+                    // Auto-advance to next lesson if available
+                    const nextIdx = currentLessonIdx + 1;
+                    if (nextIdx < curriculum.length) {
+                        const nextLesson = curriculum[nextIdx];
+                        // Check if next lesson is now unlocked (it should be if current is Completed/Approved)
+                        // Since loadCurriculum is async and we awaited it, curriculum is updated.
+                        if (nextLesson.progress.status !== 'Locked') {
+                            showToast("Tự động chuyển bài tiếp theo...", "success");
+                            setTimeout(() => {
+                                playLesson(nextIdx);
+                            }, 1500);
+                        }
+                    }
                 } else {
                     showToast(result.message || "Có lỗi xảy ra!", "error");
                 }
@@ -853,7 +1008,31 @@
             // If completed in previous session -> 2pts
             if (curriculum[currentLessonIdx]) {
                 const prog = curriculum[currentLessonIdx].progress;
-                const pct = (prog.maxTime || 0) / (prog.duration || 1);
+
+                // --- DYNAMIC UPDATE FROM PLAYER ---
+                let currentMax = prog.maxTime || 0;
+                let duration = prog.duration || 0;
+
+                if (player && player.getCurrentTime && player.getDuration && player.getVideoData().video_id === getYouTubeId(curriculum[currentLessonIdx].youtubeId)) {
+                    // Only use player data if it's the correct video
+                    const pCurrent = player.getCurrentTime();
+                    const pDuration = player.getDuration();
+
+                    if (pDuration > 0) {
+                        duration = pDuration;
+                        if (pCurrent > currentMax) currentMax = pCurrent;
+
+                        // Update local curriculum data so it remembers if we pause/submit
+                        prog.maxTime = currentMax;
+                        prog.duration = duration;
+                    }
+                }
+                // ----------------------------------
+
+                let pct = 0;
+                if (duration > 0) {
+                    pct = currentMax / duration;
+                }
 
                 let vidScore = 0;
                 if (prog.status === 'Completed' || prog.status === 'Approved') vidScore = 2;
@@ -911,6 +1090,7 @@
         }
 
         // Attach listeners
+        // Attach listeners
         function bindLiveInputs() {
             const ids = ['reflection-input', 'link-1', 'link-2', 'link-3'];
             ids.forEach(id => {
@@ -918,6 +1098,52 @@
                 if (el) el.oninput = calculateLiveScore;
             });
             calculateLiveScore();
+        }
+
+        async function checkGraduation() {
+            if (!curriculum || curriculum.length === 0) return;
+
+            const allDone = curriculum.every(l => l.progress.status === "Completed" || l.progress.status === "Approved");
+
+            if (allDone) {
+                let totalCourseScore = 0;
+                let maxCourseScore = curriculum.length * 10;
+                let tableHtml = "";
+
+                curriculum.forEach(lesson => {
+                    const s = lesson.progress.totalScore || 0;
+                    totalCourseScore += s;
+
+                    let gradeColor = '#0369a1';
+                    if (s >= 10) gradeColor = '#15803d';
+                    else if (s < 5) gradeColor = '#b91c1c';
+
+                    tableHtml += `
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 10px;">${lesson.title}</td>
+                            <td style="padding: 10px; text-align: center; font-weight: bold; color: ${gradeColor};">${s}/10</td>
+                            <td style="padding: 10px; text-align: center;">${lesson.progress.grade || '-'}</td>
+                        </tr>
+                    `;
+                });
+
+                document.getElementById('grad-total-score').textContent = `${totalCourseScore}/${maxCourseScore}`;
+                document.getElementById('grad-score-table').innerHTML = tableHtml;
+
+                // Show modal with confetti effect if possible, but just show for now
+                // Delay slightly to allow UI to settle
+                setTimeout(() => {
+                    document.getElementById('grad-modal').style.display = 'flex';
+                    launchConfetti();
+                }, 1000);
+            }
+        }
+
+        // Simple Consfetti
+        function launchConfetti() {
+            // Need a library or simple CSS implementation. 
+            // For now, let's skip complex confetti to avoid external dependencies.
+            // Or use a simple emoji rain?
         }
 
         document.addEventListener('DOMContentLoaded', async () => {

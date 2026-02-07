@@ -647,11 +647,22 @@ function getCourseContent(email, courseId) {
       // Tìm tiến độ của học viên cho bài này
       let userProgress = { currentTime: 0, maxTime: 0, status: "Locked" };
       for (let j = 1; j < progressData.length; j++) {
-        if (progressData[j][0] == email && progressData[j][1] == courseId && progressData[j][2] == lessonId) {
+        const pEmail = String(progressData[j][0]);
+        const pCourseId = String(progressData[j][1]);
+        const pLessonId = String(progressData[j][2]);
+        
+        if (pEmail === email && pCourseId === courseId && pLessonId === lessonId) {
           userProgress = {
             currentTime: Number(progressData[j][3] || 0),
             maxTime: Number(progressData[j][4] || 0),
-            status: progressData[j][5] || "In Progress"
+            status: progressData[j][5] || "In Progress",
+            link1: progressData[j][6] || "",
+            videoScore: Number(progressData[j][7] || 0),
+            reflection: progressData[j][8] || "",
+            link2: progressData[j][9] || "",
+            link3: progressData[j][10] || "",
+            totalScore: Number(progressData[j][11] || 0),
+            grade: progressData[j][12] || ""
           };
           break;
         }
@@ -659,10 +670,10 @@ function getCourseContent(email, courseId) {
       
       curriculum.push({
         id: lessonId,
-        title: contentData[i][2],
-        youtubeId: contentData[i][3],
-        summary: contentData[i][4],
-        assignmentType: contentData[i][5],
+        title: String(contentData[i][2]),
+        youtubeId: String(contentData[i][3]),
+        summary: String(contentData[i][4]),
+        assignmentType: String(contentData[i][5]),
         order: Number(contentData[i][6] || i),
         progress: userProgress
       });
