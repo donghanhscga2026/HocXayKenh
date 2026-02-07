@@ -431,13 +431,42 @@
                 });
             }
 
+            // Tab Switching Logic
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach((tab, index) => {
+                tab.onclick = () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    const lesson = curriculum[currentLessonIdx];
+
+                    if (index === 0) { // Tổng quan
+                        document.getElementById('lesson-summary').innerHTML = lesson.summary || "Không có tóm tắt.";
+                        document.getElementById('lesson-summary').style.display = 'block';
+                        document.getElementById('assignment-section').classList.add('hidden');
+                    } else if (index === 1) { // Tài liệu
+                        document.getElementById('lesson-summary').innerHTML = "Chưa có tài liệu đính kèm.";
+                        document.getElementById('lesson-summary').style.display = 'block';
+                        document.getElementById('assignment-section').classList.add('hidden');
+                    } else if (index === 2) { // Bài tập
+                        document.getElementById('lesson-summary').style.display = 'none';
+                        document.getElementById('assignment-section').classList.remove('hidden');
+                        if (lesson.assignmentType) {
+                            document.getElementById('assignment-desc').textContent = lesson.assignmentType;
+                        } else {
+                            document.getElementById('assignment-desc').textContent = "Bài học này không yêu cầu bài tập.";
+                        }
+                    }
+                };
+            });
+
             // Start sync
             if (syncInterval) clearInterval(syncInterval);
-            syncInterval = setInterval(syncProgress, 15000);
+            syncInterval = setInterval(syncProgress, 10000);
         }
 
         function onPlayerError(event) {
-            showToast("Lỗi phát video (Mã: " + event.data + ")", "error");
+            console.error("YouTube Player Error:", event.data);
         }
 
         function getYouTubeId(url) {
@@ -447,28 +476,46 @@
             return (match && match[2].length === 11) ? match[2] : url;
         }
 
+        // Biến theo dõi max time cục bộ để xử lý trơn tru hơn
+        let currentLocalMaxTime = 0;
+
         function onPlayerStateChange(event) {
             if (event.data == YT.PlayerState.PLAYING) {
+                // Khi bắt đầu play, lấy maxTime từ dữ liệu bài học
+                if (curriculum[currentLessonIdx]) {
+                    currentLocalMaxTime = Number(curriculum[currentLessonIdx].progress.maxTime) || 0;
+                }
+
                 // Anti-cheat: Check if trying to fast forward
                 const checkSkip = setInterval(() => {
+                    if (!player || !player.getCurrentTime) return;
+
                     const currentTime = player.getCurrentTime();
-                    const maxTime = curriculum[currentLessonIdx].progress.maxTime || 0;
 
-                    if (currentTime > maxTime + 5) { // Allow 5s buffer
-                        player.seekTo(maxTime, true);
-                        showToast("Vui lòng không tua nhanh qua đoạn chưa học!", "warning");
+                    // Logic mới: Nếu đang xem bình thường (currentTime gần với localMaxTime)
+                    // thì cập nhật localMaxTime luôn.
+                    if (currentTime > currentLocalMaxTime && currentTime < currentLocalMaxTime + 5) {
+                        currentLocalMaxTime = currentTime;
+                        // Cập nhật ngược lại vào object để sync sau này
+                        curriculum[currentLessonIdx].progress.maxTime = currentLocalMaxTime;
                     }
-                }, 1000);
 
-                // Clear interval when not playing
-                const stopCheck = () => {
-                    clearInterval(checkSkip);
-                    event.target.removeEventListener('onStateChange', stopCheck);
-                };
+                    // Chỉ chặn nếu currentTime vượt quá xa so với localMaxTime (cho phép buffer 10s)
+                    if (currentTime > currentLocalMaxTime + 10) {
+                        console.log(`Seek attempt: Current ${currentTime} > Max ${currentLocalMaxTime}`);
+                        player.seekTo(currentLocalMaxTime, true);
+                        showToast("Vui lòng học lần lượt, không tua nhanh!", "warning");
+                    }
+                }, 1000); // Check mỗi 1s
+
+                // Gán tạm vào window để có thể clear nếu cần (dù logic này hơi lỏng lẻo nhưng đủ cho demo)
+                window.currentCheckInterval = checkSkip;
+            } else {
+                if (window.currentCheckInterval) clearInterval(window.currentCheckInterval);
             }
 
             if (event.data == YT.PlayerState.ENDED) {
-                syncProgress(true); // Finish video
+                syncProgress(true);
             }
         }
 
@@ -479,9 +526,17 @@
             const duration = Math.floor(player.getDuration());
             const lesson = curriculum[currentLessonIdx];
 
-            // Update local max time
+            // Cập nhật ngay biến local để anti-cheat không chặn nhầm
             if (currentTime > (lesson.progress.maxTime || 0)) {
                 lesson.progress.maxTime = currentTime;
+            }
+
+            // Nếu đã xem hết video (>95%)
+            if (isFinished || (duration > 0 && currentTime / duration > 0.95)) {
+                if (lesson.progress.status !== "Completed" && lesson.progress.status !== "Approved") {
+                    // Nếu không có bài tập -> Completed luôn
+                    // Nếu có bài tập -> Đợi nộp -> In Progress (nhưng backend sẽ xử lý logic này)
+                }
             }
 
             try {
