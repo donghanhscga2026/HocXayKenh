@@ -106,7 +106,19 @@ function doPost(e) {
       return returnJSON(updateVideoProgress(content.email, content.courseId, content.lessonId, content.currentTime, content.duration));
     }
     else if (action === "submitAssignment") {
-      return returnJSON(submitAssignment(content.email, content.courseId, content.lessonId, content.assignmentLink));
+      return returnJSON(submitAssignment(
+        content.email, 
+        content.courseId, 
+        content.lessonId, 
+        content.reflection, 
+        content.link1, 
+        content.link2, 
+        content.link3,
+        content.disciplineSupport,
+        content.disciplineLeadership,
+        content.videoMaxTime,
+        content.duration
+      ));
     }
     else if (action === "getAllAvailableCourses") {
       return returnJSON(getAllAvailableCourses());

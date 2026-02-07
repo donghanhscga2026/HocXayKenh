@@ -304,6 +304,16 @@
                     </div>
 
                     <div id="assignment-section" class="assignment-box hidden">
+                        <!-- Video Progress UI -->
+                        <div id="video-progress-display"
+                            style="background: #f0f9ff; padding: 10px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #bae6fd; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <i class="fas fa-video" style="color: #0284c7;"></i>
+                                <span style="font-weight: 600; color: #0f172a;">Tiến độ Video:</span>
+                                <span id="video-prog-text">0%</span>
+                            </div>
+                            <span id="video-score-text" style="font-weight: bold; color: #0284c7;">0/2 điểm</span>
+                        </div>
                         <div
                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <h4 style="color: #ca8a04; margin: 0;"><i class="fas fa-edit"></i> Ghi nhận Cần mẫn mỗi ngày
@@ -433,9 +443,14 @@
         let curriculum = [];
         let currentLessonIdx = -1;
         let syncInterval;
+        let isYouTubeReady = false;
+        let pendingLessonIdx = -1;
 
         window.onYouTubeIframeAPIReady = function () {
-            loadCurriculum();
+            isYouTubeReady = true;
+            if (pendingLessonIdx !== -1) {
+                playLesson(pendingLessonIdx);
+            }
         };
 
         async function loadCurriculum() {
@@ -508,9 +523,32 @@
         }
 
         function playLesson(idx) {
-            if (idx === currentLessonIdx) return;
+            // Wait for YouTube API
+            if (!isYouTubeReady) {
+                pendingLessonIdx = idx;
+                return;
+            }
+            pendingLessonIdx = -1;
+
+            if (idx === currentLessonIdx && player) return;
+
             // Hide overlay if visible
             document.getElementById('video-overlay').style.display = 'none';
+
+            // --- RESET ASSIGNMENT FORM DEFAULTS ---
+            if (document.getElementById('reflection-input')) document.getElementById('reflection-input').value = "";
+            if (document.getElementById('link-1')) document.getElementById('link-1').value = "";
+            if (document.getElementById('link-2')) document.getElementById('link-2').value = "";
+            if (document.getElementById('link-3')) document.getElementById('link-3').value = "";
+            if (document.getElementById('discipline-support')) document.getElementById('discipline-support').checked = false;
+            if (document.getElementById('discipline-leadership')) document.getElementById('discipline-leadership').checked = false;
+            if (document.getElementById('grading-result')) document.getElementById('grading-result').style.display = 'none';
+
+            const vProg = document.getElementById('video-prog-text');
+            const vScore = document.getElementById('video-score-text');
+            if (vProg) { vProg.textContent = "0%"; vProg.style.color = "#0f172a"; }
+            if (vScore) { vScore.textContent = "0/2 điểm"; vScore.style.color = "#0284c7"; }
+            // --------------------------------------
 
             const lesson = curriculum[idx];
             currentLessonIdx = idx;
@@ -724,6 +762,17 @@
 
             const lesson = curriculum[currentLessonIdx];
 
+            // Get Video Stats for accurate scoring
+            let videoMaxTime = lesson.progress.maxTime || 0;
+            let duration = lesson.progress.duration || 0;
+
+            if (player && player.getDuration) {
+                const current = player.getCurrentTime();
+                const dur = player.getDuration();
+                if (current > videoMaxTime) videoMaxTime = current;
+                if (dur > 0) duration = dur;
+            }
+
             // Show loading state
             const btn = document.querySelector('.btn-submit');
             const originalText = btn.innerHTML;
@@ -743,7 +792,9 @@
                         link2: link2,
                         link3: link3,
                         disciplineSupport: discSupport,
-                        disciplineLeadership: discLeadership
+                        disciplineLeadership: discLeadership,
+                        videoMaxTime: videoMaxTime,
+                        duration: duration
                     })
                 });
                 const result = await response.json();
@@ -753,6 +804,7 @@
 
                     // Display Grade Result
                     const resultBox = document.getElementById('grading-result');
+                    const details = result.details || { video: 0, reflection: 0, practice: 0, discipline: 0, total: 0 };
                     const score = result.score || 0;
                     const grade = result.grade || "Chưa xác định";
 
@@ -761,10 +813,15 @@
                     else if (score < 5) gradeColor = '#b91c1c'; // Red
 
                     resultBox.innerHTML = `
-                        <h4 style="margin: 0 0 10px 0; font-size: 16px;">📊 Kết quả bài làm:</h4>
-                        <p style="margin: 5px 0;"><strong>Điểm tổng kết:</strong> <span style="font-size: 18px; color: ${gradeColor}; font-weight: bold;">${score}/10</span></p>
-                        <p style="margin: 5px 0;"><strong>Xếp loại:</strong> <span style="font-weight: bold; color: ${gradeColor};">${grade}</span></p>
-                        <p style="margin-top: 10px; font-size: 13px; font-style: italic;">(Hệ thống đã tự động cập nhật tiến độ)</p>
+                        <h4 style="margin: 0 0 10px 0; font-size: 16px;">📊 Chi tiết điểm số:</h4>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 10px;">
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">Xem Video:</td><td style="text-align: right; font-weight: bold;">${details.video}/2</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">Tâm đắc ngộ:</td><td style="text-align: right; font-weight: bold;">${details.reflection}/2</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">Bài tập (Links):</td><td style="text-align: right; font-weight: bold;">${details.practice}/3</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">Kỷ luật:</td><td style="text-align: right; font-weight: bold;">${details.discipline}/3</td></tr>
+                            <tr style="background: #f0f9ff;"><td style="padding: 8px; font-weight: bold; color: ${gradeColor};">TỔNG CỘNG:</td><td style="text-align: right; font-weight: bold; color: ${gradeColor}; font-size: 16px;">${score}/10</td></tr>
+                        </table>
+                        <p style="margin: 5px 0; text-align: center;"><strong>Xếp loại:</strong> <span style="font-weight: bold; color: ${gradeColor}; transform: uppercase;">${grade}</span></p>
                     `;
                     resultBox.style.display = 'block';
 
@@ -797,11 +854,31 @@
             if (curriculum[currentLessonIdx]) {
                 const prog = curriculum[currentLessonIdx].progress;
                 const pct = (prog.maxTime || 0) / (prog.duration || 1);
-                // Since duration might be 0 initially, this is rough.
-                // Let's assume 0 for Video in Live View unless we know it's done.
-                if (prog.status === 'Completed' || prog.status === 'Approved') score += 2;
-                else if (pct >= 0.9) score += 2;
-                else if (pct >= 0.5) score += 1;
+
+                let vidScore = 0;
+                if (prog.status === 'Completed' || prog.status === 'Approved') vidScore = 2;
+                else if (pct >= 0.95) vidScore = 2; // >95% ~ 100%
+                else if (pct >= 0.5) vidScore = 1;
+
+                score += vidScore;
+
+                // Update Video Progress UI
+                const progText = document.getElementById('video-prog-text');
+                const scoreText = document.getElementById('video-score-text');
+                if (progText && scoreText) {
+                    const percentDisplay = Math.min(100, Math.round(pct * 100));
+                    progText.textContent = `${percentDisplay}%`;
+                    scoreText.textContent = `${vidScore}/2 điểm`;
+
+                    // Style change based on completion
+                    if (vidScore === 2) {
+                        progText.style.color = '#15803d';
+                        scoreText.style.color = '#15803d';
+                    } else {
+                        progText.style.color = '#0f172a'; // Default
+                        scoreText.style.color = '#0284c7';
+                    }
+                }
             }
 
             // 2. Reflection (+2 if > 10 chars)
@@ -845,10 +922,11 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             // Check login first
-            if (!user.email) {
+            if (!user.email && !user.isGuest) {
                 // Logic handled by checkLogin in main script, but just in case
             }
             bindLiveInputs();
+            loadCurriculum(); // Load content immediately
         });
     </script>
 </body>
