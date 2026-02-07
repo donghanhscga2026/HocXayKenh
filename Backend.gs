@@ -1009,13 +1009,14 @@ function getAllAvailableCourses() {
   // Map columns based on User's provided structure
   const COL_MA_LOP = findIndex("Ma_Lop");
   const COL_TEN_KHOA_HOC = findIndex("Tên khóa học");
+  const COL_TEN_LOP_HOC = findIndex("Tên lớp học"); // New preference
   const COL_CO_SAN = findIndex("Có sẵn");
   const COL_MO_TA = findIndex("Mô tả ngắn");
   const COL_PHI_COC = findIndex("Phí cọc");
   const COL_LINK_ANH = findIndex("Link_Anh_Lop");
   const COL_LINK_ANH_ALT = findIndex("Link_Anh");
 
-  debugLog.push(`Indices: Ma_Lop=${COL_MA_LOP}, Ten=${COL_TEN_KHOA_HOC}, CoSan=${COL_CO_SAN}, PhiCoc=${COL_PHI_COC}`);
+  debugLog.push(`Indices: Ma_Lop=${COL_MA_LOP}, TenLop=${COL_TEN_LOP_HOC}, TenKhoa=${COL_TEN_KHOA_HOC}, CoSan=${COL_CO_SAN}`);
 
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
@@ -1046,14 +1047,22 @@ function getAllAvailableCourses() {
         isFree = (isNaN(fee) || fee <= 0);
       }
       
-      // 4. Get Image
+      // 4. Get Title (Prioritize Tên lớp học > Tên khóa học)
+      let title = "";
+      if (COL_TEN_LOP_HOC !== -1 && row[COL_TEN_LOP_HOC]) {
+        title = String(row[COL_TEN_LOP_HOC]);
+      } else if (COL_TEN_KHOA_HOC !== -1) {
+        title = String(row[COL_TEN_KHOA_HOC] || "");
+      }
+      
+      // 5. Get Image
       let imageUrl = "";
       if (COL_LINK_ANH !== -1) imageUrl = String(row[COL_LINK_ANH] || "");
       else if (COL_LINK_ANH_ALT !== -1) imageUrl = String(row[COL_LINK_ANH_ALT] || "");
 
       availableCourses.push({
         id: courseId,
-        title: (COL_TEN_KHOA_HOC !== -1) ? String(row[COL_TEN_KHOA_HOC] || "") : "Khóa học",
+        title: title || "Khóa học",
         desc: (COL_MO_TA !== -1) ? String(row[COL_MO_TA] || "") : "",
         imageUrl: imageUrl,
         icon: "fa-book",
