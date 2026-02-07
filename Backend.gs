@@ -637,7 +637,9 @@ function getCourseContent(email, courseId) {
   if (!contentSheet) return { success: false, msg: "Sheet nội dung không tồn tại" };
   
   const contentData = contentSheet.getDataRange().getValues();
-  const progressData = progressSheet ? progressSheet.getDataRange().getValues() : [];
+  // FORCE reading 16 columns to ensure Discipline columns are included even if sparse
+  const lastRow = progressSheet ? progressSheet.getLastRow() : 0;
+  const progressData = (progressSheet && lastRow > 0) ? progressSheet.getRange(1, 1, lastRow, 16).getValues() : [];
   
   const curriculum = [];
   for (let i = 1; i < contentData.length; i++) {
@@ -1662,6 +1664,8 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
   // Save Discipline Checkboxes
   sheet.getRange(rowNum, 15).setValue(disciplineSupport ? 1 : 0);
   sheet.getRange(rowNum, 16).setValue(disciplineLeadership ? 1 : 0);
+  
+  SpreadsheetApp.flush(); // Ensure data is persisted immediately
 
   return { 
     success: true, 

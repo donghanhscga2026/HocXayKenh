@@ -332,9 +332,8 @@
                                     Chia sẻ bài học tâm đắc ngộ (Quan trọng - 2đ):</label>
                                 <textarea id="reflection-input" class="submit-input" rows="3"
                                     style="width: 100%; font-family: inherit;"
-                                    placeholder="Viết chia sẻ của bạn (trên 10 ký tự)..."></textarea>
-                                placeholder="Viết chia sẻ của bạn (trên 10 ký tự)..."
-                                oninput="calculateLiveScore()"></textarea>
+                                    placeholder="Viết chia sẻ của bạn (trên 10 ký tự)..."
+                                    oninput="calculateLiveScore()"></textarea>
                             </div>
 
                             <!-- Links -->
@@ -1136,7 +1135,8 @@
             score += supportScore;
 
             // 5. Time (Auto +1)
-            score += 1;
+            let timeScore = 1;
+            score += timeScore;
 
             if (score > 10) score = 10;
 
@@ -1146,40 +1146,49 @@
             else if (score >= 5) grade = "Hoàn thành Khá";
             else if (score >= 5) grade = "Hoàn thành";
 
-            const scoreArea = document.getElementById('live-score-area');
-            if (scoreArea) {
-                // Determine current status of inputs
-                const vidText = `${vidScore}/2`;
-                const refText = (ref && ref.trim().length > 10) ? "2/2" : "0/2";
+            // Update UI Badges
+            const setBadge = (id, current, max) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.textContent = `${current}/${max}`;
+                    if (current === max) {
+                        el.style.color = '#15803d';
+                        el.style.background = '#dcfce7';
+                        el.style.borderColor = '#86efac';
+                    } else {
+                        el.style.color = '#d97706';
+                        el.style.background = '#fffbeb';
+                        el.style.borderColor = '#fcd34d';
+                    }
+                }
+            };
 
-                let pracCount = 0;
-                if (document.getElementById('link-1').value.trim().length > 5) pracCount++;
-                if (document.getElementById('link-2').value.trim().length > 5) pracCount++;
-                if (document.getElementById('link-3').value.trim().length > 5) pracCount++;
-                const pracText = `${pracCount}/3`;
+            setBadge('live-score-video', vidScore, 2);
+            setBadge('live-score-reflection', (ref && ref.trim().length > 10) ? 2 : 0, 2);
 
-                const supportText = `${supportScore}/2`;
-                const timeText = "1/1"; // Fixed for live view
+            let pracCount = 0;
+            if (document.getElementById('link-1').value.trim().length > 5) pracCount++;
+            if (document.getElementById('link-2').value.trim().length > 5) pracCount++;
+            if (document.getElementById('link-3').value.trim().length > 5) pracCount++;
+            setBadge('live-score-links', pracCount, 3);
 
-                scoreArea.style.display = 'block';
-                // scoreArea.style.flexDirection = 'column'; // Keep default block or flex
+            // Discipline: Support (max 2) + Time (max 1) displayed as group or separate?
+            // The badge is on the "Discipline" header, typically covering the checkbox part (max 2) or total section logic (max 3)?
+            // The HTML I added shows "0/3" on the discipline header.
+            // So Discipline = SupportScore (0-2) + TimeScore (1). Total 3.
+            let disciplineTotal = supportScore + timeScore;
+            setBadge('live-score-discipline', disciplineTotal, 3);
 
-                scoreArea.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px dashed #fcd34d; padding-bottom: 5px;">
-                        <span style="font-size: 14px; color: #92400e; font-weight: 600;">Điểm hiển thị tạm tính:</span>
-                        <span style="font-size: 18px; font-weight: bold; color: ${score >= 5 ? '#15803d' : '#d97706'};">${score}/10</span>
-                    </div>
-                    <div style="font-size: 13px; color: #78350f; display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
-                        <div style="display: flex; justify-content: space-between;"><span>1. Video:</span> <b>${vidText}</b></div>
-                        <div style="display: flex; justify-content: space-between;"><span>2. Tâm đắc:</span> <b>${refText}</b></div>
-                        <div style="display: flex; justify-content: space-between;"><span>3. Links:</span> <b>${pracText}</b></div>
-                        <div style="display: flex; justify-content: space-between;"><span>4. Hỗ trợ:</span> <b>${supportText}</b></div>
-                        <div style="display: flex; justify-content: space-between; grid-column: span 2;"><span>5. Đúng hạn:</span> <b>${timeText}</b></div>
-                    </div>
-                    <div style="text-align: right; font-size: 12px; font-style: italic; color: ${score >= 5 ? '#15803d' : '#d97706'}; margin-top: 5px;">
-                        (${grade})
-                    </div>
-                `;
+            // Total Block
+            const totalEl = document.getElementById('live-total-score');
+            const gradeEl = document.getElementById('live-grade');
+            if (totalEl) {
+                totalEl.textContent = `${score}/10`;
+                totalEl.style.color = score >= 5 ? '#ea580c' : '#b45309'; // Orange theme remains
+            }
+            if (gradeEl) {
+                gradeEl.textContent = `(${grade})`;
+                gradeEl.style.color = score >= 5 ? '#15803d' : '#64748b';
             }
         }
 
