@@ -509,46 +509,76 @@ function getCourses(email) {
   if (!courseSheet) return { success: false, msg: "Chưa có dữ liệu khóa học" };
   
   const courses = courseSheet.getDataRange().getValues();
-  const progressSheet = ss.getSheetByName("KH_TienDo");
-  const progressData = progressSheet ? progressSheet.getDataRange().getValues() : [];
+  if (courses.length < 2) return { success: true, data: [] };
+
+  const headers = courses[0];
+  
+  // Helper: Find column index by name (case-insensitive, trimmed)
+  const findIndex = (name) => {
+    return headers.findIndex(h => String(h).trim().toLowerCase() === name.toLowerCase());
+  };
+
+  // Dynamic Column Mapping
+  const COL_MA_LOP = findIndex("Ma_Lop");
+  const COL_TEN_KHOA_HOC = findIndex("Tên khóa học");
+  const COL_TEN_LOP_HOC = findIndex("Tên lớp học"); // Prioritized Title
+  const COL_CO_SAN = findIndex("Có sẵn");
+  const COL_MO_TA = findIndex("Mô tả ngắn");
+  const COL_PHI_COC = findIndex("Phí cọc");
+  const COL_LINK_ANH = findIndex("Link_Anh_Lop");
   
   const courseList = [];
   
-  // Mapping columns for KH sheet:
-  const C_ID = 0;       // Cột A: Mã khóa
-  const C_TITLE = 1;    // Cột B: Tên khóa học
-  const C_AVAILABLE = 4; // Cột E: Có sẵn (TRUE/FALSE)
-  const C_DESC = 5;     // Cột F: Mô tả ngắn
-  const C_DEPOSIT = 7;  // Cột H: Phí cọc
-  const C_MA_LOP = 15;  // Cột P: Ma_Lop
-  const C_IMAGE_URL = 16; // Cột Q: Link_Anh_Lop
-
   // Bỏ qua header
   for (let i = 1; i < courses.length; i++) {
-    // Chỉ lấy khóa học có Có sẵn (cột E) = TRUE
-    // SỬA: Dùng Ma_Lop (Cột P) làm khóa chính
-    if (courses[i][C_AVAILABLE] === true && courses[i][C_MA_LOP]) {
-      const courseMaLop = String(courses[i][C_MA_LOP] || "").trim();
+    const row = courses[i];
+    
+    // Check Availability
+    let isAvailable = false;
+    if (COL_CO_SAN !== -1) {
+       const val = row[COL_CO_SAN];
+       isAvailable = (val === true || String(val).toUpperCase() === "TRUE" || val === 1);
+    }
+
+    const courseMaLop = (COL_MA_LOP !== -1) ? String(row[COL_MA_LOP] || "").trim() : "";
+    
+    // Chỉ lấy khóa học có Có sẵn = TRUE và có Ma_Lop
+    if (isAvailable && courseMaLop) {
       const courseId = courseMaLop;
       
-      const courseName = String(courses[i][C_TITLE] || "");
-      
-      // Logic kích hoạt: Nếu học viên có 86D hoặc mã lớp này đã được duyệt
+      // Title Logic: Prioritize Tên lớp học > Tên khóa học
+      let courseName = "";
+      if (COL_TEN_LOP_HOC !== -1 && row[COL_TEN_LOP_HOC]) {
+        courseName = String(row[COL_TEN_LOP_HOC]);
+      } else if (COL_TEN_KHOA_HOC !== -1) {
+        courseName = String(row[COL_TEN_KHOA_HOC] || "");
+      }
+
+      // Logic kích hoạt
       const has86D = activatedCourses.includes("86D");
       const isActivated = has86D || activatedCourses.includes(courseId);
       
-      const isFree = Number(courses[i][C_DEPOSIT]) === 0;
+      // Fee Logic
+      let isFree = false;
+      if (COL_PHI_COC !== -1) {
+        const fee = Number(row[COL_PHI_COC]);
+        isFree = (isNaN(fee) || fee <= 0);
+      }
       
       let percentComplete = 0;
       if (isActivated) {
         percentComplete = calculateCourseProgress(email, courseId, ss);
       }
       
+      // Image Logic
+      let imageUrl = "";
+      if (COL_LINK_ANH !== -1) imageUrl = String(row[COL_LINK_ANH] || "");
+
       courseList.push({
         id: courseId,
-        title: courseName,
-        desc: String(courses[i][C_DESC] || ""),
-        imageUrl: String(courses[i][C_IMAGE_URL] || ""),
+        title: courseName || "Khóa học",
+        desc: (COL_MO_TA !== -1) ? String(row[COL_MO_TA] || "") : "",
+        imageUrl: imageUrl,
         icon: "fa-book",
         isFree: isFree,
         isActivated: isActivated,
@@ -1247,7 +1277,8 @@ function getCourseDepositInfo(courseId) {
   
   // Map columns based on Verified User Schema
   const COL_MA_LOP = findIndex("Ma_Lop");
-  const COL_TITLE = findIndex("Tên khóa học");
+  const COL_TEN_KHOA_HOC = findIndex("Tên khóa học");
+  const COL_TEN_LOP_HOC = findIndex("Tên lớp học"); // Prioritized Title
   
   const COL_PHI_COC = findIndex("Phí cọc");
   const COL_STK = findIndex("STK");
@@ -1276,9 +1307,16 @@ function getCourseDepositInfo(courseId) {
         depositFee = Number(cleanFee) || 0;
       }
       
+      let title = "";
+      if (COL_TEN_LOP_HOC !== -1 && row[COL_TEN_LOP_HOC]) {
+        title = String(row[COL_TEN_LOP_HOC]);
+      } else if (COL_TEN_KHOA_HOC !== -1) {
+        title = String(row[COL_TEN_KHOA_HOC] || "");
+      }
+
       return {
         id: courseId,
-        title: COL_TITLE !== -1 ? String(row[COL_TITLE] || "") : "",
+        title: title || "Khóa học",
         depositFee: depositFee,
         stk: COL_STK !== -1 ? String(row[COL_STK] || "") : "",
         tenChuTK: COL_TEN_CHU_TK !== -1 ? String(row[COL_TEN_CHU_TK] || "") : "",
