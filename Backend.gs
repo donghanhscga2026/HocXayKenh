@@ -946,35 +946,68 @@ function getAllAvailableCourses() {
   }
   
   const data = courseSheet.getDataRange().getValues();
+  if (data.length < 2) return { success: true, data: [] };
+  
+  const headers = data[0];
   const availableCourses = [];
   
-  // Column mapping (adjust based on your actual sheet structure)
-  const COL_ID = 0;        // Cột A: Mã khóa
-  const COL_TITLE = 1;     // Cột B: Tên khóa học
-  const COL_AVAILABLE = 4; // Cột E: Có sẵn (TRUE/FALSE)
-  const COL_DESC = 5;      // Cột F: Mô tả ngắn
-  const COL_IS_FREE = 14;  // Cột O: isFree (TRUE/FALSE)
-  const COL_MA_LOP = 15;   // Cột P: Ma_Lop
-  const COL_IMAGE_URL = 16; // Cột Q: Link_Anh_Lop
+  // Helper to find column index case-insensitively with aliases
+  const findCol = (aliases) => {
+    const lowerHeaders = headers.map(h => String(h).toLowerCase().trim());
+    for (const alias of aliases) {
+      const idx = lowerHeaders.indexOf(alias.toLowerCase());
+      if (idx !== -1) return idx;
+    }
+    return -1;
+  };
+
+  // 1. Title (Column B - Index 1)
+  let COL_TITLE = findCol(["Tên khóa học", "Ten khoa hoc", "Title"]);
+  if (COL_TITLE === -1) COL_TITLE = 1; // Fallback
+
+  // 2. Available (Column E - Index 4)
+  let COL_AVAILABLE = findCol(["Có sẵn", "Co san", "Available", "Active"]);
+  if (COL_AVAILABLE === -1) COL_AVAILABLE = 4; // Fallback
+
+  // 3. Description (Column F - Index 5)
+  let COL_DESC = findCol(["Mô tả ngắn", "Mo ta ngan", "Description"]);
+  if (COL_DESC === -1) COL_DESC = 5; // Fallback
+
+  // 4. Image URL (Column Q - Index 16 or Link_Anh)
+  let COL_IMAGE_URL = findCol(["Link_Anh_Lop", "Link_Anh", "Image"]);
+  if (COL_IMAGE_URL === -1) COL_IMAGE_URL = 16; // Fallback
+
+  // 5. Ma_Lop (Column P - Index 15)
+  let COL_MA_LOP = findCol(["Ma_Lop", "Ma Lop", "CourseID", "ID"]);
+  if (COL_MA_LOP === -1) COL_MA_LOP = 15; // Fallback
+
+  // 6. Is Free (Column O - Index 14)
+  let COL_IS_FREE = findCol(["Miễn phí", "Mien phi", "Is_Free", "Free"]);
+  if (COL_IS_FREE === -1) COL_IS_FREE = 14; // Fallback
   
   for (let i = 1; i < data.length; i++) {
-    // Chỉ lấy khóa học có Có sẵn (cột E) = TRUE và có Ma_Lop
-    if (data[i][COL_AVAILABLE] === true && data[i][COL_MA_LOP]) {
-      // SỬA: Dùng Ma_Lop làm ID
-      const courseId = String(data[i][COL_MA_LOP]).trim();
-      
-      if (courseId) {
-        availableCourses.push({
+    // Check Available
+    const availableVal = data[i][COL_AVAILABLE];
+    const isAvailable = availableVal === true || String(availableVal).toUpperCase() === "TRUE" || availableVal === 1;
+    
+    // Check Ma_Lop
+    const courseId = data[i][COL_MA_LOP] ? String(data[i][COL_MA_LOP]).trim() : "";
+    
+    // Logic: Must be Available AND have a Course ID
+    // Note: If COL_MA_LOP was missing/wrong and fallback used index 15 which might be empty, we skip.
+    // Safety check: if fallback index is out of bounds, data[i][COL] is undefined.
+    
+    if (isAvailable && courseId) {
+       availableCourses.push({
           id: courseId,
-          title: String(data[i][COL_TITLE] || ""),
+          title: String(data[i][COL_TITLE] || "Khóa học chưa đặt tên"),
           desc: String(data[i][COL_DESC] || ""),
           imageUrl: String(data[i][COL_IMAGE_URL] || ""),
           icon: "fa-book",
-          isFree: data[i][COL_IS_FREE] === true,
-          isActivated: false, // Public view, không có thông tin kích hoạt
+          isFree: (data[i][COL_IS_FREE] === true || String(data[i][COL_IS_FREE]).toUpperCase() === "TRUE" || data[i][COL_IS_FREE] === 1),
+          isActivated: false, // Public view
           percentComplete: 0
         });
-      }
     }
   }
   
@@ -1261,6 +1294,74 @@ function activateCourse(data) {
       }
     }
     
+    // 8. Ghi vào LS_DangKy
+    const ss = getDB();
+    const lsSheet = ss.getSheetByName("LS_DangKy");
+    
+    if (!lsSheet) {
+      return { success: false, message: "Sheet LS_DangKy không tồn tại!" };
+    }
+    
+    const newRow = [
+      "", // STT - để trống, sẽ tự động
+      new Date(), // Ngày đăng ký
+      studentInfo.name, // Tên
+      studentCode, // Mã học viên
+      data.email, // Email
+      studentInfo.phone || "", // SĐT
+      courseInfo.title, // Tên khóa học
+      data.courseId, // Mã khóa
+      isWaived ? 0 : courseInfo.depositFee, // Phí cọc
+      imageUrl, // Link ảnh minh chứng
+      "Chờ duyệt", // Trạng thái
+      "", // Người giới thiệu
+      isWaived ? "Miễn cọc (Học viên 86 ngày)" : "", // Ghi chú
+      "", // Ngày duyệt
+      courseInfo.maLop || "" // Ma_Lop
+    ];
+    
+    lsSheet.appendRow(newRow);
+    
+    // 9. Gửi email xác nhận (optional - có thể bật sau)
+    // sendActivationConfirmationEmail(studentInfo, courseInfo);
+    
+    // 10. Trả về kết quả
+    return {
+      success: true,
+      message: isWaived 
+        ? "Kích hoạt thành công! Bạn được miễn cọc." 
+        : "Gửi yêu cầu kích hoạt thành công! Vui lòng chờ BTC duyệt.",
+      zaloLink: courseInfo.zaloLink || ""
+    };
+    
+  } catch (error) {
+    Logger.log("Lỗi activateCourse: " + error);
+    return { 
+      success: false, 
+      message: "Lỗi hệ thống: " + error.message 
+    };
+  }
+}
+
+/**
+ * Helper: Upload file lên Drive
+ * (Sử dụng lại function có sẵn hoặc tạo mới)
+ */
+function uploadFileToDrive(base64Data, fileName, fileType, studentCode, studentName) {
+  const folder = DriveApp.getFolderById(FOLDER_ID);
+  const blob = Utilities.newBlob(
+    Utilities.base64Decode(base64Data),
+    fileType,
+    fileName
+  );
+  
+  const file = folder.createFile(blob);
+  file.setName(`${studentCode}_${studentName}_${fileName}`);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  
+  return file.getUrl();
+}
+
 /**
  * Cập nhật tiến độ xem video
  */

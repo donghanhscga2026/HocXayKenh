@@ -1118,7 +1118,7 @@
                 let progressUI = '';
 
                 if (course.isActivated) {
-                    // Đã kích hoạt → Hiện % và Nút "Vào học tiếp"
+                    // Đã kích hoạt -> Hiện % và Nút "Vào học tiếp"
                     const percent = course.percentComplete || 0;
                     progressUI = `
                         <div style="margin-top: 10px;">
@@ -1133,20 +1133,23 @@
                             <i class="fas fa-play-circle"></i> Vào học tiếp
                         </button>
                     `;
-                } else if (!course.isFree) {
-                    // Chưa kích hoạt và có phí → Nút "Kích hoạt"
-                    actionButton = `
-                        <button class="btn-activate" onclick="handleActivate('${course.id}')">
-                            <i class="fas fa-unlock"></i> Kích hoạt
-                        </button>
-                    `;
                 } else {
-                    // Miễn phí → Nút "Học ngay"
-                    actionButton = `
-                        <button class="btn-start" onclick="startCourse('${course.id}')">
-                            <i class="fas fa-rocket"></i> Học ngay
-                        </button>
-                    `;
+                    // Chưa kích hoạt hoặc chưa đăng nhập
+                    if (course.isFree) {
+                        // Miễn phí -> Nút "Học thử ngay" (Khách hc được nhưng ko lưu)
+                        actionButton = `
+                            <button class="btn-start" onclick="handlePublicCourseInteract('${course.id}', true)">
+                                <i class="fas fa-eye"></i> Học thử ngay
+                            </button>
+                        `;
+                    } else {
+                        // Có phí -> Nút "Kích hoạt ngay"
+                        actionButton = `
+                            <button class="btn-activate" onclick="handlePublicCourseInteract('${course.id}', false)">
+                                <i class="fas fa-bolt"></i> Kích hoạt ngay
+                            </button>
+                        `;
+                    }
                 }
 
                 // Image URL with fallback (using data URI to avoid network issues)

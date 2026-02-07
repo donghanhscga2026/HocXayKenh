@@ -247,6 +247,18 @@
         <div id="user-display"></div>
     </header>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const u = JSON.parse(localStorage.getItem('user'));
+            const display = document.getElementById('user-display');
+            if (u) {
+                display.textContent = `Hi, ${u.name}`;
+            } else {
+                display.innerHTML = '<a href="login.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">Đăng nhập</a>';
+            }
+        });
+    </script>
+
     <div class="main-container">
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -315,9 +327,14 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbwd9qsO3FlcwNMOWBqPm5c7NWb0d5c8hMCd5o2YzeXlFOQMVayvHErqcUcWHrelojIbeA/exec";
         const urlParams = new URLSearchParams(window.location.search);
         const courseId = urlParams.get('id');
-        const user = JSON.parse(localStorage.getItem('user'));
+        let user = JSON.parse(localStorage.getItem('user'));
 
-        if (!user || !courseId) {
+        // Nếu chưa đăng nhập, tạo user giả cho Guest để không bị lỗi JS
+        if (!user) {
+            user = { email: "", name: "Khách", isGuest: true };
+        }
+
+        if (!courseId) {
             window.location.href = "index.html";
         }
 
@@ -401,6 +418,9 @@
 
         function playLesson(idx) {
             if (idx === currentLessonIdx) return;
+            // Hide overlay if visible
+            document.getElementById('video-overlay').style.display = 'none';
+
             const lesson = curriculum[idx];
             currentLessonIdx = idx;
 
