@@ -175,21 +175,33 @@
         .lesson-list-mobile {
             display: none;
             /* Hidden on desktop */
-            width: 90%;
-            max-width: 90%;
+            width: calc(100% - 30px);
+            max-width: 100%;
             margin: 15px auto;
-            padding: 10px;
+            padding: 12px 40px 12px 15px;
+            /* Right padding for arrow */
 
             border: 1px solid #334155;
             border-radius: 8px;
-            background: #1e293b;
+
+            /* Custom Arrow & Background */
+            background-color: #1e293b;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1rem;
+
             color: white;
-            font-size: 14px;
-            text-overflow: ellipsis;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            overflow: hidden;
+            font-size: 16px;
+            /* 16px prevents iOS zoom */
+
+            /* Reset Native Styles */
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+
             box-sizing: border-box;
+            cursor: pointer;
         }
 
         /* Video Progress Overlay Top-Right */
