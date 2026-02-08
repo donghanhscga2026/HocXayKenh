@@ -355,6 +355,11 @@
             padding: 20px;
         }
 
+        /* Hide mobile inline assignment form on desktop */
+        #assignment-section {
+            display: none;
+        }
+
         p {
             line-height: 1.6;
             margin-bottom: 15px;
@@ -594,6 +599,11 @@
                 border-radius: 0;
                 border: none;
                 margin-top: 0;
+            }
+
+            /* Show mobile inline assignment form on mobile */
+            #assignment-section {
+                display: block !important;
             }
         }
     </style>
@@ -1287,7 +1297,8 @@
             // Hide overlay if visible
             document.getElementById('video-overlay').style.display = 'none';
 
-            // --- RESET ASSIGNMENT FORM DEFAULTS ---
+            // --- RESET ASSIGNMENT FORM DEFAULTS (Both Mobile and Desktop) ---
+            // Mobile form fields
             if (document.getElementById('reflection-input')) document.getElementById('reflection-input').value = "";
             if (document.getElementById('link-1')) document.getElementById('link-1').value = "";
             if (document.getElementById('link-2')) document.getElementById('link-2').value = "";
@@ -1295,6 +1306,15 @@
             if (document.getElementById('discipline-support-1')) document.getElementById('discipline-support-1').checked = false;
             if (document.getElementById('discipline-support-2')) document.getElementById('discipline-support-2').checked = false;
             if (document.getElementById('grading-result')) document.getElementById('grading-result').style.display = 'none';
+
+            // Desktop form fields
+            if (document.getElementById('reflection-input-desktop')) document.getElementById('reflection-input-desktop').value = "";
+            if (document.getElementById('link-1-desktop')) document.getElementById('link-1-desktop').value = "";
+            if (document.getElementById('link-2-desktop')) document.getElementById('link-2-desktop').value = "";
+            if (document.getElementById('link-3-desktop')) document.getElementById('link-3-desktop').value = "";
+            if (document.getElementById('discipline-support-1-desktop')) document.getElementById('discipline-support-1-desktop').checked = false;
+            if (document.getElementById('discipline-support-2-desktop')) document.getElementById('discipline-support-2-desktop').checked = false;
+            if (document.getElementById('grading-result-desktop')) document.getElementById('grading-result-desktop').style.display = 'none';
 
             const vProg = document.getElementById('video-prog-text');
             const vScore = document.getElementById('video-score-text');
@@ -1319,13 +1339,13 @@
             document.getElementById('lesson-summary').innerHTML = lesson.summary || "Không có tóm tắt.";
 
             const assignBox = document.getElementById('assignment-section');
+            const assignBoxDesktop = document.getElementById('assignment-section-desktop');
             if (lesson.assignmentType) {
-                assignBox.classList.remove('hidden');
-                // document.getElementById('assignment-desc').textContent = lesson.assignmentType;
-                // Recalculate live score immediately with new lesson data (which should be 0 or saved progress)
-                calculateLiveScore();
+                if (assignBox) assignBox.classList.remove('hidden');
+                // Desktop assignment box is always visible (not using hidden class)
+                // Don't call calculateLiveScore here - it will be called after form population
             } else {
-                assignBox.classList.add('hidden');
+                if (assignBox) assignBox.classList.add('hidden');
             }
 
             renderLessonList(); // Update active state
@@ -1374,18 +1394,33 @@
             }
 
             if (isDone && lesson.progress.totalScore !== undefined) {
-                // Populate Form
+                // Populate Form (Both Mobile and Desktop)
+                // Mobile form
                 if (document.getElementById('reflection-input')) document.getElementById('reflection-input').value = lesson.progress.reflection || "";
                 if (document.getElementById('link-1')) document.getElementById('link-1').value = lesson.progress.link1 || "";
                 if (document.getElementById('link-2')) document.getElementById('link-2').value = lesson.progress.link2 || "";
                 if (document.getElementById('link-3')) document.getElementById('link-3').value = lesson.progress.link3 || "";
 
-                // Populate Discipline Checkboxes
+                // Desktop form
+                if (document.getElementById('reflection-input-desktop')) document.getElementById('reflection-input-desktop').value = lesson.progress.reflection || "";
+                if (document.getElementById('link-1-desktop')) document.getElementById('link-1-desktop').value = lesson.progress.link1 || "";
+                if (document.getElementById('link-2-desktop')) document.getElementById('link-2-desktop').value = lesson.progress.link2 || "";
+                if (document.getElementById('link-3-desktop')) document.getElementById('link-3-desktop').value = lesson.progress.link3 || "";
+
+                // Populate Discipline Checkboxes (Mobile)
                 if (document.getElementById('discipline-support-1')) {
                     document.getElementById('discipline-support-1').checked = !!lesson.progress.disciplineSupport1;
                 }
                 if (document.getElementById('discipline-support-2')) {
                     document.getElementById('discipline-support-2').checked = !!lesson.progress.disciplineSupport2;
+                }
+
+                // Populate Discipline Checkboxes (Desktop)
+                if (document.getElementById('discipline-support-1-desktop')) {
+                    document.getElementById('discipline-support-1-desktop').checked = !!lesson.progress.disciplineSupport1;
+                }
+                if (document.getElementById('discipline-support-2-desktop')) {
+                    document.getElementById('discipline-support-2-desktop').checked = !!lesson.progress.disciplineSupport2;
                 }
 
                 // Calculate component scores for display
@@ -1412,11 +1447,11 @@
                 if (totalScore > 10) totalScore = 10;
                 if (totalScore < 0) totalScore = 0;
 
-                const resultBox = document.getElementById('grading-result');
+                // Display results in both mobile and desktop result boxes
                 const gradeColor = totalScore >= 10 ? '#15803d' : (totalScore >= 5 ? '#0369a1' : '#b91c1c');
                 const gradeText = totalScore >= 10 ? 'Xuất sắc' : (totalScore >= 8 ? 'Hoàn thành Tốt' : (totalScore >= 6 ? 'Hoàn thành Khá' : (totalScore >= 5 ? 'Hoàn thành' : 'Chưa hoàn thành')));
 
-                resultBox.innerHTML = `
+                const resultHTML = `
                         <h4 style="margin: 0 0 10px 0; font-size: 16px;">📊 Kết quả bài làm chi tiết:</h4>
                         <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 10px;">
                             <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">1. Xem Video (Max 2):</td><td style="text-align: right; font-weight: bold;">${vidScore}/2</td></tr>
@@ -1428,17 +1463,48 @@
                         </table>
                         <p style="margin: 5px 0; text-align: center;"><strong>Xếp loại:</strong> <span style="font-weight: bold; color: ${gradeColor}; transform: uppercase;">${gradeText}</span></p>
                     `;
-                resultBox.style.display = 'block';
+
+                // Mobile result box
+                const resultBox = document.getElementById('grading-result');
+                if (resultBox) {
+                    resultBox.innerHTML = resultHTML;
+                    resultBox.style.display = 'block';
+                }
+
+                // Desktop result box
+                const resultBoxDesktop = document.getElementById('grading-result-desktop');
+                if (resultBoxDesktop) {
+                    resultBoxDesktop.innerHTML = resultHTML;
+                    resultBoxDesktop.style.display = 'block';
+                }
+
+                // Update live score calculation to reflect saved data
+                // Use setTimeout to ensure DOM is fully updated
+                console.log('About to call calculateLiveScore for completed lesson');
+                setTimeout(() => {
+                    console.log('setTimeout executed for completed lesson');
+                    calculateLiveScore();
+                }, 100);
 
                 // Update Buttons
                 btnSubmit.innerHTML = '<i class="fas fa-save"></i> Cập nhật bài làm';
                 btnRelearn.style.display = 'block';
             } else {
-                // Not done
+                // Not done - still calculate live score for new lessons
+                console.log('About to call calculateLiveScore for new lesson');
+                setTimeout(() => {
+                    console.log('setTimeout executed for new lesson');
+                    calculateLiveScore();
+                }, 100);
+
                 if (btnRelearn) btnRelearn.style.display = 'none';
                 btnSubmit.innerHTML = '<i class="fas fa-check-circle"></i> Ghi nhận hoàn thành (Chốt bài)';
             }
             // ---------------------
+
+            // ALSO call immediately without setTimeout as backup
+            console.log('Calling calculateLiveScore immediately as backup');
+            calculateLiveScore();
 
             if (!videoId) {
                 showToast("ID Video không hợp lệ! Vui lòng kiểm tra dữ liệu.", "error");
@@ -1631,6 +1697,148 @@
             }
             lesson.progress.currentTime = currentTime;
             lesson.progress.duration = duration;
+
+            // Update UI for both mobile and desktop
+            const percentage = duration > 0 ? Math.floor((currentTime / duration) * 100) : 0;
+
+            // Mobile UI
+            const videoStatusText = document.getElementById('video-status-text');
+            const videoProgressBar = document.getElementById('video-progress-bar');
+            if (videoStatusText) videoStatusText.textContent = `Đang xem: ${percentage}%`;
+            if (videoProgressBar) videoProgressBar.style.width = `${percentage}%`;
+
+            // Desktop UI
+            const videoStatusTextDesktop = document.getElementById('video-status-text-desktop');
+            const videoProgressBarDesktop = document.getElementById('video-progress-bar-desktop');
+            if (videoStatusTextDesktop) videoStatusTextDesktop.textContent = `Đang xem: ${percentage}%`;
+            if (videoProgressBarDesktop) videoProgressBarDesktop.style.width = `${percentage}%`;
+        }
+
+        // Calculate live score based on current form inputs
+        console.log('DEFINING calculateLiveScore function NOW');
+        window.calculateLiveScore = function () {
+            try {
+                console.log('calculateLiveScore: START');
+
+                if (currentLessonIdx === -1) {
+                    console.log('calculateLiveScore: currentLessonIdx is -1, returning');
+                    return;
+                }
+
+                const lesson = curriculum[currentLessonIdx];
+                console.log('calculateLiveScore: lesson =', lesson);
+
+                // Read from BOTH mobile and desktop forms (whichever has data)
+                // This ensures we get values regardless of which form is visible
+                const reflectionMobile = document.getElementById('reflection-input')?.value || '';
+                const reflectionDesktop = document.getElementById('reflection-input-desktop')?.value || '';
+                const reflection = reflectionDesktop || reflectionMobile; // Desktop takes priority if both exist
+
+                const link1Mobile = document.getElementById('link-1')?.value || '';
+                const link1Desktop = document.getElementById('link-1-desktop')?.value || '';
+                const link1 = link1Desktop || link1Mobile;
+
+                const link2Mobile = document.getElementById('link-2')?.value || '';
+                const link2Desktop = document.getElementById('link-2-desktop')?.value || '';
+                const link2 = link2Desktop || link2Mobile;
+
+                const link3Mobile = document.getElementById('link-3')?.value || '';
+                const link3Desktop = document.getElementById('link-3-desktop')?.value || '';
+                const link3 = link3Desktop || link3Mobile;
+
+                const support1Mobile = document.getElementById('discipline-support-1')?.checked || false;
+                const support1Desktop = document.getElementById('discipline-support-1-desktop')?.checked || false;
+                const support1 = support1Desktop || support1Mobile;
+
+                const support2Mobile = document.getElementById('discipline-support-2')?.checked || false;
+                const support2Desktop = document.getElementById('discipline-support-2-desktop')?.checked || false;
+                const support2 = support2Desktop || support2Mobile;
+
+                // Debug logging
+                console.log('calculateLiveScore called:', {
+                    reflectionMobile: reflectionMobile.length,
+                    reflectionDesktop: reflectionDesktop.length,
+                    reflection: reflection.length,
+                    link1, link2, link3,
+                    support1, support2,
+                    duration: lesson.progress.duration,
+                    maxTime: lesson.progress.maxTime
+                });
+
+                // Calculate scores
+                // 1. Video Progress (2pts)
+                let videoScore = 0;
+                const duration = lesson.progress.duration || 0;
+                const maxTime = lesson.progress.maxTime || 0;
+                if (duration > 0) {
+                    const percentage = (maxTime / duration) * 100;
+                    if (percentage >= 95) videoScore = 2;
+                    else if (percentage >= 50) videoScore = 1;
+                }
+
+                // 2. Reflection (2pts)
+                let reflectionScore = 0;
+                if (reflection.length >= 50) reflectionScore = 2;
+                else if (reflection.length > 10) reflectionScore = 1;
+
+                // 3. Practice Links (3pts)
+                let practiceScore = 0;
+                if (link1 && link1.trim()) practiceScore++;
+                if (link2 && link2.trim()) practiceScore++;
+                if (link3 && link3.trim()) practiceScore++;
+
+                // 4. Support (2pts)
+                let supportScore = 0;
+                if (support1) supportScore++;
+                if (support2) supportScore++;
+
+                // 5. On-time (1pt) - always 1 for live calculation
+                const onTimeScore = 1;
+
+                // Total
+                let totalScore = videoScore + reflectionScore + practiceScore + supportScore + onTimeScore;
+                if (totalScore > 10) totalScore = 10;
+
+                console.log('Calculated scores:', {
+                    videoScore, reflectionScore, practiceScore, supportScore, onTimeScore, totalScore
+                });
+
+                // Update UI for both mobile and desktop
+                // Mobile
+                const scorep1 = document.getElementById('score-p1');
+                const scorep2 = document.getElementById('score-p2');
+                const scorep3 = document.getElementById('score-p3');
+                const scorep4 = document.getElementById('score-p4');
+                const scorep5 = document.getElementById('score-p5');
+                const liveTotal = document.getElementById('live-total-score');
+
+                if (scorep1) scorep1.textContent = `${videoScore}/2`;
+                if (scorep2) scorep2.textContent = `${reflectionScore}/2`;
+                if (scorep3) scorep3.textContent = `${practiceScore}/3`;
+                if (scorep4) scorep4.textContent = `${supportScore}/2`;
+                if (scorep5) scorep5.textContent = `${onTimeScore}/1`;
+                if (liveTotal) liveTotal.textContent = `${totalScore}/10`;
+
+                // Desktop
+                const scorep1Desktop = document.getElementById('score-p1-desktop');
+                const scorep2Desktop = document.getElementById('score-p2-desktop');
+                const scorep3Desktop = document.getElementById('score-p3-desktop');
+                const scorep4Desktop = document.getElementById('score-p4-desktop');
+                const scorep5Desktop = document.getElementById('score-p5-desktop');
+                const liveTotalDesktop = document.getElementById('live-total-score-desktop');
+
+                if (scorep1Desktop) scorep1Desktop.textContent = `${videoScore}/2`;
+                if (scorep2Desktop) scorep2Desktop.textContent = `${reflectionScore}/2`;
+                if (scorep3Desktop) scorep3Desktop.textContent = `${practiceScore}/3`;
+                if (scorep4Desktop) scorep4Desktop.textContent = `${supportScore}/2`;
+                if (scorep5Desktop) scorep5Desktop.textContent = `${onTimeScore}/1`;
+                if (liveTotalDesktop) liveTotalDesktop.textContent = `${totalScore}/10`;
+
+                console.log('UI updated successfully');
+            } catch (error) {
+                console.error('ERROR in calculateLiveScore:', error);
+                console.error('Error stack:', error.stack);
+            }
         }
 
         async function syncProgress(isFinished = false) {
