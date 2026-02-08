@@ -203,8 +203,8 @@
             top: 100%;
             left: 0;
             width: 100%;
-            background: #1e293b;
-            border: 1px solid #334155;
+            background: #334155;
+            border: 1px solid #475569;
             border-radius: 8px;
             margin-top: 5px;
             max-height: 300px;
@@ -304,18 +304,24 @@
         /* Content Area - Video Player */
         .content {
             flex: 1;
-            overflow-y: auto;
-            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 0;
+            position: relative;
         }
 
         .video-wrapper {
             position: relative;
             width: 100%;
+            /* Sticky Logic */
+            flex-shrink: 0;
             aspect-ratio: 16/9;
             background: black;
-            border-radius: 12px;
+            border-radius: 0;
             overflow: visible;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 20;
         }
 
 
@@ -331,11 +337,14 @@
         }
 
         .lesson-detail {
-            margin-top: 30px;
+            /* Scrollable Area */
+            flex: 1;
+            overflow-y: auto;
             background: white;
-            padding: 30px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
+            padding: 20px 30px;
+            border-radius: 0;
+            border: none;
+            margin-top: 0;
         }
 
         p {
@@ -464,8 +473,9 @@
         .custom-mobile-dropdown {
             display: none;
             width: 100%;
-            background: #1e293b;
-            border-bottom: 1px solid #334155;
+            background: #334155;
+            /* Changed Background */
+            border-bottom: 1px solid #475569;
         }
 
         .custom-dropdown-header {
@@ -997,7 +1007,7 @@
             isYouTubeReady = true;
         }
 
-        async function loadCurriculum() {
+        async function loadCurriculum(autoPlay = true) {
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
@@ -1024,7 +1034,7 @@
                     // Check graduation FIRST
                     checkGraduation();
 
-                    playLesson(lastIdx !== -1 ? lastIdx : 0);
+                    if (autoPlay) playLesson(lastIdx !== -1 ? lastIdx : 0);
                 } else {
                     console.error("API Error:", result.msg);
                     showToast("Lỗi API: " + (result.msg || "Không xác định"), "error");
@@ -1581,7 +1591,7 @@
                     `;
                     resultBox.style.display = 'block';
 
-                    await loadCurriculum(); // Reload to update status and locks
+                    await loadCurriculum(false); // Reload to update status and locks
 
                     // Auto-advance to next lesson if available
                     const nextIdx = currentLessonIdx + 1;
