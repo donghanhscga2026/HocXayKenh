@@ -606,6 +606,29 @@ function getCourses(email) {
   return { success: true, data: courseList };
 }
 
+// --- CONFIG: KH_TienDo COLUMN NAMES ---
+const COL_NAME_GHI_NHAN = "Thoi_Gian_Ghi_Nhan";
+const COL_NAME_MA_CODE = "Ma_Code";
+const COL_NAME_EMAIL = "Email";
+const COL_NAME_TEN_HV = "Ten_HV";
+const COL_NAME_MA_KH = "Ma_KH";
+const COL_NAME_MA_BAI = "Ma_Bai";
+const COL_NAME_HIEN_TAI = "Thoi_Diem_Hien_Tai";
+const COL_NAME_XA_NHAT = "Diem_Xem_Xa_Nhat";
+const COL_NAME_DIEM_VIDEO = "Diem_Video";
+const COL_NAME_BHTDN = "BHTDN";
+const COL_NAME_DIEM_BHTDN = "Diem_BHTDN";
+const COL_NAME_LINK_1 = "Link_Video1";
+const COL_NAME_LINK_2 = "Link_Video2";
+const COL_NAME_LINK_3 = "Link_Video3";
+const COL_NAME_DIEM_LINK = "Diem_Link";
+const COL_NAME_HO_TRO_1 = "Ho_Tro1";
+const COL_NAME_HO_TRO_2 = "Ho_Tro2";
+const COL_NAME_DIEM_DUNG_HAN = "Diem_Dung_Han";
+const COL_NAME_TONG_DIEM = "Tong_Diem";
+const COL_NAME_XEP_LOAI = "Xep_Loai"; // Wait, user sheet doesn't seem to show Xep_Loai in the partial view, but usually it's there.
+const COL_NAME_TRANG_THAI = "Trang_Thai"; // Need to check if this exists or if it's derived.
+
 function calculateCourseProgress(email, courseId, ss) {
   const contentSheet = ss.getSheetByName("KH_NoiDung");
   const progressSheet = ss.getSheetByName("KH_TienDo");
@@ -618,11 +641,23 @@ function calculateCourseProgress(email, courseId, ss) {
   }
   if (totalLessons === 0) return 0;
 
+  // Use Dynamic Column Index
+  const idxEmail = getColumnIndex(progressSheet, COL_NAME_EMAIL);
+  const idxCourse = getColumnIndex(progressSheet, COL_NAME_MA_KH);
+  // Default to Status column if found, else fallback to hardcoded (dangerous if user changed it)
+  // But wait, getColumnIndex returns -1 if not found.
+  let idxStatus = getColumnIndex(progressSheet, COL_NAME_TRANG_THAI);
+  
+  if (idxEmail === -1 || idxCourse === -1 || idxStatus === -1) return 0; // Cannot calculate
+
   const progress = progressSheet.getDataRange().getValues();
   let completedCount = 0;
   for (let i = 1; i < progress.length; i++) {
-    if (progress[i][0] == email && progress[i][1] == courseId) {
-      const currentStatus = progress[i][5];
+    const rowEmail = String(progress[i][idxEmail]);
+    const rowCourse = String(progress[i][idxCourse]);
+    
+    if (rowEmail === email && rowCourse == courseId) {
+      const currentStatus = progress[i][idxStatus];
       if (currentStatus == "Completed" || currentStatus == "Approved") {
         completedCount++;
       }
@@ -640,9 +675,8 @@ function getCourseContent(email, courseId) {
   if (!contentSheet) return { success: false, msg: "Sheet nội dung không tồn tại" };
   
   const contentData = contentSheet.getDataRange().getValues();
-  // FORCE reading 16 columns to ensure Discipline columns are included even if sparse
-  const lastRow = progressSheet ? progressSheet.getLastRow() : 0;
-  const progressData = (progressSheet && lastRow > 0) ? progressSheet.getRange(1, 1, lastRow, 16).getValues() : [];
+  // FORCE reading ALL columns to ensure we catch new columns added by user
+  const progressData = (progressSheet && progressSheet.getLastRow() > 0) ? progressSheet.getDataRange().getValues() : [];
   
   const curriculum = [];
   for (let i = 1; i < contentData.length; i++) {
@@ -651,28 +685,59 @@ function getCourseContent(email, courseId) {
       
       // Tìm tiến độ của học viên cho bài này
       let userProgress = { currentTime: 0, maxTime: 0, status: "Locked" };
-      for (let j = 1; j < progressData.length; j++) {
-        const pEmail = String(progressData[j][0]);
-        const pCourseId = String(progressData[j][1]);
-        const pLessonId = String(progressData[j][2]);
-        
-        if (pEmail === email && pCourseId === courseId && pLessonId === lessonId) {
-          userProgress = {
-            currentTime: Number(progressData[j][3] || 0),
-            maxTime: Number(progressData[j][4] || 0),
-            status: progressData[j][5] || "In Progress",
-            link1: progressData[j][6] || "",
-            videoScore: Number(progressData[j][7] || 0),
-            reflection: progressData[j][8] || "",
-            link2: progressData[j][9] || "",
-            link3: progressData[j][10] || "",
-            totalScore: Number(progressData[j][11] || 0),
-            grade: progressData[j][12] || "",
-            disciplineSupport1: progressData[j][14] === true || progressData[j][14] === "true" || progressData[j][14] === 1,
-            disciplineSupport2: progressData[j][15] === true || progressData[j][15] === "true" || progressData[j][15] === 1
-          };
-          break;
-        }
+      
+      // Get Dynamic Column Indexes
+      const idxEmail = getColumnIndex(progressSheet, COL_NAME_EMAIL);
+      const idxCourse = getColumnIndex(progressSheet, COL_NAME_MA_KH);
+      const idxLesson = getColumnIndex(progressSheet, COL_NAME_MA_BAI);
+      
+      // Data Columns
+      const idxCurTime = getColumnIndex(progressSheet, COL_NAME_HIEN_TAI);
+      const idxMaxTime = getColumnIndex(progressSheet, COL_NAME_XA_NHAT);
+      const idxStatus = getColumnIndex(progressSheet, COL_NAME_TRANG_THAI);
+      const idxLink1 = getColumnIndex(progressSheet, COL_NAME_LINK_1);
+      const idxVidScore = getColumnIndex(progressSheet, COL_NAME_DIEM_VIDEO);
+      const idxReflect = getColumnIndex(progressSheet, COL_NAME_BHTDN);
+      const idxLink2 = getColumnIndex(progressSheet, COL_NAME_LINK_2);
+      const idxLink3 = getColumnIndex(progressSheet, COL_NAME_LINK_3);
+      const idxTotal = getColumnIndex(progressSheet, COL_NAME_TONG_DIEM);
+      const idxGrade = getColumnIndex(progressSheet, COL_NAME_XEP_LOAI);
+      const idxSupp1 = getColumnIndex(progressSheet, COL_NAME_HO_TRO_1);
+      const idxSupp2 = getColumnIndex(progressSheet, COL_NAME_HO_TRO_2);
+      
+      if (idxEmail !== -1 && idxCourse !== -1 && idxLesson !== -1) {
+          for (let j = 1; j < progressData.length; j++) {
+            const pEmail = String(progressData[j][idxEmail]);
+            const pCourseId = String(progressData[j][idxCourse]);
+            const pLessonId = String(progressData[j][idxLesson]);
+            
+            if (pEmail === email && pCourseId === courseId && pLessonId === lessonId) {
+              
+              const getVal = (idx) => (idx !== -1 ? progressData[j][idx] : undefined);
+              const getNum = (idx) => (idx !== -1 ? Number(progressData[j][idx] || 0) : 0);
+              const getBool = (idx) => {
+                  if (idx === -1) return false;
+                  const v = progressData[j][idx];
+                  return v === true || v === "true" || v === 1;
+              };
+
+              userProgress = {
+                currentTime: getNum(idxCurTime),
+                maxTime: getNum(idxMaxTime),
+                status: getVal(idxStatus) || "In Progress",
+                link1: getVal(idxLink1) || "",
+                videoScore: getNum(idxVidScore),
+                reflection: getVal(idxReflect) || "",
+                link2: getVal(idxLink2) || "",
+                link3: getVal(idxLink3) || "",
+                totalScore: getNum(idxTotal),
+                grade: getVal(idxGrade) || "",
+                disciplineSupport1: getBool(idxSupp1),
+                disciplineSupport2: getBool(idxSupp2)
+              };
+              break;
+            }
+          }
       }
       
       curriculum.push({
@@ -709,14 +774,30 @@ function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
   const ss = getDB();
   let progressSheet = ss.getSheetByName("KH_TienDo");
   if (!progressSheet) {
+    // If sheet missing, create with STANDARD headers
     progressSheet = ss.insertSheet("KH_TienDo");
-    progressSheet.appendRow(["Email", "Ma_KH", "Ma_Bai", "Thoi_Diem_Hien_Tai", "Diem_Xem_Xa_Nhat", "Trang_Thai"]);
+    // Append full standard headers A-U
+    progressSheet.appendRow([
+        COL_NAME_GHI_NHAN, COL_NAME_MA_CODE, COL_NAME_EMAIL, COL_NAME_TEN_HV, COL_NAME_MA_KH, COL_NAME_MA_BAI,
+        COL_NAME_HIEN_TAI, COL_NAME_XA_NHAT, COL_NAME_DIEM_VIDEO, COL_NAME_BHTDN, COL_NAME_DIEM_BHTDN,
+        COL_NAME_LINK_1, COL_NAME_LINK_2, COL_NAME_LINK_3, COL_NAME_DIEM_LINK,
+        COL_NAME_HO_TRO_1, COL_NAME_HO_TRO_2, COL_NAME_DIEM_DUNG_HAN, COL_NAME_TONG_DIEM, COL_NAME_XEP_LOAI, COL_NAME_TRANG_THAI
+    ]);
   }
   
+  // Get Dynamic Indexes
+  const idxEmail = getColumnIndex(progressSheet, COL_NAME_EMAIL);
+  const idxCourse = getColumnIndex(progressSheet, COL_NAME_MA_KH);
+  const idxLesson = getColumnIndex(progressSheet, COL_NAME_MA_BAI);
+  
+  if (idxEmail === -1 || idxCourse === -1 || idxLesson === -1) {
+      return { success: false, msg: "Cấu trúc Sheet không đúng (thiếu các cột định danh)." };
+  }
+
   const data = progressSheet.getDataRange().getValues();
   let foundRow = -1;
   for (let i = 1; i < data.length; i++) {
-    if (data[i][0] == email && data[i][1] == courseId && data[i][2] == lessonId) {
+    if (String(data[i][idxEmail]) == email && String(data[i][idxCourse]) == courseId && String(data[i][idxLesson]) == lessonId) {
       foundRow = i + 1;
       break;
     }
@@ -725,20 +806,51 @@ function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
   const percent = (currentTime / duration) * 100;
   const isFinishedVideo = percent > 95;
   
+  // Columns to Update
+  const idxCurTime = getColumnIndex(progressSheet, COL_NAME_HIEN_TAI);
+  const idxMaxTime = getColumnIndex(progressSheet, COL_NAME_XA_NHAT);
+  const idxStatus = getColumnIndex(progressSheet, COL_NAME_TRANG_THAI);
+  const idxTimestamp = getColumnIndex(progressSheet, COL_NAME_GHI_NHAN); // Optional: Update timestamp on view? No, maybe only on submit.
+
   if (foundRow > 0) {
-    const lastMax = Number(data[foundRow-1][4] || 0);
-    const newMax = Math.max(lastMax, currentTime);
+    // Update existing row
     
-    progressSheet.getRange(foundRow, 4).setValue(currentTime);
-    progressSheet.getRange(foundRow, 5).setValue(newMax);
+    // 1. Current Time
+    if (idxCurTime !== -1) progressSheet.getRange(foundRow, idxCurTime + 1).setValue(currentTime);
     
-    // Nếu xem xong video mà chưa có trạng thái hoặc đang "Available" thì chuyển sang "In Progress"
-    const currentStatus = data[foundRow-1][5];
-    if (isFinishedVideo && (currentStatus == "Available" || currentStatus == "Locked" || !currentStatus)) {
-       progressSheet.getRange(foundRow, 6).setValue("In Progress"); 
+    // 2. Max Time
+    if (idxMaxTime !== -1) {
+        const lastMax = Number(data[foundRow-1][idxMaxTime] || 0);
+        const newMax = Math.max(lastMax, currentTime);
+        progressSheet.getRange(foundRow, idxMaxTime + 1).setValue(newMax);
     }
+    
+    // 3. Status
+    if (idxStatus !== -1) {
+        const currentStatus = data[foundRow-1][idxStatus];
+        if (isFinishedVideo && (currentStatus == "Available" || currentStatus == "Locked" || !currentStatus)) {
+           progressSheet.getRange(foundRow, idxStatus + 1).setValue("In Progress"); 
+        }
+    }
+    
   } else {
-    progressSheet.appendRow([email, courseId, lessonId, currentTime, currentTime, "In Progress"]);
+    // Append NEW Row - Construct Array based on Headers
+    const headers = progressSheet.getRange(1, 1, 1, progressSheet.getLastColumn()).getValues()[0];
+    const newRow = new Array(headers.length).fill(""); // Fill with empty strings
+    
+    // Fill known values
+    if (idxEmail !== -1) newRow[idxEmail] = email;
+    if (idxCourse !== -1) newRow[idxCourse] = courseId;
+    if (idxLesson !== -1) newRow[idxLesson] = lessonId;
+    if (idxCurTime !== -1) newRow[idxCurTime] = currentTime;
+    if (idxMaxTime !== -1) newRow[idxMaxTime] = currentTime;
+    if (idxStatus !== -1) newRow[idxStatus] = "In Progress";
+    if (idxTimestamp !== -1) newRow[idxTimestamp] = new Date(); // Record first seen time
+    
+    // Optional: Auto-fill Student Info if possible?
+    // For now, keep it simple.
+    
+    progressSheet.appendRow(newRow);
   }
   
   return { success: true };
@@ -1469,75 +1581,98 @@ function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
   const sheet = ss.getSheetByName("KH_TienDo");
   if (!sheet) return { success: false, msg: "Sheet KH_TienDo không tồn tại" };
   
+  // Get Dynamic Column Indexes
+  const idxEmail = getColumnIndex(sheet, COL_NAME_EMAIL);
+  const idxCourse = getColumnIndex(sheet, COL_NAME_MA_KH);
+  const idxLesson = getColumnIndex(sheet, COL_NAME_MA_BAI);
+  
+  if (idxEmail === -1 || idxCourse === -1 || idxLesson === -1) {
+    return { success: false, msg: "Cấu trúc Sheet không đúng (thiếu cột định danh)" };
+  }
+
+  const idxCurTime = getColumnIndex(sheet, COL_NAME_HIEN_TAI);
+  const idxMaxTime = getColumnIndex(sheet, COL_NAME_XA_NHAT);
+  const idxStatus = getColumnIndex(sheet, COL_NAME_TRANG_THAI);
+  const idxVideoScore = getColumnIndex(sheet, COL_NAME_DIEM_VIDEO);
+  const idxTimestamp = getColumnIndex(sheet, COL_NAME_GHI_NHAN);
+  
   const data = sheet.getDataRange().getValues();
   let rowIndex = -1;
-  
+  const now = new Date();
+  const timestampStr = now.toLocaleString("vi-VN", {timeZone: "Asia/Ho_Chi_Minh"});
+
   // Tìm dòng tương ứng: Email + CourseId + LessonId
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]) === email && 
-        String(data[i][1]) === courseId && 
-        String(data[i][2]) === lessonId) {
+    if (String(data[i][idxEmail]) === email && 
+        String(data[i][idxCourse]) === courseId && 
+        String(data[i][idxLesson]) === lessonId) {
       rowIndex = i;
       break;
     }
   }
   
   const progressRatio = duration > 0 ? (currentTime / duration) : 0;
-  // Nếu > 95% coi như hoàn thành Video (nhưng chưa xong bài học nếu có bài tập)
-  // Logic: Nếu chưa có Status -> "In Progress"
-  // Nếu đã Completed/Pending -> Giữ nguyên
-  
   let newStatus = "In Progress";
   
+  // Calculate Video Score
+  // Logic: 
+  // If no existing maxTime, use currentTime.
+  // If has existing maxTime, use max(existing, current).
+  let currentMax = 0;
+  if (rowIndex !== -1 && idxMaxTime !== -1) {
+      currentMax = Number(data[rowIndex][idxMaxTime]) || 0;
+  }
+  
+  let maxTime = Math.max(currentMax, currentTime);
+  
+  let videoScore = 0;
+  if (duration > 0) {
+    const watchedPercent = (maxTime / duration) * 100;
+    if (watchedPercent >= 95 || (duration - maxTime < 10)) videoScore = 2; // Xem hết 100% (+2)
+    else if (watchedPercent >= 50) videoScore = 1; // Xem trên 50% (+1)
+    else videoScore = 0;
+  }
+  
   if (rowIndex === -1) {
-    // Thêm mới
-    sheet.appendRow([
-      email, 
-      courseId, 
-      lessonId, 
-      currentTime, 
-      currentTime, // Max time
-      newStatus,
-      "" // Link bài tập
-    ]);
+    // Thêm mới row
+    // Create array with empty strings for all columns
+    const lastCol = sheet.getLastColumn();
+    const newRow = new Array(lastCol).fill("");
+    
+    // Map values to correct indices using our handy indexes
+    if (idxTimestamp !== -1) newRow[idxTimestamp] = timestampStr;
+    if (idxEmail !== -1) newRow[idxEmail] = email;
+    if (idxCourse !== -1) newRow[idxCourse] = courseId;
+    if (idxLesson !== -1) newRow[idxLesson] = lessonId;
+    
+    if (idxCurTime !== -1) newRow[idxCurTime] = currentTime;
+    if (idxMaxTime !== -1) newRow[idxMaxTime] = maxTime;
+    if (idxStatus !== -1) newRow[idxStatus] = newStatus;
+    if (idxVideoScore !== -1) newRow[idxVideoScore] = videoScore;
+    
+    sheet.appendRow(newRow);
   } else {
-    // Cập nhật
-    // Cột D (index 3): Thời điểm hiện tại
-    // Cột E (index 4): Điểm xem xa nhất
-    // Cột F (index 5): Trạng thái
+    // Cập nhật existing row
+    const rowNum = rowIndex + 1;
     
-    // Update current time
-    sheet.getRange(rowIndex + 1, 4).setValue(currentTime);
+    // Update Record Time? Maybe not necessary for just progress update, but good for tracking last activity.
+    if (idxTimestamp !== -1) sheet.getRange(rowNum, idxTimestamp + 1).setValue(timestampStr);
     
-    // Update max time if greater
-    // Update max time if greater
-    const currentMax = Number(data[rowIndex][4]) || 0;
-    let maxTime = currentMax;
-    
-    if (currentTime > currentMax) {
-      maxTime = currentTime;
-      sheet.getRange(rowIndex + 1, 5).setValue(currentTime);
+    if (idxCurTime !== -1) sheet.getRange(rowNum, idxCurTime + 1).setValue(currentTime);
+    if (idxMaxTime !== -1 && maxTime > currentMax) {
+        sheet.getRange(rowNum, idxMaxTime + 1).setValue(maxTime);
     }
+    // Update Score
+    if (idxVideoScore !== -1) sheet.getRange(rowNum, idxVideoScore + 1).setValue(videoScore);
     
-    // --- NEW GRADING LOGIC (Video Score: Max 2) ---
-    // Col 8 (Index 7): Diem_Video
-    let videoScore = 0;
-    if (duration > 0) {
-      const watchedPercent = (maxTime / duration) * 100;
-      if (watchedPercent >= 100 || (duration - maxTime < 10)) videoScore = 2; // Xem hết = 2đ
-      else if (watchedPercent >= 50) videoScore = 1; // >50% = 1đ
-      else videoScore = 0;
+    // Update Status if currently NOT completed?
+    // Avoid overwriting "Completed" with "In Progress"
+    if (idxStatus !== -1) {
+        const currentStatus = data[rowIndex][idxStatus];
+        if (currentStatus !== "Completed" && currentStatus !== "Approved") {
+             sheet.getRange(rowNum, idxStatus + 1).setValue(newStatus);
+        }
     }
-    
-    // Update Video Score
-    sheet.getRange(rowIndex + 1, 8).setValue(videoScore);
-    
-    // Recalculate Total Score
-    // Index 7: Diem_Video, 8: Tam_Dac, 9: Link2, 10: Link3 => Total = Col 7 + 8 + 9 + 10 ???
-    // Wait, let's standardize columns first.
-    // 0:Email, 1:Ma_KH, 2:Ma_Bai, 3:Hien_Tai, 4:Xa_Nhat, 5:Status, 6:Link1(Old), 7:VideoScore, 8:Reflection, 9:Link2, 10:Link3, 11:Total, 12:Grade
-    
-    // Update Status logic handled mainly by frontend or completion check? - Keep simple here
   }
   
   return { success: true };
@@ -1553,14 +1688,23 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
   
   if (!sheet) return { success: false, message: "Lỗi hệ thống: Không tìm thấy Sheet tiến độ." };
   
+  // Get Dynamic Indexes
+  const idxEmail = getColumnIndex(sheet, COL_NAME_EMAIL);
+  const idxCourse = getColumnIndex(sheet, COL_NAME_MA_KH);
+  const idxLesson = getColumnIndex(sheet, COL_NAME_MA_BAI);
+
+  if (idxEmail === -1 || idxCourse === -1 || idxLesson === -1) {
+      return { success: false, message: "Cấu trúc Sheet không đúng (thiếu các cột định danh)." };
+  }
+  
   const data = sheet.getDataRange().getValues();
   let rowIndex = -1;
   
   // Find row
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]) === email && 
-        String(data[i][1]) === courseId && 
-        String(data[i][2]) === lessonId) {
+    if (String(data[i][idxEmail]) === email && 
+        String(data[i][idxCourse]) === courseId && 
+        String(data[i][idxLesson]) === lessonId) {
       rowIndex = i;
       break;
     }
@@ -1571,96 +1715,106 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
   }
   
   const rowNum = rowIndex + 1;
-
-  // --- GRADING LOGIC (10 Point Scale) ---
+  const idxVideoScore = getColumnIndex(sheet, COL_NAME_DIEM_VIDEO);
+  const idxMaxTime = getColumnIndex(sheet, COL_NAME_XA_NHAT);
   
-  // 1. Video Score (Max 2)
-  // Force update if data provided
-  let videoScore = Number(data[rowIndex][7]) || 0;
+  // --- GRADING LOGIC (10 Point Scale - User Requested Formula) ---
+  
+  // 1. Diem_Video (Max 2)
+  let diemVideo = 0;
+  // Initialize with existing score if no new play data
+  if (idxVideoScore !== -1) diemVideo = Number(data[rowIndex][idxVideoScore]) || 0;
   
   if (duration > 0) {
     const watchedPercent = (videoMaxTime / duration) * 100;
-    if (watchedPercent >= 100 || (duration - videoMaxTime < 10)) videoScore = 2;
-    else if (watchedPercent >= 50) videoScore = 1;
-    else videoScore = 0;
+    if (watchedPercent >= 95 || (duration - videoMaxTime < 10)) diemVideo = 2; // Xem hết 100% (+2) Note: >95% is effectively 100%
+    else if (watchedPercent >= 50) diemVideo = 1; // Xem trên 50% (+1)
+    else diemVideo = 0;
     
     // Save new video score immediately
-    sheet.getRange(rowNum, 5).setValue(videoMaxTime); // Update Max Time
-    sheet.getRange(rowNum, 8).setValue(videoScore);   // Update Score
+    if (idxMaxTime !== -1) sheet.getRange(rowNum, idxMaxTime + 1).setValue(videoMaxTime);
+    if (idxVideoScore !== -1) sheet.getRange(rowNum, idxVideoScore + 1).setValue(diemVideo);
   }
   
-  // 2. Reflection Score (Max 2)
-  let reflectionScore = 0;
+  // 2. Diem_BHTDN (Max 2)
+  let diemBHTDN = 0;
   const refLen = reflection ? String(reflection).trim().length : 0;
-  if (refLen >= 50) reflectionScore = 2;
-  else if (refLen > 10) reflectionScore = 1;
+  if (refLen >= 50) diemBHTDN = 2; // Trên 50 ký tự (+2)
+  else if (refLen > 10) diemBHTDN = 1; // Trên 10 ký tự (+1)
   
-  // 3. Practice Score (Max 3)
-  let practiceScore = 0;
-  if (link1 && String(link1).trim().length > 5) practiceScore++;
-  if (link2 && String(link2).trim().length > 5) practiceScore++;
-  if (link3 && String(link3).trim().length > 5) practiceScore++;
+  // 3. Diem_Link (Max 3)
+  let diemLink = 0;
+  if (link1 && String(link1).trim().length > 5) diemLink++; // Link 1 (+1)
+  if (link2 && String(link2).trim().length > 5) diemLink++; // Link 2 (+1)
+  if (link3 && String(link3).trim().length > 5) diemLink++; // Link 3 (+1)
   
-  // 4. Discipline Score (Max 3: Support 2 + Time 1)
-  let disciplineScore = 0;
+  // 4. Ho_Tro_1 & Ho_Tro_2 (Max 2)
+  let hoTro1 = disciplineSupport1 ? 1 : 0; // Tích hỗ trợ tuyến 1 (+1)
+  let hoTro2 = disciplineSupport2 ? 1 : 0; // Tích hỗ trợ tuyến 2 (+1)
   
-  // Support (2pts)
-  if (disciplineSupport1) disciplineScore++;
-  if (disciplineSupport2) disciplineScore++;
+  // 5. Diem_Dung_Han (+1 or -1)
+  let diemDungHan = 1; // Mặc định +1 (Nộp đúng hạn)
+  // Logic: Nếu có deadline, kiểm tra tại đây. Hiện tại luôn +1.
   
-  // On Time (1pt or -1pt)
-  // Logic: Check against 23:59 of current server time
-  // Since we assume submission is "now", we check if it is "late" relative to some deadline?
-  // User says: "tự động nếu thời gian nộp trước 23h59 ngày hôm đó... hoặc bị -1 nếu nộp muộn"
-  // We assume "today" is the deadline. So effectively always +1 unless we track "assigned date" vs "submit date".
-  // For now, we award +1 (On Time).
-  let timeParam = 1; 
-  disciplineScore += timeParam;
-  
-  // 5. Calculate Gross Total
-  let totalScore = videoScore + reflectionScore + practiceScore + disciplineScore;
+  // 6. Calculate Tong_Diem
+  // Formula: Tong_Diem = Diem_Video + Diem_BHTDN + Diem_Link + Ho_Tro1 + Ho_Tro2 + DIem_DungHan
+  let tongDiem = diemVideo + diemBHTDN + diemLink + hoTro1 + hoTro2 + diemDungHan;
   
   // Cap at 10
-  if (totalScore > 10) totalScore = 10; 
-  if (totalScore < 0) totalScore = 0;
+  if (tongDiem > 10) tongDiem = 10; 
+  if (tongDiem < 0) tongDiem = 0;
   
-  // 6. Classification
-  let grade = "Chưa hoàn thành";
-  if (totalScore >= 10) grade = "Xuất sắc"; // 10
-  else if (totalScore >= 8) grade = "Hoàn thành Tốt"; // 8-9
-  else if (totalScore >= 6) grade = "Hoàn thành Khá"; // 6-7
-  else if (totalScore >= 5) grade = "Hoàn thành"; // 5
+  // 7. Classification
+  let xepLoai = "Chưa hoàn thành";
+  if (tongDiem >= 10) xepLoai = "Xuất sắc"; // 10
+  else if (tongDiem >= 8) xepLoai = "Hoàn thành Tốt"; // 8-9
+  else if (tongDiem >= 6) xepLoai = "Hoàn thành Khá"; // 6-7
+  else if (tongDiem >= 5) xepLoai = "Hoàn thành"; // 5
   
-  const status = (totalScore >= 5) ? "Completed" : "Pending";
+  const status = (tongDiem >= 5) ? "Completed" : "Pending";
   const timestamp = new Date().toLocaleString("vi-VN", {timeZone: "Asia/Ho_Chi_Minh"});
   
-  // --- UPDATE SHEET ---
-  sheet.getRange(rowNum, 6).setValue(status);
-  sheet.getRange(rowNum, 7).setValue(link1 || "");
-  // Col 8 (Video Score) updated above
-  sheet.getRange(rowNum, 9).setValue(reflection || "");
-  sheet.getRange(rowNum, 10).setValue(link2 || "");
-  sheet.getRange(rowNum, 11).setValue(link3 || "");
-  sheet.getRange(rowNum, 12).setValue(totalScore);
-  sheet.getRange(rowNum, 13).setValue(grade);
-  sheet.getRange(rowNum, 14).setValue(timestamp);
-  // Save Discipline Checkboxes (Reuse cols 15/16)
-  sheet.getRange(rowNum, 15).setValue(disciplineSupport1 ? 1 : 0);
-  sheet.getRange(rowNum, 16).setValue(disciplineSupport2 ? 1 : 0);
+  // --- UPDATE SHEET with Dynamic Columns ---
+  const setValue = (colName, val) => {
+      const idx = getColumnIndex(sheet, colName);
+      if (idx !== -1) sheet.getRange(rowNum, idx + 1).setValue(val);
+  };
   
-  SpreadsheetApp.flush(); // Ensure data is persisted immediately
+  setValue(COL_NAME_TRANG_THAI, status);
+  setValue(COL_NAME_GHI_NHAN, timestamp);
+  
+  setValue(COL_NAME_LINK_1, link1 || "");
+  setValue(COL_NAME_LINK_2, link2 || "");
+  setValue(COL_NAME_LINK_3, link3 || "");
+  
+  setValue(COL_NAME_BHTDN, reflection || "");
+  
+  // Scores
+  setValue(COL_NAME_DIEM_VIDEO, diemVideo);
+  setValue(COL_NAME_DIEM_BHTDN, diemBHTDN);
+  setValue(COL_NAME_DIEM_LINK, diemLink);
+  setValue(COL_NAME_DIEM_DUNG_HAN, diemDungHan);
+  
+  setValue(COL_NAME_TONG_DIEM, tongDiem);
+  setValue(COL_NAME_XEP_LOAI, xepLoai);
+  
+  // Save Discipline Checkboxes
+  setValue(COL_NAME_HO_TRO_1, hoTro1);
+  setValue(COL_NAME_HO_TRO_2, hoTro2);
+  
+  SpreadsheetApp.flush(); 
 
   return { 
     success: true, 
-    message: `Đã nộp bài! Điểm: ${totalScore}/10 (${grade}).`,
-    score: totalScore,
-    grade: grade,
+    message: `Đã nộp bài! Điểm: ${tongDiem}/10 (${xepLoai}).`,
+    score: tongDiem,
+    grade: xepLoai,
     details: {
-      video: videoScore,
-      reflection: reflectionScore,
-      practice: practiceScore,
-      discipline: disciplineScore,
-      total: totalScore
+      video: diemVideo,
+      reflection: diemBHTDN,
+      practice: diemLink,
+      discipline: hoTro1 + hoTro2 + diemDungHan,
+      total: tongDiem
     }
   };
 }

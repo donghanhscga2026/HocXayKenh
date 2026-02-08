@@ -1220,30 +1220,33 @@
                     document.getElementById('discipline-support-2').checked = !!lesson.progress.disciplineSupport2;
                 }
 
-                const resultBox = document.getElementById('grading-result');
-                const gradeColor = lesson.progress.totalScore >= 10 ? '#15803d' : (lesson.progress.totalScore >= 5 ? '#0369a1' : '#b91c1c');
-
                 // Calculate component scores for display
-                const vidScore = lesson.progress.videoScore || 0;
+                const vidScore = lesson.progress.videoScore || 0; // Diem_Video
 
-                let refScore = 0;
-                if ((lesson.progress.reflection || "").length >= 10) refScore = 2;
+                let refScore = 0; // Diem_BHTDN
+                if ((lesson.progress.reflection || "").length >= 50) refScore = 2;
+                else if ((lesson.progress.reflection || "").length > 10) refScore = 1;
 
-                let pracScore = 0;
+                let pracScore = 0; // Diem_Link
                 if (lesson.progress.link1) pracScore++;
                 if (lesson.progress.link2) pracScore++;
                 if (lesson.progress.link3) pracScore++;
 
-                let supportScore = 0;
-                if (lesson.progress.disciplineSupport1) supportScore++;
-                if (lesson.progress.disciplineSupport2) supportScore++;
+                // Diem_Ho_Tro
+                const hoTro1 = (lesson.progress.disciplineSupport1) ? 1 : 0;
+                const hoTro2 = (lesson.progress.disciplineSupport2) ? 1 : 0;
 
-                // Calculate Time Score (The rest)
-                // Total = Vid + Ref + Prac + Support + Time
-                // Time = Total - (Vid + Ref + Prac + Support)
-                let timeScore = lesson.progress.totalScore - (vidScore + refScore + pracScore + supportScore);
-                if (timeScore < 0) timeScore = 0;
-                if (timeScore > 1) timeScore = 1; // Should be max 1
+                // Diem_Dung_Han (+1)
+                const diemDungHan = 1; // Default +1
+
+                // Calculate Total
+                let totalScore = vidScore + refScore + pracScore + hoTro1 + hoTro2 + diemDungHan;
+                if (totalScore > 10) totalScore = 10;
+                if (totalScore < 0) totalScore = 0;
+
+                const resultBox = document.getElementById('grading-result');
+                const gradeColor = totalScore >= 10 ? '#15803d' : (totalScore >= 5 ? '#0369a1' : '#b91c1c');
+                const gradeText = totalScore >= 10 ? 'Xuất sắc' : (totalScore >= 8 ? 'Hoàn thành Tốt' : (totalScore >= 6 ? 'Hoàn thành Khá' : (totalScore >= 5 ? 'Hoàn thành' : 'Chưa hoàn thành')));
 
                 resultBox.innerHTML = `
                         <h4 style="margin: 0 0 10px 0; font-size: 16px;">📊 Kết quả bài làm chi tiết:</h4>
@@ -1251,11 +1254,11 @@
                             <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">1. Xem Video (Max 2):</td><td style="text-align: right; font-weight: bold;">${vidScore}/2</td></tr>
                             <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">2. Tâm đắc ngộ (Max 2):</td><td style="text-align: right; font-weight: bold;">${refScore}/2</td></tr>
                             <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">3. Bài tập Links (Max 3):</td><td style="text-align: right; font-weight: bold;">${pracScore}/3</td></tr>
-                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">4. Hỗ trợ đồng đội (Max 2):</td><td style="text-align: right; font-weight: bold;">${supportScore}/2</td></tr>
-                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">5. Đúng hạn (Max 1):</td><td style="text-align: right; font-weight: bold;">${timeScore}/1</td></tr>
-                            <tr style="background: #f0f9ff; border-top: 2px solid #bae6fd;"><td style="padding: 8px; font-weight: bold; color: ${gradeColor};">TỔNG CỘNG:</td><td style="text-align: right; font-weight: bold; color: ${gradeColor}; font-size: 16px;">${lesson.progress.totalScore}/10</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">4. Hỗ trợ đồng đội (Max 2):</td><td style="text-align: right; font-weight: bold;">${hoTro1 + hoTro2}/2</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">5. Đúng hạn (Max 1):</td><td style="text-align: right; font-weight: bold;">${diemDungHan}/1</td></tr>
+                            <tr style="background: #f0f9ff; border-top: 2px solid #bae6fd;"><td style="padding: 8px; font-weight: bold; color: ${gradeColor};">TỔNG CỘNG:</td><td style="text-align: right; font-weight: bold; color: ${gradeColor}; font-size: 16px;">${totalScore}/10</td></tr>
                         </table>
-                        <p style="margin: 5px 0; text-align: center;"><strong>Xếp loại:</strong> <span style="font-weight: bold; color: ${gradeColor}; transform: uppercase;">${lesson.progress.grade}</span></p>
+                        <p style="margin: 5px 0; text-align: center;"><strong>Xếp loại:</strong> <span style="font-weight: bold; color: ${gradeColor}; transform: uppercase;">${gradeText}</span></p>
                     `;
                 resultBox.style.display = 'block';
 
@@ -1567,8 +1570,9 @@
                         <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 10px;">
                             <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">Xem Video:</td><td style="text-align: right; font-weight: bold;">${details.video}/2</td></tr>
                             <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">Tâm đắc ngộ:</td><td style="text-align: right; font-weight: bold;">${details.reflection}/2</td></tr>
-                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">Bài tập (Links):</td><td style="text-align: right; font-weight: bold;">${details.practice}/3</td></tr>
-                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">Kỷ luật:</td><td style="text-align: right; font-weight: bold;">${details.discipline}/3</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">3. Bài tập Links (Max 3):</td><td style="text-align: right; font-weight: bold;">${details.practice}/3</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">4. Hỗ trợ đồng đội (Max 2):</td><td style="text-align: right; font-weight: bold;">${details.discipline - 1}/2</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">5. Đúng hạn (Max 1):</td><td style="text-align: right; font-weight: bold;">1/1</td></tr>
                             <tr style="background: #f0f9ff;"><td style="padding: 8px; font-weight: bold; color: ${gradeColor};">TỔNG CỘNG:</td><td style="text-align: right; font-weight: bold; color: ${gradeColor}; font-size: 16px;">${score}/10</td></tr>
                         </table>
                         <p style="margin: 5px 0; text-align: center;"><strong>Xếp loại:</strong> <span style="font-weight: bold; color: ${gradeColor}; transform: uppercase;">${grade}</span></p>
@@ -1676,9 +1680,9 @@
 
             // --- Part 3: Links (3pts) ---
             let linkScore = 0;
-            if (document.getElementById('link-1') && document.getElementById('link-1').value.trim()) linkScore++;
-            if (document.getElementById('link-2') && document.getElementById('link-2').value.trim()) linkScore++;
-            if (document.getElementById('link-3') && document.getElementById('link-3').value.trim()) linkScore++;
+            if (document.getElementById('link-1') && document.getElementById('link-1').value.trim().length > 5) linkScore++;
+            if (document.getElementById('link-2') && document.getElementById('link-2').value.trim().length > 5) linkScore++;
+            if (document.getElementById('link-3') && document.getElementById('link-3').value.trim().length > 5) linkScore++;
             if (document.getElementById('score-p3')) document.getElementById('score-p3').textContent = `${linkScore}/3`;
             total += linkScore;
 
