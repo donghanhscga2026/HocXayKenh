@@ -1591,9 +1591,9 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
   
   // 2. Reflection Score (Max 2)
   let reflectionScore = 0;
-  if (reflection && String(reflection).trim().length > 10) {
-    reflectionScore = 2;
-  }
+  const refLen = reflection ? String(reflection).trim().length : 0;
+  if (refLen >= 50) reflectionScore = 2;
+  else if (refLen > 10) reflectionScore = 1;
   
   // 3. Practice Score (Max 3)
   let practiceScore = 0;

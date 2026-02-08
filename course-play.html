@@ -171,37 +171,78 @@
             overflow-y: auto;
         }
 
-        /* Mobile Dropdown Style */
-        .lesson-list-mobile {
+        /* Custom Mobile Dropdown */
+        .custom-mobile-dropdown {
             display: none;
             /* Hidden on desktop */
-            width: calc(100% - 30px);
-            max-width: 100%;
-            margin: 15px auto;
-            padding: 12px 40px 12px 15px;
-            /* Right padding for arrow */
+            position: relative;
+            width: 100%;
+            /* Parent container handles width */
+            margin: 15px 0;
+            font-size: 14px;
+            z-index: 100;
+            font-family: inherit;
+        }
 
+        .custom-dropdown-header {
+            background: #1e293b;
             border: 1px solid #334155;
             border-radius: 8px;
-
-            /* Custom Arrow & Background */
-            background-color: #1e293b;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            background-size: 1rem;
-
+            padding: 12px 15px;
             color: white;
-            font-size: 16px;
-            /* 16px prevents iOS zoom */
-
-            /* Reset Native Styles */
-            appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-
-            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             cursor: pointer;
+            user-select: none;
+        }
+
+        .custom-dropdown-options {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            margin-top: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        }
+
+        .custom-dropdown-options.open {
+            display: block;
+        }
+
+        .custom-option {
+            padding: 12px 15px;
+            color: #cbd5e1;
+            cursor: pointer;
+            border-bottom: 1px solid #334155;
+            transition: background 0.2s;
+        }
+
+        .custom-option:last-child {
+            border-bottom: none;
+        }
+
+        .custom-option:hover {
+            background: #334155;
+        }
+
+        .custom-option.selected {
+            background: #0f172a;
+            color: var(--primary);
+            font-weight: 600;
+            border-left: 3px solid var(--primary);
+        }
+
+        .custom-option.locked {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: #1e293b;
         }
 
         /* Video Progress Overlay Top-Right */
@@ -459,6 +500,10 @@
             }
 
             .lesson-list-mobile {
+                display: none !important;
+            }
+
+            .custom-mobile-dropdown {
                 display: block !important;
             }
 
@@ -481,37 +526,97 @@
 
 <body>
     <header>
-        <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Quay lại trang chủ</a>
-        <div id="course-header-title" style="font-weight: bold; color: var(--primary);">Khóa học</div>
+        <div class="header-left">
+            <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+            <div id="course-header-title">Khóa học</div>
+        </div>
         <div id="user-display"></div>
     </header>
 
+    <style>
+        /* Mobile Header Tweaks */
+        header {
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #course-header-title {
+            font-weight: bold;
+            color: var(--primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 16px;
+        }
+
+        .back-btn {
+            font-size: 16px;
+            padding-right: 5px;
+        }
+
+        #user-display {
+            font-size: 14px;
+            white-space: nowrap;
+        }
+    </style>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const u = JSON.parse(localStorage.getItem('user'));
-            const display = document.getElementById('user-display');
-            if (u) {
-                display.textContent = `Hi, ${u.name}`;
-            } else {
-                display.innerHTML = '<a href="login.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">Đăng nhập</a>';
+        if (u) {
+            display.textContent = `Hi, ${u.name}`;
+        } else {
+            display.innerHTML = '<a href="login.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">Đăng nhập</a>';
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function (event) {
+            const dropdown = document.getElementById('custom-mobile-dropdown');
+            const header = document.querySelector('.custom-dropdown-header');
+            const opts = document.getElementById('custom-dropdown-options');
+            if (dropdown && !dropdown.contains(event.target)) {
+                opts.classList.remove('open');
             }
         });
+
     </script>
 
     <div class="main-container">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h3 id="sidebar-title">Nội dung khóa học</h3>
-                <p id="progress-summary" style="font-size: 13px; color: #64748b; margin-top: 5px;">0/0 bài học đã hoàn
-                    thành</p>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <h3 id="sidebar-title" style="margin: 0; font-size: 16px;">Nội dung khóa học</h3>
+                        <p id="progress-summary" style="font-size: 13px; color: #64748b; margin-top: 5px;">0/0 bài hoàn
+                            thành</p>
+                    </div>
+                    <button onclick="document.getElementById('rules-modal').style.display='flex'"
+                        style="background: #334155; border: 1px solid #475569; color: #fbbf24; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 18px;">
+                        <i class="fas fa-info-circle"></i>
+                    </button>
+                </div>
             </div>
             <div class="lesson-list-desktop" id="lesson-list-desktop">
                 <!-- Desktop List Items -->
             </div>
 
-            <select class="lesson-list-mobile" id="lesson-list-mobile">
-                <option value="-1" selected disabled>-- Chọn bài học --</option>
-            </select>
+            <div class="custom-mobile-dropdown" id="custom-mobile-dropdown">
+                <div class="custom-dropdown-header" onclick="toggleDropdown()">
+                    <span id="dropdown-selected-text">-- Chọn bài học --</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="custom-dropdown-options" id="custom-dropdown-options">
+                    <!-- Options populated by JS -->
+                </div>
+            </div>
         </aside>
 
         <main class="content">
@@ -550,101 +655,189 @@
                     </div>
 
                     <div id="assignment-section" class="assignment-box hidden">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h4 style="color: #ca8a04; margin: 0;"><i class="fas fa-edit"></i> Ghi nhận Cần mẫn mỗi ngày
-                            </h4>
-                            <button onclick="document.getElementById('rules-modal').style.display='flex'"
-                                style="background: none; border: 1px solid #ca8a04; color: #ca8a04; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                                <i class="fas fa-info-circle"></i> Quy tắc tính điểm
-                            </button>
+                        <h3
+                            style="margin-top: 0; color: #b45309; border-bottom: 2px solid #fcd34d; padding-bottom: 10px; margin-bottom: 20px;">
+                            <i class="fas fa-clipboard-check"></i> Ghi nhận kết quả
+                        </h3>
+
+                        <!-- 1. Video Progress -->
+                        <div class="grading-part">
+                            <div class="part-header">
+                                <span class="part-title">1. Tiến trình Video (2đ)</span>
+                                <span class="part-score" id="score-p1">0/2</span>
+                            </div>
+                            <div style="font-size: 13px; color: #64748b; margin-bottom: 5px;" id="video-status-text">
+                                Đang xem: 0%</div>
+                            <div class="progress-bar-bg"
+                                style="height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
+                                <div id="video-progress-bar"
+                                    style="height: 100%; width: 0%; background: #0ea5e9; transition: width 0.3s;"></div>
+                            </div>
                         </div>
-                        <p id="assignment-desc" style="margin-top: 8px; font-size: 14px; margin-bottom: 15px;"></p>
 
-                        <div class="submit-group" style="flex-direction: column; gap: 15px;">
-                            <!-- Reflection -->
-                            <div>
-                                <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 5px;">1.
-                                    Chia sẻ bài học tâm đắc ngộ (Quan trọng - 2đ):</label>
-                                <textarea id="reflection-input" class="submit-input" rows="3"
-                                    style="width: 100%; font-family: inherit;"
-                                    placeholder="Viết chia sẻ của bạn (trên 10 ký tự)..."
-                                    oninput="calculateLiveScore()"></textarea>
+                        <!-- 2. Reflection -->
+                        <div class="grading-part">
+                            <div class="part-header">
+                                <span class="part-title">2. Bài học tâm đắc (2đ)</span>
+                                <span class="part-score" id="score-p2">0/2</span>
                             </div>
+                            <textarea id="reflection-input" class="submit-input" rows="3"
+                                style="width: 100%; font-family: inherit;"
+                                placeholder="Viết chia sẻ của bạn (tối thiểu 50 ký tự)..."
+                                oninput="calculateLiveScore()"></textarea>
+                        </div>
 
-                            <!-- Links -->
-                            <div>
-                                <div
-                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                                    <label style="font-weight: 600; font-size: 13px;">2. Link Video trả bài (Mỗi link 1đ
-                                        - Tối đa 3đ):</label>
-                                    <span id="live-score-links"
-                                        style="font-size: 12px; font-weight: bold; color: #d97706; background: #fffbeb; padding: 2px 6px; border-radius: 4px; border: 1px solid #fcd34d;">0/3</span>
-                                </div>
-                                <div style="display: flex; flex-direction: column; gap: 8px;">
-                                    <input type="text" id="link-1" placeholder="Link Video 1..." class="submit-input"
-                                        oninput="calculateLiveScore()">
-                                    <input type="text" id="link-2" placeholder="Link Video 2..." class="submit-input"
-                                        oninput="calculateLiveScore()">
-                                    <input type="text" id="link-3" placeholder="Link Video 3..." class="submit-input"
-                                        oninput="calculateLiveScore()">
-                                </div>
+                        <!-- 3. Video Links -->
+                        <div class="grading-part">
+                            <div class="part-header">
+                                <span class="part-title">3. Link Video quay bài (3đ)</span>
+                                <span class="part-score" id="score-p3">0/3</span>
                             </div>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <input type="text" id="link-1" placeholder="Link Video 1 (1đ)..." class="submit-input"
+                                    oninput="calculateLiveScore()">
+                                <input type="text" id="link-2" placeholder="Link Video 2 (1đ)..." class="submit-input"
+                                    oninput="calculateLiveScore()">
+                                <input type="text" id="link-3" placeholder="Link Video 3 (1đ)..." class="submit-input"
+                                    oninput="calculateLiveScore()">
+                            </div>
+                        </div>
 
-                            <!-- Discipline -->
+                        <!-- 4. Support -->
+                        <div class="grading-part">
+                            <div class="part-header">
+                                <span class="part-title">4. Hỗ trợ đồng đội (1đ)</span>
+                                <span class="part-score" id="score-p4">0/1</span>
+                            </div>
+                            <label class="custom-checkbox">
+                                <input type="checkbox" id="discipline-support" onchange="calculateLiveScore()">
+                                <span class="checkmark"></span>
+                                Tôi đã hỗ trợ đồng đội / thả tim hành trình văn hóa
+                            </label>
+                        </div>
+
+                        <!-- 5. On Time -->
+                        <div class="grading-part">
+                            <div class="part-header">
+                                <span class="part-title">5. Nộp đúng hạn (2đ)</span>
+                                <span class="part-score" id="score-p5">0/2</span>
+                            </div>
+                            <label class="custom-checkbox">
+                                <input type="checkbox" id="discipline-leadership" onchange="calculateLiveScore()">
+                                <span class="checkmark"></span>
+                                Tôi cam kết nộp bài đúng hạn
+                            </label>
+                        </div>
+
+                        <!-- Total & Submit -->
+                        <div style="margin-top: 25px; padding-top: 15px; border-top: 2px dashed #cbd5e1;">
                             <div
-                                style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px dashed #cbd5e1;">
-                                <div
-                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                    <label style="font-weight: 600; font-size: 13px;">3. Tự giác kỷ luật (Tự đánh
-                                        giá):</label>
-                                    <span id="live-score-discipline"
-                                        style="font-size: 12px; font-weight: bold; color: #d97706; background: #fffbeb; padding: 2px 6px; border-radius: 4px; border: 1px solid #fcd34d;">0/3</span>
-                                </div>
-                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                    <label
-                                        style="display: flex; align-items: center; gap: 5px; font-size: 13px; cursor: pointer;">
-                                        <input type="checkbox" id="discipline-support" onchange="calculateLiveScore()">
-                                        Đã nhắc 2 đồng đội (+1đ)
-                                    </label>
-                                    <label
-                                        style="display: flex; align-items: center; gap: 5px; font-size: 13px; cursor: pointer;">
-                                        <input type="checkbox" id="discipline-leadership"
-                                            onchange="calculateLiveScore()">
-                                        Đồng đội đã nhắc người dưới (+1đ)
-                                    </label>
-                                </div>
-                                <div
-                                    style="font-size: 12px; color: #64748b; margin-top: 5px; display: flex; align-items: center; gap: 5px;">
-                                    <span>* Nộp trước 23:59:</span>
-                                    <span id="time-bonus-badge"
-                                        style="color: #15803d; font-weight: bold; background: #dcfce7; padding: 1px 5px; border-radius: 3px;">+1đ
-                                        (Đúng hạn)</span>
-                                </div>
-                            </div>
-
-                            <!-- TOTAL Live Score Floating or Bottom -->
-                            <div id="live-total-area"
-                                style="margin-top: 15px; text-align: right; border-top: 2px solid #e2e8f0; padding-top: 10px;">
-                                <span style="font-size: 16px; font-weight: 600; color: #334155;">Tổng điểm tạm
-                                    tính:</span>
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <span style="font-weight: bold; color: #334155;">TỔNG ĐIỂM TẠM TÍNH:</span>
                                 <span id="live-total-score"
-                                    style="font-size: 24px; font-weight: bold; color: #ea580c; margin-left: 10px;">0/10</span>
-                                <div id="live-grade" style="font-size: 14px; font-weight: 500; color: #64748b;">(Chưa
-                                    hoàn thành)</div>
+                                    style="font-size: 20px; font-weight: 800; color: #ea580c;">0/10</span>
                             </div>
 
-                            <button class="btn-submit" onclick="submitWork()"
-                                style="margin-top: 10px; width: 100%; background: #ea580c; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 16px;">
-                                <i class="fas fa-paper-plane"></i> Nộp bài
+                            <button onclick="submitWork()" class="btn-submit"
+                                style="width: 100%; font-size: 16px; padding: 12px;">
+                                <i class="fas fa-paper-plane"></i> GHI NHẬN KẾT QUẢ
                             </button>
                         </div>
 
-                        <!-- Grading Result -->
                         <div id="grading-result"
-                            style="display: none; margin-top: 20px; padding: 15px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; color: #0369a1;">
+                            style="display: none; margin-top: 20px; background: #ecfdf5; padding: 15px; border-radius: 8px; border: 1px solid #6ee7b7;">
                         </div>
                     </div>
+
+                    <style>
+                        .grading-part {
+                            background: white;
+                            padding: 15px;
+                            border-radius: 8px;
+                            border: 1px solid #e2e8f0;
+                            margin-bottom: 15px;
+                            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+                        }
+
+                        .part-header {
+                            display: flex;
+                            justify-content: space-between;
+                            margin-bottom: 10px;
+                            align-items: center;
+                        }
+
+                        .part-title {
+                            font-weight: 700;
+                            color: #334155;
+                            font-size: 14px;
+                        }
+
+                        .part-score {
+                            font-weight: 800;
+                            color: #0ea5e9;
+                            background: #e0f2fe;
+                            padding: 2px 8px;
+                            border-radius: 12px;
+                            font-size: 12px;
+                        }
+
+                        /* Custom Checkbox */
+                        .custom-checkbox {
+                            display: flex;
+                            align-items: center;
+                            cursor: pointer;
+                            font-size: 14px;
+                            user-select: none;
+                            color: #475569;
+                        }
+
+                        .custom-checkbox input {
+                            position: absolute;
+                            opacity: 0;
+                            cursor: pointer;
+                            height: 0;
+                            width: 0;
+                        }
+
+                        .checkmark {
+                            height: 20px;
+                            width: 20px;
+                            background-color: #f1f5f9;
+                            border: 1px solid #cbd5e1;
+                            border-radius: 4px;
+                            margin-right: 10px;
+                            position: relative;
+                        }
+
+                        .custom-checkbox:hover input~.checkmark {
+                            background-color: #e2e8f0;
+                        }
+
+                        .custom-checkbox input:checked~.checkmark {
+                            background-color: #10b981;
+                            border-color: #10b981;
+                        }
+
+                        .checkmark:after {
+                            content: "";
+                            position: absolute;
+                            display: none;
+                        }
+
+                        .custom-checkbox input:checked~.checkmark:after {
+                            display: block;
+                        }
+
+                        .custom-checkbox .checkmark:after {
+                            left: 7px;
+                            top: 3px;
+                            width: 5px;
+                            height: 10px;
+                            border: solid white;
+                            border-width: 0 2px 2px 0;
+                            transform: rotate(45deg);
+                        }
+                    </style>
                 </div>
             </div>
         </main>
@@ -804,11 +997,11 @@
 
         function renderLessonList() {
             const listDesktop = document.getElementById('lesson-list-desktop');
-            const listMobile = document.getElementById('lesson-list-mobile');
+            const listMobileOpts = document.getElementById('custom-dropdown-options');
 
             // Reset
             if (listDesktop) listDesktop.innerHTML = '';
-            if (listMobile) listMobile.innerHTML = '<option value="-1" selected disabled>-- Chọn bài học --</option>';
+            if (listMobileOpts) listMobileOpts.innerHTML = '';
 
             let completed = 0;
             curriculum.forEach((lesson, idx) => {
@@ -842,16 +1035,18 @@
                     listDesktop.appendChild(item);
                 }
 
-                // --- 2. Mobile Item (Option) ---
-                if (listMobile) {
-                    let status = isLocked ? '🔒' : (isDone ? '✓' : '▶');
-                    const option = document.createElement('option');
-                    option.value = idx;
-                    option.textContent = `${status} ${lesson.title}`;
-                    option.disabled = isLocked;
+                // --- 2. Mobile Custom Dropdown Item ---
+                if (listMobileOpts) {
+                    const option = document.createElement('div');
+                    option.className = `custom-option ${isLocked ? 'locked' : ''} ${idx === currentLessonIdx ? 'selected' : ''}`;
 
-                    if (idx === currentLessonIdx) option.selected = true;
-                    listMobile.appendChild(option);
+                    let status = isLocked ? '🔒' : (isDone ? '✓' : '▶');
+                    option.innerHTML = `<span style="margin-right:8px">${status}</span> ${lesson.title}`;
+
+                    if (!isLocked) {
+                        option.onclick = () => selectMobileLesson(idx);
+                    }
+                    listMobileOpts.appendChild(option);
                 }
             });
 
@@ -859,18 +1054,17 @@
             if (summaryEl) summaryEl.textContent = `${completed}/${curriculum.length} bài học đã hoàn thành`;
         }
 
-        // Add change event for mobile dropdown
-        document.addEventListener('DOMContentLoaded', () => {
-            const selectEl = document.getElementById('lesson-list-mobile');
-            if (selectEl) {
-                selectEl.addEventListener('change', (e) => {
-                    const idx = parseInt(e.target.value);
-                    if (idx !== -1) {
-                        playLesson(idx);
-                    }
-                });
-            }
-        });
+        function toggleDropdown() {
+            const opts = document.getElementById('custom-dropdown-options');
+            if (opts) opts.classList.toggle('open');
+        }
+
+        function selectMobileLesson(idx) {
+            playLesson(idx);
+            toggleDropdown(); // Close after selection
+        }
+
+
 
         function playLesson(idx) {
             // Wait for YouTube API
@@ -906,6 +1100,12 @@
 
             const lesson = curriculum[idx];
             currentLessonIdx = idx;
+
+            // Update Mobile Dropdown Text
+            const dropdownText = document.getElementById('dropdown-selected-text');
+            if (dropdownText) {
+                dropdownText.textContent = lesson.title;
+            }
 
             document.getElementById('current-lesson-title').textContent = lesson.title;
             document.getElementById('lesson-summary').innerHTML = lesson.summary || "Không có tóm tắt.";
@@ -1368,141 +1568,89 @@
         }
 
         function calculateLiveScore() {
-            let score = 0;
-            let vidScore = 0;
+            let total = 0;
 
-            // 1. Video (Assume 1pt for simplicity in live view as we can't easily check >50% without player state, but let's try)
-            // If completed in previous session -> 2pts
+            // --- Part 1: Video (2pts) ---
+            let vidScore = 0;
             if (curriculum[currentLessonIdx]) {
                 const prog = curriculum[currentLessonIdx].progress;
 
-                // --- DYNAMIC UPDATE FROM PLAYER ---
+                // Get accurate max progress
                 let currentMax = prog.maxTime || 0;
                 let duration = prog.duration || 0;
-                let pct = 0; // Display Percentage 
+                let pctDisplay = 0;
 
-                if (duration > 0) pct = currentMax / duration; // Default to Max Progress
-
-                if (player && player.getCurrentTime && player.getDuration && player.getVideoData().video_id === getYouTubeId(curriculum[currentLessonIdx].youtubeId)) {
-                    // Only use player data if it's the correct video
-                    const pCurrent = player.getCurrentTime();
-                    const pDuration = player.getDuration();
-
-                    if (pDuration > 0) {
-                        duration = pDuration;
-                        if (pCurrent > currentMax) currentMax = pCurrent;
-
-                        // Update local curriculum data so it remembers if we pause/submit
-                        prog.maxTime = currentMax;
-                        prog.duration = duration;
-
-                        // For display, use current time pct (so it resets when replaying)
-                        // But for score, we use maxTime
-                        pct = pCurrent / duration;
+                // Sync with player if active
+                if (player && player.getCurrentTime && player.getVideoData
+                    && player.getVideoData().video_id === getYouTubeId(curriculum[currentLessonIdx].youtubeId)) {
+                    if (player.getDuration() > 0) {
+                        duration = player.getDuration();
+                        const curr = player.getCurrentTime();
+                        if (curr > currentMax) currentMax = curr;
+                        pctDisplay = (curr / duration) * 100;
                     }
+                } else if (duration > 0) {
+                    pctDisplay = (currentMax / duration) * 100;
                 }
-                // ----------------------------------
 
-                // Score Calculation uses MAX progress
-                let scorePct = 0;
-                if (duration > 0) scorePct = currentMax / duration;
-
+                // Calc Score
                 if (prog.status === 'Completed' || prog.status === 'Approved') vidScore = 2;
-                else if (scorePct >= 0.95) vidScore = 2; // >95% ~ 100%
-                else if (scorePct >= 0.5) vidScore = 1;
+                else {
+                    let scorePct = (duration > 0) ? currentMax / duration : 0;
+                    if (scorePct >= 0.95) vidScore = 2;
+                    else if (scorePct >= 0.5) vidScore = 1;
+                }
 
-                score += vidScore;
-
-                // Update Video Progress UI
-                const progText = document.getElementById('video-prog-text');
-                const scoreText = document.getElementById('video-score-text');
-                if (progText && scoreText) {
-                    const percentDisplay = Math.min(100, Math.round(pct * 100));
-                    progText.textContent = `${percentDisplay}%`;
-                    scoreText.textContent = `${vidScore}/2 điểm`;
-
-                    // Style change based on completion
-                    if (vidScore === 2) {
-                        progText.style.color = '#15803d';
-                        scoreText.style.color = '#15803d';
-                    } else {
-                        progText.style.color = '#0f172a'; // Default
-                        scoreText.style.color = '#0284c7';
-                    }
+                // Update UI P1
+                const uiScoreP1 = document.getElementById('score-p1');
+                if (uiScoreP1) {
+                    uiScoreP1.textContent = `${vidScore}/2`;
+                    if (document.getElementById('video-status-text'))
+                        document.getElementById('video-status-text').textContent = `Đang xem: ${Math.round(pctDisplay)}%`;
+                    if (document.getElementById('video-progress-bar'))
+                        document.getElementById('video-progress-bar').style.width = `${Math.min(100, pctDisplay)}%`;
                 }
             }
+            total += vidScore;
 
-            // 2. Reflection (+2 if > 10 chars)
-            const ref = document.getElementById('reflection-input').value;
-            if (ref && ref.trim().length > 10) score += 2;
-
-            // 3. Links (+1 each)
-            if (document.getElementById('link-1').value.trim().length > 5) score += 1;
-            if (document.getElementById('link-2').value.trim().length > 5) score += 1;
-            if (document.getElementById('link-3').value.trim().length > 5) score += 1;
-
-            // 4. Discipline
-            let supportScore = 0;
-            if (document.getElementById('discipline-support').checked) supportScore += 1;
-            if (document.getElementById('discipline-leadership').checked) supportScore += 1;
-            score += supportScore;
-
-            // 5. Time (Auto +1)
-            let timeScore = 1;
-            score += timeScore;
-
-            if (score > 10) score = 10;
-
-            let grade = "Chưa hoàn thành";
-            if (score >= 10) grade = "Xuất sắc";
-            else if (score >= 8) grade = "Hoàn thành Tốt";
-            else if (score >= 5) grade = "Hoàn thành Khá";
-            else if (score >= 5) grade = "Hoàn thành";
-
-            // Update UI Badges
-            const setBadge = (id, current, max) => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.textContent = `${current}/${max}`;
-                    if (current === max) {
-                        el.style.color = '#15803d';
-                        el.style.background = '#dcfce7';
-                        el.style.borderColor = '#86efac';
-                    } else {
-                        el.style.color = '#d97706';
-                        el.style.background = '#fffbeb';
-                        el.style.borderColor = '#fcd34d';
-                    }
-                }
-            };
-
-            setBadge('live-score-video', vidScore, 2);
-            setBadge('live-score-reflection', (ref && ref.trim().length > 10) ? 2 : 0, 2);
-
-            let pracCount = 0;
-            if (document.getElementById('link-1').value.trim().length > 5) pracCount++;
-            if (document.getElementById('link-2').value.trim().length > 5) pracCount++;
-            if (document.getElementById('link-3').value.trim().length > 5) pracCount++;
-            setBadge('live-score-links', pracCount, 3);
-
-            // Discipline: Support (max 2) + Time (max 1) displayed as group or separate?
-            // The badge is on the "Discipline" header, typically covering the checkbox part (max 2) or total section logic (max 3)?
-            // The HTML I added shows "0/3" on the discipline header.
-            // So Discipline = SupportScore (0-2) + TimeScore (1). Total 3.
-            let disciplineTotal = supportScore + timeScore;
-            setBadge('live-score-discipline', disciplineTotal, 3);
-
-            // Total Block
-            const totalEl = document.getElementById('live-total-score');
-            const gradeEl = document.getElementById('live-grade');
-            if (totalEl) {
-                totalEl.textContent = `${score}/10`;
-                totalEl.style.color = score >= 5 ? '#ea580c' : '#b45309'; // Orange theme remains
+            // --- Part 2: Reflection (2pts) ---
+            let refScore = 0;
+            const refInput = document.getElementById('reflection-input');
+            if (refInput) {
+                const refVal = refInput.value.trim();
+                // User requirement: Tâm đắc ngộ usually requires thought, let's keep it reasonable or >10 as before
+                if (refVal.length >= 50) refScore = 2;
+                else if (refVal.length > 10) refScore = 1;
+                document.getElementById('score-p2').textContent = `${refScore}/2`;
             }
-            if (gradeEl) {
-                gradeEl.textContent = `(${grade})`;
-                gradeEl.style.color = score >= 5 ? '#15803d' : '#64748b';
-            }
+            total += refScore;
+
+            // --- Part 3: Links (3pts) ---
+            let linkScore = 0;
+            if (document.getElementById('link-1') && document.getElementById('link-1').value.trim()) linkScore++;
+            if (document.getElementById('link-2') && document.getElementById('link-2').value.trim()) linkScore++;
+            if (document.getElementById('link-3') && document.getElementById('link-3').value.trim()) linkScore++;
+            if (document.getElementById('score-p3')) document.getElementById('score-p3').textContent = `${linkScore}/3`;
+            total += linkScore;
+
+            // --- Part 4: Support (1pt) ---
+            let supScore = 0;
+            if (document.getElementById('discipline-support') && document.getElementById('discipline-support').checked) supScore = 1;
+            if (document.getElementById('score-p4')) document.getElementById('score-p4').textContent = `${supScore}/1`;
+            total += supScore;
+
+            // --- Part 5: On Time (2pts) ---
+            let timeScore = 0;
+            if (document.getElementById('discipline-leadership') && document.getElementById('discipline-leadership').checked) timeScore = 2;
+            if (document.getElementById('score-p5')) document.getElementById('score-p5').textContent = `${timeScore}/2`;
+            total += timeScore;
+
+            // --- Total ---
+            if (document.getElementById('live-total-score')) document.getElementById('live-total-score').textContent = `${total}/10`;
+
+            // Also update overlay small text if it exists
+            const vScore = document.getElementById('video-score-text');
+            if (vScore) vScore.textContent = `${vidScore}/2 điểm`;
         }
 
         // Attach listeners
