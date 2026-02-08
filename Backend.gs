@@ -114,8 +114,8 @@ function doPost(e) {
         content.link1, 
         content.link2, 
         content.link3,
-        content.disciplineSupport,
-        content.disciplineLeadership,
+        content.disciplineSupport1,
+        content.disciplineSupport2,
         content.videoMaxTime,
         content.duration
       ));
@@ -1574,6 +1574,40 @@ function uploadFileToDrive(base64Data, fileName, fileType, studentCode, studentN
 }
 
 /**
+ * Helper: Lấy thông tin học viên từ Email
+ */
+function getStudentInfoFromEmail(email) {
+  const ss = getDB();
+  const sheet = ss.getSheetByName("Dky");
+  if (!sheet) return { code: "", name: "" };
+  
+  // Use getColumnIndex or assume standard layout if Dky has headers
+  // Based on registerUser:
+  // Col B (Index 1) => Code
+  // Col C (Index 2) => Name
+  // Col G (Index 6) => Email
+  // Let's safe read headers just in case
+  
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const idxEmail = headers.indexOf("Email"); // Or usage of constants if available globally
+  const idxCode = headers.indexOf("Ma_Code") > -1 ? headers.indexOf("Ma_Code") : 1; // Fallback to 1 (Col B)
+  const idxName = headers.indexOf("Ten_HV") > -1 ? headers.indexOf("Ten_HV") : 2;   // Fallback to 2 (Col C)
+  
+  if (idxEmail === -1) return { code: "", name: "" };
+  
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][idxEmail]).toLowerCase() === String(email).toLowerCase()) {
+      return { 
+        code: data[i][idxCode], 
+        name: data[i][idxName] 
+      };
+    }
+  }
+  return { code: "", name: "" };
+}
+
+/**
  * Cập nhật tiến độ xem video
  */
 function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
@@ -1596,6 +1630,10 @@ function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
   const idxVideoScore = getColumnIndex(sheet, COL_NAME_DIEM_VIDEO);
   const idxTimestamp = getColumnIndex(sheet, COL_NAME_GHI_NHAN);
   
+  // New Columns for Student Info
+  const idxStudentCode = getColumnIndex(sheet, COL_NAME_MA_CODE);
+  const idxStudentName = getColumnIndex(sheet, COL_NAME_TEN_HV);
+  
   const data = sheet.getDataRange().getValues();
   let rowIndex = -1;
   const now = new Date();
@@ -1615,9 +1653,6 @@ function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
   let newStatus = "In Progress";
   
   // Calculate Video Score
-  // Logic: 
-  // If no existing maxTime, use currentTime.
-  // If has existing maxTime, use max(existing, current).
   let currentMax = 0;
   if (rowIndex !== -1 && idxMaxTime !== -1) {
       currentMax = Number(data[rowIndex][idxMaxTime]) || 0;
@@ -1635,6 +1670,9 @@ function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
   
   if (rowIndex === -1) {
     // Thêm mới row
+    // Get Student Info from Dky
+    const studentInfo = getStudentInfoFromEmail(email);
+    
     // Create array with empty strings for all columns
     const lastCol = sheet.getLastColumn();
     const newRow = new Array(lastCol).fill("");
@@ -1645,32 +1683,76 @@ function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
     if (idxCourse !== -1) newRow[idxCourse] = courseId;
     if (idxLesson !== -1) newRow[idxLesson] = lessonId;
     
+    // Fill Student Info
+    if (idxStudentCode !== -1) newRow[idxStudentCode] = studentInfo.code;
+    if (idxStudentName !== -1) newRow[idxStudentName] = studentInfo.name;
+    
     if (idxCurTime !== -1) newRow[idxCurTime] = currentTime;
     if (idxMaxTime !== -1) newRow[idxMaxTime] = maxTime;
-    if (idxStatus !== -1) newRow[idxStatus] = newStatus;
+    
+    // For new row, other scores are 0, so Total = Video Score
+    // Status is likely "In Progress" (max 2 pts < 5)
+    if (idxStatus !== -1) newRow[idxStatus] = "In Progress";
     if (idxVideoScore !== -1) newRow[idxVideoScore] = videoScore;
+    if (getColumnIndex(sheet, COL_NAME_TONG_DIEM) !== -1) newRow[getColumnIndex(sheet, COL_NAME_TONG_DIEM)] = videoScore;
     
     sheet.appendRow(newRow);
   } else {
     // Cập nhật existing row
     const rowNum = rowIndex + 1;
     
-    // Update Record Time? Maybe not necessary for just progress update, but good for tracking last activity.
+    // Update Record Time
     if (idxTimestamp !== -1) sheet.getRange(rowNum, idxTimestamp + 1).setValue(timestampStr);
     
     if (idxCurTime !== -1) sheet.getRange(rowNum, idxCurTime + 1).setValue(currentTime);
     if (idxMaxTime !== -1 && maxTime > currentMax) {
         sheet.getRange(rowNum, idxMaxTime + 1).setValue(maxTime);
     }
-    // Update Score
+    
+    // Update Video Score
     if (idxVideoScore !== -1) sheet.getRange(rowNum, idxVideoScore + 1).setValue(videoScore);
     
-    // Update Status if currently NOT completed?
-    // Avoid overwriting "Completed" with "In Progress"
+    // --- RECALCULATE TOTAL SCORE & STATUS ---
+    // Read other scores
+    const getNum = (name) => {
+        const idx = getColumnIndex(sheet, name);
+        if (idx === -1) return 0;
+        return Number(data[rowIndex][idx]) || 0;
+    };
+    
+    const diemBHTDN = getNum(COL_NAME_DIEM_BHTDN);
+    const diemLink = getNum(COL_NAME_DIEM_LINK);
+    const hoTro1 = getNum(COL_NAME_HO_TRO_1); // Should be 0 or 1
+    const hoTro2 = getNum(COL_NAME_HO_TRO_2); // Should be 0 or 1
+    const diemDungHan = getNum(COL_NAME_DIEM_DUNG_HAN);
+    
+    let tongDiem = videoScore + diemBHTDN + diemLink + hoTro1 + hoTro2 + diemDungHan;
+    if (tongDiem > 10) tongDiem = 10;
+    
+    // Update Total Score
+    const idxTotal = getColumnIndex(sheet, COL_NAME_TONG_DIEM);
+    if (idxTotal !== -1) sheet.getRange(rowNum, idxTotal + 1).setValue(tongDiem);
+    
+    // Update Classification (Xep_Loai)
+    let xepLoai = "Chưa hoàn thành";
+    if (tongDiem >= 10) xepLoai = "Xuất sắc";
+    else if (tongDiem >= 8) xepLoai = "Hoàn thành Tốt";
+    else if (tongDiem >= 6) xepLoai = "Hoàn thành Khá";
+    else if (tongDiem >= 5) xepLoai = "Hoàn thành";
+    
+    const idxXepLoai = getColumnIndex(sheet, COL_NAME_XEP_LOAI);
+    if (idxXepLoai !== -1) sheet.getRange(rowNum, idxXepLoai + 1).setValue(xepLoai);
+    
+    // Update Status
+    // Rule: Total >= 5 => Completed.
+    const newComputedStatus = (tongDiem >= 5) ? "Completed" : "In Progress";
+    
+    // Only update status if it changes or if we are upgrading (In Progress -> Completed)
+    // Avoid downgrading Completed -> In Progress (though unlikely if scores only go up)
     if (idxStatus !== -1) {
         const currentStatus = data[rowIndex][idxStatus];
         if (currentStatus !== "Completed" && currentStatus !== "Approved") {
-             sheet.getRange(rowNum, idxStatus + 1).setValue(newStatus);
+             sheet.getRange(rowNum, idxStatus + 1).setValue(newComputedStatus);
         }
     }
   }
@@ -1779,6 +1861,11 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
       const idx = getColumnIndex(sheet, colName);
       if (idx !== -1) sheet.getRange(rowNum, idx + 1).setValue(val);
   };
+  
+  // Ensure Student Info is present
+  const studentInfo = getStudentInfoFromEmail(email);
+  if (studentInfo.code) setValue(COL_NAME_MA_CODE, studentInfo.code);
+  if (studentInfo.name) setValue(COL_NAME_TEN_HV, studentInfo.name);
   
   setValue(COL_NAME_TRANG_THAI, status);
   setValue(COL_NAME_GHI_NHAN, timestamp);

@@ -1114,6 +1114,9 @@
             }
             pendingLessonIdx = -1;
 
+            // Clear any existing progress interval
+            if (videoProgressInterval) clearInterval(videoProgressInterval);
+
             if (idx === currentLessonIdx && player) return;
 
             // Hide overlay if visible
@@ -1194,8 +1197,8 @@
                         document.getElementById('link-1').value = "";
                         document.getElementById('link-2').value = "";
                         document.getElementById('link-3').value = "";
-                        document.getElementById('discipline-support').checked = false;
-                        document.getElementById('discipline-leadership').checked = false;
+                        document.getElementById('discipline-support-1').checked = false;
+                        document.getElementById('discipline-support-2').checked = false;
                         document.getElementById('grading-result').style.display = 'none';
                         btnSubmit.innerHTML = '<i class="fas fa-check-circle"></i> Ghi nhận hoàn thành (Chốt bài)';
                         btnRelearn.style.display = 'none';
@@ -1543,7 +1546,6 @@
                         link1: link1,
                         link2: link2,
                         link3: link3,
-                        link3: link3,
                         disciplineSupport1: discSupport1,
                         disciplineSupport2: discSupport2,
                         videoMaxTime: videoMaxTime,
@@ -1585,13 +1587,23 @@
                     const nextIdx = currentLessonIdx + 1;
                     if (nextIdx < curriculum.length) {
                         const nextLesson = curriculum[nextIdx];
+
+                        // OPTIMISTIC UNLOCK: If we passed (score >= 5), ensure next is unlocked
+                        // This handles cases where loadCurriculum might return stale data
+                        if (score >= 5 && nextLesson.progress.status === 'Locked') {
+                            console.log("Optimistic Unlock for Auto-Advance");
+                            nextLesson.progress.status = 'Available';
+                            renderLessonList(); // Update UI to show unlocked
+                        }
+
                         // Check if next lesson is now unlocked (it should be if current is Completed/Approved)
-                        // Since loadCurriculum is async and we awaited it, curriculum is updated.
                         if (nextLesson.progress.status !== 'Locked') {
                             showToast("Tự động chuyển bài tiếp theo...", "success");
                             setTimeout(() => {
                                 playLesson(nextIdx);
                             }, 1500);
+                        } else {
+                            showToast("Bạn chưa đủ điểm hoàn thành để mở bài tiếp theo!", "warning");
                         }
                     } else {
                         // Loop back to beginning (User Request)
