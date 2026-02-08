@@ -699,7 +699,7 @@
             <div class="sidebar-header">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <div>
-                        <h3 id="sidebar-title" style="margin: 0; font-size: 16px;">Nội dung khóa học</h3>
+                        <h3 id="sidebar-title" style="margin: 0; font-size: 16px;"></h3>
                         <p id="progress-summary" style="font-size: 13px; color: #64748b; margin-top: 5px;">0/0 bài hoàn
                             thành</p>
                     </div>
@@ -729,7 +729,8 @@
                 <div id="video-overlay" class="overlay-container">
                     <div class="overlay-icon"><i class="fas fa-check-circle"></i></div>
                     <h2 class="overlay-title">Chúc mừng bạn đã xem hết video!</h2>
-                    <p class="overlay-text">Hãy làm bài tập và ghi nhận dưới đây để hoàn thành bài học và mở khóa bài tiếp theo!</p>
+                    <p class="overlay-text">Hãy làm bài tập và ghi nhận dưới đây để hoàn thành bài học và mở khóa bài
+                        tiếp theo!</p>
                     <button onclick="replayVideo()" class="overlay-btn">
                         <i class="fas fa-redo"></i> Xem lại
                     </button>
@@ -1134,17 +1135,24 @@
             style="background: white; padding: 25px; border-radius: 12px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
             <h3 style="margin-top: 0; color: #b45309;">Quy tắc chấm điểm (Thang 10)</h3>
             <ul style="padding-left: 20px; font-size: 14px; line-height: 1.6; color: #334155;">
-                <li><strong>Video (Max 2đ)</strong>: Xem >50% (+1đ), Xem hết (+2đ).</li>
-                <li><strong>Ghi nhận bài học (Max 2đ)</strong>: Có chia sẻ (+1đ), Sâu sắc (dài hơn 50 ký tự) (+1đ).</li>
-                <li><strong>Thực hành (Max 3đ)</strong>: Mỗi link video (+1đ).</li>
-                <li><strong>Kỷ luật (Max 3đ)</strong>:
+                <li><strong>1. Học theo Video (Max 2đ)</strong>: Xem >50% (+1đ), Xem hết (+2đ).</li>
+                <li><strong>2. Chia sẻ Bài học Tâm đắc Ngộ (Max 2đ)</strong>: Có chia sẻ (+1đ), Sâu sắc (dài hơn 50 ký
+                    tự) (+1đ).</li>
+                <li><strong>3. Thực hành nộp link video (Max 3đ)</strong>: Mỗi link video (+1đ).</li>
+                <li><strong>4. Hỗ trợ: (Max 2đ)</strong>:
                     <ul style="margin: 5px 0;">
-                        <li>Nộp trước 23:59 (+1đ).</li>
-                        <li>Nhắc 2 đồng đội (+1đ).</li>
-                        <li>Đồng đội nhắc người dưới (+1đ).</li>
+                        <li>Giúp người: Nhắc 2 đồng đội mình nhận hỗ trợ (+1đ).</li>
+                        <li>Giúp người giúp người: Đồng đội mình nhắc 2 người họ nhận hỗ trợ (+1đ).</li>
+                        <li>Nếu chưa có người để hỗ trợ: Nhắc ngược lên trên được tích vào ô đầu (+1đ).</li>
                     </ul>
                 </li>
-                <li style="color: #ef4444;"><strong>Trừ điểm</strong>: Nộp muộn sau 23:59 (-1đ).</li>
+                <li><strong>5. Giữ tín đúng hạn (1đ)</strong>:
+                    <ul style="margin: 5px 0;">
+                        <li>Nộp trước 23:59 (+1đ).</li>
+                        <li style="color: #ef4444;">
+                            </listyle>><strong>Trừ điểm</strong>: Nộp muộn sau 23:59 (-1đ).</li>
+                    </ul>
+                </li>
             </ul>
             <div style="margin-top: 15px; text-align: right;">
                 <button onclick="document.getElementById('rules-modal').style.display='none'"
@@ -1162,6 +1170,7 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbwd9qsO3FlcwNMOWBqPm5c7NWb0d5c8hMCd5o2YzeXlFOQMVayvHErqcUcWHrelojIbeA/exec";
         const urlParams = new URLSearchParams(window.location.search);
         const courseId = urlParams.get('id');
+        const courseTitle = urlParams.get('title'); // Get course title from URL
         let user = JSON.parse(localStorage.getItem('user'));
 
         // Nếu chưa đăng nhập, tạo user giả cho Guest để không bị lỗi JS
@@ -1171,6 +1180,14 @@
 
         if (!courseId) {
             window.location.href = "index.html";
+        }
+
+        // Set sidebar title to course name from URL
+        const sidebarTitle = document.getElementById('sidebar-title');
+        if (courseTitle) {
+            sidebarTitle.textContent = decodeURIComponent(courseTitle);
+        } else {
+            sidebarTitle.textContent = "Khóa học";
         }
 
         let player;
@@ -1475,11 +1492,11 @@
                 const resultHTML = `
                         <h4 style="margin: 0 0 10px 0; font-size: 16px;">📊 Kết quả bài làm chi tiết:</h4>
                         <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 10px;">
-                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">1. Xem Video (Max 2):</td><td style="text-align: right; font-weight: bold;">${vidScore}/2</td></tr>
-                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">2. Tâm đắc ngộ (Max 2):</td><td style="text-align: right; font-weight: bold;">${refScore}/2</td></tr>
-                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">3. Bài tập Links (Max 3):</td><td style="text-align: right; font-weight: bold;">${pracScore}/3</td></tr>
-                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">4. Hỗ trợ đồng đội (Max 2):</td><td style="text-align: right; font-weight: bold;">${hoTro1 + hoTro2}/2</td></tr>
-                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">5. Đúng hạn (Max 1):</td><td style="text-align: right; font-weight: bold;">${diemDungHan}/1</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">1. Bồi Nhân - Học theo Video:</td><td style="text-align: right; font-weight: bold;">${vidScore}/2</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">2. Mở Trí - Bài học Tâm đắc Ngộ:</td><td style="text-align: right; font-weight: bold;">${refScore}/2</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">3. Hành Lễ - Thực hành video đăng Links:</td><td style="text-align: right; font-weight: bold;">${pracScore}/3</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">4. Trọng Nghĩa - Hỗ trợ đồng đội:</td><td style="text-align: right; font-weight: bold;">${hoTro1 + hoTro2}/2</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">5. Giữ Tín - Đúng hạn:</td><td style="text-align: right; font-weight: bold;">${diemDungHan}/1</td></tr>
                             <tr style="background: #f0f9ff; border-top: 2px solid #bae6fd;"><td style="padding: 8px; font-weight: bold; color: ${gradeColor};">TỔNG CỘNG:</td><td style="text-align: right; font-weight: bold; color: ${gradeColor}; font-size: 16px;">${totalScore}/10</td></tr>
                         </table>
                         <p style="margin: 5px 0; text-align: center;"><strong>Xếp loại:</strong> <span style="font-weight: bold; color: ${gradeColor}; transform: uppercase;">${gradeText}</span></p>
@@ -1515,7 +1532,7 @@
                 }, 100);
 
                 if (btnRelearn) btnRelearn.style.display = 'none';
-                btnSubmit.innerHTML = '<i class="fas fa-check-circle"></i> Ghi nhận hoàn thành (Chốt bài)';
+                btnSubmit.innerHTML = '<i class="fas fa-check-circle"></i> Ghi nhận hoàn thành';
             }
             // ---------------------
 
@@ -1889,7 +1906,7 @@
 
             // Validate: Must have reflection OR at least one link
             if (!reflection && !link1 && !link2 && !link3) {
-                showToast("Vui lòng nhập ít nhất một nội dung (Tâm đắc ngộ hoặc Link video)!", "warning");
+                showToast("Vui lòng nhập ít nhất một nội dung (Bài học Tâm đắc Ngộ hoặc Link video)!", "warning");
                 return;
             }
 
@@ -1910,7 +1927,7 @@
             const btn = document.querySelector('.btn-submit');
             const originalText = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang chấm điểm...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tổng hợp ...';
 
             try {
                 const response = await fetch(API_URL, {
@@ -1933,7 +1950,7 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showToast("Đã nộp bài thành công!", "success");
+                    showToast("Đã Ghi nhận thành công!", "success");
 
                     // Display Grade Result in appropriate location
                     const resultBoxId = isDesktop ? 'grading-result-desktop' : 'grading-result';
@@ -1949,11 +1966,11 @@
                     resultBox.innerHTML = `
                         <h4 style="margin: 0 0 10px 0; font-size: 16px;">📊 Chi tiết điểm số:</h4>
                         <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 10px;">
-                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">Xem Video:</td><td style="text-align: right; font-weight: bold;">${details.video}/2</td></tr>
-                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">Tâm đắc ngộ:</td><td style="text-align: right; font-weight: bold;">${details.reflection}/2</td></tr>
-                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">3. Bài tập Links (Max 3):</td><td style="text-align: right; font-weight: bold;">${details.practice}/3</td></tr>
-                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">4. Hỗ trợ đồng đội (Max 2):</td><td style="text-align: right; font-weight: bold;">${details.discipline - 1}/2</td></tr>
-                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">5. Đúng hạn (Max 1):</td><td style="text-align: right; font-weight: bold;">1/1</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">1. Bồi Nhân = Học theo Video:</td><td style="text-align: right; font-weight: bold;">${details.video}/2</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">2. Mở Trí - Chia sẻ Bài học Tâm đắc Ngộ:</td><td style="text-align: right; font-weight: bold;">${details.reflection}/2</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">3. Hành Lễ - Thực hành đăng video nộp Links:</td><td style="text-align: right; font-weight: bold;">${details.practice}/3</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">4. Trọng Nghĩa = Hỗ trợ đồng đội:</td><td style="text-align: right; font-weight: bold;">${details.discipline - 1}/2</td></tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 5px;">5. Giữ Tín = Đúng hạn:</td><td style="text-align: right; font-weight: bold;">1/1</td></tr>
                             <tr style="background: #f0f9ff;"><td style="padding: 8px; font-weight: bold; color: ${gradeColor};">TỔNG CỘNG:</td><td style="text-align: right; font-weight: bold; color: ${gradeColor}; font-size: 16px;">${score}/10</td></tr>
                         </table>
                         <p style="margin: 5px 0; text-align: center;"><strong>Xếp loại:</strong> <span style="font-weight: bold; color: ${gradeColor}; transform: uppercase;">${grade}</span></p>
@@ -1995,7 +2012,7 @@
                     showToast(result.message || "Có lỗi xảy ra!", "error");
                 }
             } catch (e) {
-                showToast("Lỗi nộp bài: " + e.message, "error");
+                showToast("Lỗi Ghi nhận: " + e.message, "error");
                 console.error(e);
             } finally {
                 btn.disabled = false;

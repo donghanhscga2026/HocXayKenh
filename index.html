@@ -1635,6 +1635,27 @@
             });
         }
 
+        // Navigate to course page
+        function continueLearning(courseId) {
+            const course = courses.find(c => c.id === courseId);
+            const title = course ? encodeURIComponent(course.title) : '';
+            window.location.href = `course-play.html?id=${courseId}&title=${title}`;
+        }
+
+        function handlePublicCourseInteract(courseId, isFree) {
+            const course = courses.find(c => c.id === courseId);
+            const title = course ? encodeURIComponent(course.title) : '';
+
+            if (isFree) {
+                // Free course - go directly
+                window.location.href = `course-play.html?id=${courseId}&title=${title}`;
+            } else {
+                // Paid course - show activation modal
+                // TODO: implement activation modal logic
+                showToast('Chức năng kích hoạt sẽ sớm được cập nhật!', 'info');
+            }
+        }
+
         // Show Toast Notification
         function showToast(message, type = 'info') {
             const toast = document.getElementById('toast');
