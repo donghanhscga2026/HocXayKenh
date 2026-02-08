@@ -1148,8 +1148,10 @@
                             </div>
                         </div>
                     `;
+                    // Escape single quotes in title for onclick attribute
+                    const escapedTitle = course.title.replace(/'/g, "\\'");
                     actionButton = `
-                        <button class="btn-continue" onclick="continueLearning('${course.id}')">
+                        <button class="btn-continue" onclick="continueLearning('${course.id}', '${escapedTitle}')">
                             <i class="fas fa-play-circle"></i> Vào học tiếp
                         </button>
                     `;
@@ -1157,8 +1159,9 @@
                     // Chưa kích hoạt hoặc chưa đăng nhập
                     if (course.isFree) {
                         // Miễn phí -> Nút "Học luôn" (Học được nhưng không lưu)
+                        const escapedTitle = course.title.replace(/'/g, "\\'");
                         actionButton = `
-                            <button class="btn-start" onclick="handlePublicCourseInteract('${course.id}', true)">
+                            <button class="btn-start" onclick="handlePublicCourseInteract('${course.id}', true, '${escapedTitle}')">
                                 <i class="fas fa-eye"></i> Học luôn
                             </button>
                         `;
@@ -1636,19 +1639,49 @@
         }
 
         // Navigate to course page
-        function continueLearning(courseId) {
-            const course = courses.find(c => c.id === courseId);
-            const title = course ? encodeURIComponent(course.title) : '';
-            window.location.href = `course-play.html?id=${courseId}&title=${title}`;
+        function continueLearning(courseId, courseTitle) {
+            console.log('=== continueLearning called ===');
+            console.log('courseId:', courseId);
+            console.log('courseTitle:', courseTitle);
+
+            if (courseTitle) {
+                const title = encodeURIComponent(courseTitle);
+                const url = `course-play.html?id=${courseId}&title=${title}`;
+                console.log('Navigating to:', url);
+                window.location.href = url;
+            } else {
+                console.warn('⚠️ No title provided, falling back to courses array');
+                const course = courses.find(c => c.id === courseId);
+                if (course && course.title) {
+                    const title = encodeURIComponent(course.title);
+                    window.location.href = `course-play.html?id=${courseId}&title=${title}`;
+                } else {
+                    window.location.href = `course-play.html?id=${courseId}`;
+                }
+            }
         }
 
-        function handlePublicCourseInteract(courseId, isFree) {
-            const course = courses.find(c => c.id === courseId);
-            const title = course ? encodeURIComponent(course.title) : '';
+        function handlePublicCourseInteract(courseId, isFree, courseTitle) {
+            console.log('=== handlePublicCourseInteract called ===');
+            console.log('courseId:', courseId, 'isFree:', isFree, 'courseTitle:', courseTitle);
 
             if (isFree) {
                 // Free course - go directly
-                window.location.href = `course-play.html?id=${courseId}&title=${title}`;
+                if (courseTitle) {
+                    const title = encodeURIComponent(courseTitle);
+                    const url = `course-play.html?id=${courseId}&title=${title}`;
+                    console.log('Navigating to:', url);
+                    window.location.href = url;
+                } else {
+                    console.warn('⚠️ No title provided, falling back to courses array');
+                    const course = courses.find(c => c.id === courseId);
+                    if (course && course.title) {
+                        const title = encodeURIComponent(course.title);
+                        window.location.href = `course-play.html?id=${courseId}&title=${title}`;
+                    } else {
+                        window.location.href = `course-play.html?id=${courseId}`;
+                    }
+                }
             } else {
                 // Paid course - show activation modal
                 // TODO: implement activation modal logic

@@ -707,7 +707,31 @@
                 <!-- Rules button moved to Assignment Section -->
             </div>
 
-            <div class="lesson-list-desktop" id="lesson-list-desktop">
+            <!-- Loading skeleton -->
+            <div id="lesson-list-loading" class="lesson-list-desktop">
+                <div style="padding: 15px; text-align: center; color: #64748b;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 10px;"></i>
+                    <p style="margin: 0; font-size: 14px; font-weight: 500;">Đang tải khóa học...</p>
+                </div>
+                <!-- Skeleton items -->
+                <div style="padding: 10px;">
+                    <div
+                        style="background: #f1f5f9; height: 60px; border-radius: 8px; margin-bottom: 10px; animation: pulse 1.5s infinite;">
+                    </div>
+                    <div
+                        style="background: #f1f5f9; height: 60px; border-radius: 8px; margin-bottom: 10px; animation: pulse 1.5s infinite; animation-delay: 0.1s;">
+                    </div>
+                    <div
+                        style="background: #f1f5f9; height: 60px; border-radius: 8px; margin-bottom: 10px; animation: pulse 1.5s infinite; animation-delay: 0.2s;">
+                    </div>
+                    <div
+                        style="background: #f1f5f9; height: 60px; border-radius: 8px; margin-bottom: 10px; animation: pulse 1.5s infinite; animation-delay: 0.3s;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="lesson-list-desktop" id="lesson-list-desktop" style="display: none;">
+                <!-- Lessons will be inserted here -->
                 <!-- Desktop List Items -->
             </div>
 
@@ -1183,10 +1207,14 @@
         }
 
         // Set sidebar title to course name from URL
+        console.log('URL params:', { courseId, courseTitle });
         const sidebarTitle = document.getElementById('sidebar-title');
         if (courseTitle) {
-            sidebarTitle.textContent = decodeURIComponent(courseTitle);
+            const decodedTitle = decodeURIComponent(courseTitle);
+            console.log('Setting sidebar title to:', decodedTitle);
+            sidebarTitle.textContent = decodedTitle;
         } else {
+            console.warn('No course title in URL, using default');
             sidebarTitle.textContent = "Khóa học";
         }
 
@@ -1211,6 +1239,37 @@
         }
 
         async function loadCurriculum(autoPlay = true) {
+            const cacheKey = `curriculum_${courseId}_${user.email}`;
+            const cacheExpiry = 5 * 60 * 1000; // 5 minutes
+
+            // Try to load from cache first
+            const cachedData = getCachedCurriculum(cacheKey, cacheExpiry);
+            if (cachedData) {
+                console.log('📦 Loading from cache...');
+                curriculum = cachedData;
+
+                // Validate curriculum
+                if (!curriculum || curriculum.length === 0) {
+                    console.warn('⚠️ Cached curriculum is empty, fetching fresh data...');
+                    // Clear bad cache
+                    localStorage.removeItem(cacheKey);
+                    // Fetch fresh data
+                    loadCurriculum(autoPlay);
+                    return;
+                }
+
+                renderLessonList();
+
+                const lastIdx = curriculum.findIndex(l => l.progress && l.progress.status === "In Progress");
+                checkGraduation();
+                if (autoPlay) playLesson(lastIdx !== -1 ? lastIdx : 0);
+
+                // Fetch in background to update cache
+                fetchCurriculumInBackground(cacheKey, autoPlay);
+                return;
+            }
+
+            // No cache, fetch from API
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
@@ -1223,6 +1282,10 @@
                 const result = await response.json();
                 if (result.success) {
                     curriculum = result.data;
+
+                    // Cache the data
+                    setCachedCurriculum(cacheKey, curriculum);
+
                     if (curriculum.length === 0) {
                         showToast("Khóa học này chưa có nội dung bài học nào!", "warning");
                         document.getElementById('current-lesson-title').textContent = "Chưa có nội dung";
@@ -1231,12 +1294,8 @@
                     }
 
                     renderLessonList();
-                    // Tự động load bài học đầu tiên khả dụng hoặc đang học dở
                     const lastIdx = curriculum.findIndex(l => l.progress.status === "In Progress");
-
-                    // Check graduation FIRST
                     checkGraduation();
-
                     if (autoPlay) playLesson(lastIdx !== -1 ? lastIdx : 0);
                 } else {
                     console.error("API Error:", result.msg);
@@ -1248,9 +1307,83 @@
             }
         }
 
+        // Get cached curriculum
+        function getCachedCurriculum(key, expiry) {
+            try {
+                const cached = localStorage.getItem(key);
+                if (!cached) return null;
+
+                const { data, timestamp } = JSON.parse(cached);
+                const now = Date.now();
+
+                if (now - timestamp < expiry) {
+                    return data;
+                }
+
+                localStorage.removeItem(key);
+                return null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Set cached curriculum
+        function setCachedCurriculum(key, data) {
+            try {
+                const cacheData = {
+                    data: data,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem(key, JSON.stringify(cacheData));
+            } catch (e) {
+                console.warn('Failed to cache curriculum:', e);
+            }
+        }
+
+        // Fetch curriculum in background to update cache
+        async function fetchCurriculumInBackground(cacheKey, autoPlay) {
+            console.log('🔄 Fetching fresh data in background...');
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: "getCourseContent",
+                        email: user.email,
+                        courseId: courseId
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    const freshData = result.data;
+
+                    // Update cache
+                    setCachedCurriculum(cacheKey, freshData);
+
+                    // Check if data changed
+                    if (JSON.stringify(freshData) !== JSON.stringify(curriculum)) {
+                        console.log('✅ Fresh data received, updating UI...');
+                        curriculum = freshData;
+                        renderLessonList();
+                        checkGraduation();
+                    } else {
+                        console.log('✅ Data is up-to-date');
+                    }
+                }
+            } catch (e) {
+                console.warn('Background fetch failed:', e);
+            }
+        }
+
         function renderLessonList() {
+            // Hide loading skeleton, show actual list
+            const loadingSkeleton = document.getElementById('lesson-list-loading');
+            if (loadingSkeleton) loadingSkeleton.style.display = 'none';
+
             const listDesktop = document.getElementById('lesson-list-desktop');
             const listMobileOpts = document.getElementById('custom-dropdown-options');
+
+            // Show desktop list
+            if (listDesktop) listDesktop.style.display = 'block';
 
             // Reset
             if (listDesktop) listDesktop.innerHTML = '';
@@ -1320,6 +1453,32 @@
 
 
         function playLesson(idx) {
+            console.log(`playLesson called with idx: ${idx}`);
+
+            // Validate idx and curriculum
+            if (!curriculum || curriculum.length === 0) {
+                console.error('Curriculum is empty!');
+                showToast('Khóa học chưa có bài học nào!', 'error');
+                return;
+            }
+
+            if (idx < 0 || idx >= curriculum.length) {
+                console.error(`Invalid lesson index: ${idx}`);
+                showToast('Bài học không tồn tại!', 'error');
+                return;
+            }
+
+            const lesson = curriculum[idx];
+
+            // Validate lesson object
+            if (!lesson || !lesson.title) {
+                console.error('Lesson is invalid:', lesson);
+                showToast('Dữ liệu bài học không hợp lệ!', 'error');
+                return;
+            }
+
+            currentLessonIdx = idx;
+
             // Wait for YouTube API
             if (!isYouTubeReady) {
                 pendingLessonIdx = idx;
@@ -1355,17 +1514,19 @@
             if (document.getElementById('grading-result-desktop')) document.getElementById('grading-result-desktop').style.display = 'none';
 
             const vProg = document.getElementById('video-prog-text');
-            const vScore = document.getElementById('video-score-text');
-            const liveScoreEl = document.getElementById('live-score-value'); // Find the total live score element
+            // Reset Assignment section first
+            resetAssignment();
 
-            if (vProg) { vProg.textContent = "0%"; vProg.style.color = "#0f172a"; }
-            if (vScore) { vScore.textContent = "0/2 điểm"; vScore.style.color = "#0284c7"; }
+            // Clear live score for mobile/desktop
+            const liveScoreEl = document.getElementById('live-score');
+            const liveScoreElDesktop = document.getElementById('live-score-desktop');
             if (liveScoreEl) { liveScoreEl.innerHTML = `0/10`; liveScoreEl.style.color = "#d97706"; }
+            if (liveScoreElDesktop) { liveScoreElDesktop.innerHTML = `0/10`; liveScoreElDesktop.style.color = "#d97706"; }
 
             // --------------------------------------
 
-            const lesson = curriculum[idx];
-            currentLessonIdx = idx;
+            // lesson is already declared at the top of the function
+            // currentLessonIdx is already set at the top
 
             // Update Mobile Dropdown Text
             const dropdownText = document.getElementById('dropdown-selected-text');
