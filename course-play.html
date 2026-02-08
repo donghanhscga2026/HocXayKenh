@@ -58,16 +58,28 @@
         /* Sidebar - Lesson List */
         .sidebar {
             width: 350px;
-            background: #f0fdf4;
-            /* Light Green Background */
-            border-right: 1px solid var(--border);
+            background: #0f172a;
+            /* Slate 900 - Dark Theme */
+            color: #f8fafc;
+            border-right: 1px solid #334155;
             display: flex;
             flex-direction: column;
         }
 
         .sidebar-header {
             padding: 20px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid #334155;
+            background: #0f172a;
+        }
+
+        #sidebar-title {
+            color: #fbbf24;
+            /* Amber 400 - Gold */
+        }
+
+        #progress-summary {
+            color: #94a3b8 !important;
+            /* Slate 400 */
         }
 
         .lesson-list {
@@ -77,21 +89,27 @@
 
         .lesson-item {
             padding: 15px 20px;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid #1e293b;
+            /* Slate 800 */
             cursor: pointer;
             transition: background 0.2s;
             display: flex;
             align-items: flex-start;
             gap: 12px;
+            color: #cbd5e1;
+            /* Slate 300 */
         }
 
         .lesson-item:hover {
-            background: #f8fafc;
+            background: #1e293b;
+            /* Slate 800 */
         }
 
         .lesson-item.active {
-            background: #eff6ff;
-            border-left: 4px solid var(--primary);
+            background: #334155;
+            /* Slate 700 */
+            border-left: 4px solid #fbbf24;
+            /* Gold Border */
         }
 
         .lesson-item.locked {
@@ -124,6 +142,8 @@
             font-size: 14px;
             font-weight: 600;
             margin-bottom: 4px;
+            color: #f1f5f9;
+            /* Slate 100 */
         }
 
         .lesson-meta {
@@ -226,6 +246,92 @@
             border-radius: 6px;
             font-weight: 600;
             cursor: pointer;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Overlay Responsive Styles */
+        .overlay-container {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .overlay-icon {
+            font-size: 40px;
+            color: #10b981;
+            margin-bottom: 10px;
+        }
+
+        .overlay-title {
+            margin-bottom: 10px;
+            font-size: 20px;
+            padding: 0 10px;
+        }
+
+        .overlay-text {
+            margin-bottom: 20px;
+            color: #cbd5e1;
+            max-width: 600px;
+            line-height: 1.4;
+            font-size: 14px;
+            padding: 0 15px;
+        }
+
+        .overlay-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid white;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .overlay-btn:hover {
+            background: white;
+            color: black;
+        }
+
+        /* Adjust for very small screens (phones in portrait) */
+        @media (max-width: 600px) {
+            .overlay-icon {
+                font-size: 30px;
+                margin-bottom: 5px;
+            }
+
+            .overlay-title {
+                font-size: 16px;
+                margin-bottom: 5px;
+            }
+
+            .overlay-text {
+                font-size: 12px;
+                margin-bottom: 15px;
+                line-height: 1.3;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+
+            .overlay-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
         }
 
         @media (max-width: 1024px) {
@@ -237,8 +343,10 @@
                 width: 100%;
                 height: 300px;
                 border-right: none;
-                border-top: 1px solid var(--border);
+                border-top: 1px solid #334155;
                 order: 2;
+                background: #0f172a;
+                /* Dark Theme on Mobile */
             }
 
             .content {
@@ -283,15 +391,11 @@
             <div class="video-wrapper">
                 <div id="player"></div>
                 <!-- Video Overlay -->
-                <div id="video-overlay"
-                    style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 20px;">
-                    <div style="font-size: 50px; color: #10b981; margin-bottom: 20px;"><i
-                            class="fas fa-check-circle"></i></div>
-                    <h2 style="margin-bottom: 15px; font-size: 24px;">Chúc mừng bạn đã xem hết video bài học!</h2>
-                    <p style="margin-bottom: 30px; color: #cbd5e1; max-width: 600px; line-height: 1.5;">Hãy làm bài tập
-                        và ghi nhận nộp bài phía dưới đây để hoàn thành bài học trước khi học bài tiếp theo!</p>
-                    <button onclick="replayVideo()"
-                        style="padding: 10px 20px; background: transparent; border: 1px solid white; color: white; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                <div id="video-overlay" class="overlay-container">
+                    <div class="overlay-icon"><i class="fas fa-check-circle"></i></div>
+                    <h2 class="overlay-title">Chúc mừng bạn đã xem hết video!</h2>
+                    <p class="overlay-text">Hãy làm bài tập và ghi nhận nộp bài dưới đây để hoàn thành bài học!</p>
+                    <button onclick="replayVideo()" class="overlay-btn">
                         <i class="fas fa-redo"></i> Xem lại
                     </button>
                 </div>

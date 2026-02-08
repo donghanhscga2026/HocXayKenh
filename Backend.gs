@@ -1071,7 +1071,7 @@ function getAllAvailableCourses() {
   const COL_TEN_KHOA_HOC = findIndex("Tên khóa học");
   const COL_TEN_LOP_HOC = findIndex("Tên lớp học"); // New preference
   const COL_CO_SAN = findIndex("Có sẵn");
-  const COL_MO_TA = findIndex("Mô tả ngắn");
+  const COL_MO_TA = findIndex("Mo_Ta_Ngan");
   const COL_PHI_COC = findIndex("Phí cọc");
   const COL_LINK_ANH = findIndex("Link_Anh_Lop");
   const COL_LINK_ANH_ALT = findIndex("Link_Anh");
@@ -1198,37 +1198,6 @@ function getActivatedCoursesFromLS(studentCode) {
   return maLopList;
 }
 
-// ===================================================================
-// TEST FUNCTION - Chỉ dùng để debug, xóa sau khi xong
-// ===================================================================
-function testActivation838() {
-  Logger.log("=== BẮT ĐẦU TEST ===");
-  const result = getActivatedCoursesFromLS("838");
-  Logger.log("Kết quả: " + JSON.stringify(result));
-  Logger.log("=== KẾT THÚC TEST ===");
-  return result;
-}
-
-function testActivation470() {
-  Logger.log("=== BẮT ĐẦU TEST CODE 470 ===");
-  const result = getActivatedCoursesFromLS("470");
-  Logger.log("Kết quả: " + JSON.stringify(result));
-  Logger.log("=== KẾT THÚC TEST ===");
-  return result;
-}
-
-// Function để check version
-function checkVersion() {
-  Logger.log("=== VERSION INFO ===");
-  Logger.log("Deployment Time: " + new Date());
-  Logger.log("Logic: Sử dụng Ma_Lop (cột O LS_DangKy, cột P KH)");
-  Logger.log("Version: 2.0 - Ma_Lop Based Activation");
-  return {
-    version: "2.0",
-    logic: "Ma_Lop based",
-    timestamp: new Date()
-  };
-}
 
 // ------------------------------------------------------------------
 // COURSE ACTIVATION FEATURE
