@@ -668,8 +668,8 @@ function getCourseContent(email, courseId) {
             link3: progressData[j][10] || "",
             totalScore: Number(progressData[j][11] || 0),
             grade: progressData[j][12] || "",
-            disciplineSupport: progressData[j][14] === true || progressData[j][14] === "true" || progressData[j][14] === 1,
-            disciplineLeadership: progressData[j][15] === true || progressData[j][15] === "true" || progressData[j][15] === 1
+            disciplineSupport1: progressData[j][14] === true || progressData[j][14] === "true" || progressData[j][14] === 1,
+            disciplineSupport2: progressData[j][15] === true || progressData[j][15] === "true" || progressData[j][15] === 1
           };
           break;
         }

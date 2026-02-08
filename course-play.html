@@ -1213,11 +1213,11 @@
                 if (document.getElementById('link-3')) document.getElementById('link-3').value = lesson.progress.link3 || "";
 
                 // Populate Discipline Checkboxes
-                if (document.getElementById('discipline-support')) {
-                    document.getElementById('discipline-support').checked = !!lesson.progress.disciplineSupport;
+                if (document.getElementById('discipline-support-1')) {
+                    document.getElementById('discipline-support-1').checked = !!lesson.progress.disciplineSupport1;
                 }
-                if (document.getElementById('discipline-leadership')) {
-                    document.getElementById('discipline-leadership').checked = !!lesson.progress.disciplineLeadership;
+                if (document.getElementById('discipline-support-2')) {
+                    document.getElementById('discipline-support-2').checked = !!lesson.progress.disciplineSupport2;
                 }
 
                 const resultBox = document.getElementById('grading-result');
@@ -1235,8 +1235,8 @@
                 if (lesson.progress.link3) pracScore++;
 
                 let supportScore = 0;
-                if (lesson.progress.disciplineSupport) supportScore++;
-                if (lesson.progress.disciplineLeadership) supportScore++;
+                if (lesson.progress.disciplineSupport1) supportScore++;
+                if (lesson.progress.disciplineSupport2) supportScore++;
 
                 // Calculate Time Score (The rest)
                 // Total = Vid + Ref + Prac + Support + Time
@@ -1589,6 +1589,12 @@
                                 playLesson(nextIdx);
                             }, 1500);
                         }
+                    } else {
+                        // Loop back to beginning (User Request)
+                        showToast("Đã hoàn thành khóa học! Quay lại bài đầu tiên...", "success");
+                        setTimeout(() => {
+                            playLesson(0);
+                        }, 1500);
                     }
                 } else {
                     showToast(result.message || "Có lỗi xảy ra!", "error");
