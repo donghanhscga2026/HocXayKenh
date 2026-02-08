@@ -535,7 +535,10 @@ function getCourses(email) {
   const COL_TEN_KHOA_HOC = findIndex("Tên khóa học");
   const COL_TEN_LOP_HOC = findIndex("Tên lớp học"); // Prioritized Title
   const COL_CO_SAN = findIndex("Có sẵn");
+  
+  // Try to find Short Description column (Code or Readable Name)
   const COL_MO_TA = findIndex("Mo_Ta_Ngan");
+  
   const COL_PHI_COC = findIndex("Phí cọc");
   const COL_LINK_ANH = findIndex("Link_Anh_Lop");
   
@@ -1575,7 +1578,6 @@ function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
  * Nộp bài tập
  */
 // Xử lý nộp bài tập (Assignment Submission) - Daily Discipline Grading
-// Xử lý nộp bài tập (Assignment Submission) - Daily Discipline Grading
 function submitAssignment(email, courseId, lessonId, reflection, link1, link2, link3, disciplineSupport, disciplineLeadership, videoMaxTime, duration) {
   const ss = getDB();
   const sheet = ss.getSheetByName("KH_TienDo");
@@ -1682,37 +1684,3 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
   };
 }
 
-
-// ------------------------------------------------------------------
-// DEBUGGING / TESTING AREA
-// ------------------------------------------------------------------
-// Hướng dẫn: 
-// 1. Chọn hàm 'debug_testDepositInfo' trên thanh công cụ bên trên.
-// 2. Nhấn nút 'Run' (Chạy).
-// 3. Xem kết quả ở phần 'Execution Log' (Nhật ký thực thi) phía dưới.
-
-function debug_testDepositInfo() {
-  const courseId = "NH"; // Thay bằng mã khóa học bạn muốn test (ví dụ: 86D, NH, AF...)
-  
-  Logger.log("🚀 Bắt đầu test lấy thông tin cọc cho khóa: " + courseId);
-  
-  const result = getCourseDepositInfo(courseId);
-  
-  if (result) {
-    Logger.log("✅ KẾT QUẢ TÌM THẤY:");
-    Logger.log("--------------------------------");
-    Logger.log("Mã: " + result.id);
-    Logger.log("Tên: " + result.title);
-    Logger.log("Phí cọc (Số tiền): " + result.depositFee);
-    Logger.log("Chủ TK: " + result.tenChuTK);
-    Logger.log("STK: " + result.stk);
-    Logger.log("Ngân hàng: " + result.nganHang);
-    Logger.log("Nội dung CK: " + result.paymentContent);
-    Logger.log("Link QR: " + result.qrLink);
-    Logger.log("Link Zalo: " + result.zaloLink);
-    Logger.log("--------------------------------");
-  } else {
-    Logger.log("❌ KHÔNG TÌM THẤY thông tin cho khóa: " + courseId);
-    Logger.log("Nguyên nhân có thể: Mã khóa sai, hoặc Sheet KH chưa đúng cấu trúc cột.");
-  }
-}
