@@ -216,7 +216,7 @@
             backdrop-filter: blur(4px);
         }
 
-        #video-progress-overlay > div {
+        #video-progress-overlay>div {
             display: flex;
             align-items: center;
             gap: 5px;
@@ -382,6 +382,7 @@
                 margin-bottom: 15px;
                 line-height: 1.3;
                 display: -webkit-box;
+                line-clamp: 2;
                 -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
                 overflow: hidden;
@@ -755,12 +756,12 @@
                 option.value = idx;
                 option.textContent = optionText;
                 option.disabled = isLocked;
-                
+
                 if (idx === currentLessonIdx) {
                     option.selected = true;
                     listEl.value = idx;
                 }
-                
+
                 listEl.appendChild(option);
             });
 
@@ -1009,15 +1010,15 @@
             };
             const msg = errorMessages[errorCode] || `Lỗi ${errorCode}`;
             console.error("YouTube Player Error:", msg);
-            
+
             if (errorCode === 153) {
                 const youtubeUrl = curriculum[currentLessonIdx]?.videoUrl;
                 const youtubeId = getYouTubeId(youtubeUrl);
                 const directLink = `https://youtu.be/${youtubeId}`;
-                
+
                 // Detect if on Chrome mobile
                 const isChromeMobile = /Chrome/.test(navigator.userAgent) && /Mobile/.test(navigator.userAgent);
-                
+
                 let msg = `Lỗi phát video: ${msg}`;
                 if (isChromeMobile) {
                     msg += " - Vui lòng dùng Safari hoặc mở link trực tiếp";
