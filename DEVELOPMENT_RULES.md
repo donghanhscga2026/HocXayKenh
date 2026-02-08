@@ -114,7 +114,125 @@ Tài liệu này định nghĩa quy trình làm việc để đảm bảo chất
 
 ---
 
+## 🐛 DEBUGGING WORKFLOW
+
+> **CRITICAL**: Debugging MUST follow a systematic approach. DO NOT guess or fix multiple things at once.
+
+### Step 1: Verify Function is Called
+
+**ALWAYS add debug logging as the FIRST step:**
+
+```javascript
+function myFunction() {
+    console.log('myFunction: START');  // ← ADD THIS FIRST
+    
+    // ... rest of code
+}
+```
+
+**Interpretation:**
+- ✅ **Log appears** → Function IS called, debug logic inside
+- ❌ **No log** → Function NOT called OR doesn't exist → Check:
+  - Is function defined? (Check for syntax errors)
+  - Is function in correct scope? (Try `window.functionName = function()`)
+  - Is function being overridden elsewhere?
+
+### Step 2: Hard Reload Properly
+
+**Browser cache is EXTREMELY persistent:**
+
+1. **First attempt**: `Ctrl + Shift + R` (hard reload)
+2. **If still cached**: Close ALL browser tabs → Reopen browser
+3. **If STILL cached**: Clear browser cache manually
+4. **Nuclear option**: Open in Incognito/Private mode
+
+### Step 3: Scope Issues
+
+**Common JavaScript scope problems:**
+
+```javascript
+// ❌ BAD: Function may not be accessible globally
+function calculateLiveScore() { ... }
+
+// ✅ GOOD: Explicitly assign to window object
+window.calculateLiveScore = function() { ... }
+
+// ✅ ALSO GOOD: Module pattern
+const myModule = {
+    calculateLiveScore: function() { ... }
+};
+```
+
+### Step 4: Incremental Debugging
+
+**Fix ONE thing at a time:**
+
+```markdown
+1. Add console.log → Test → Verify log appears
+2. Fix ONE issue → Test → Verify fix works
+3. Fix NEXT issue → Test → Verify fix works
+4. Never fix multiple issues in parallel!
+```
+
+### Step 5: Debug Data Flow
+
+**Log data at EVERY transformation:**
+
+```javascript
+function processData(input) {
+    console.log('Input:', input);  // ← Log input
+    
+    const transformed = transform(input);
+    console.log('After transform:', transformed);  // ← Log intermediate
+    
+    const result = calculate(transformed);
+    console.log('Final result:', result);  // ← Log output
+    
+    return result;
+}
+```
+
+---
+
+## 🚨 DEBUGGING ANTI-PATTERNS
+
+### ❌ NEVER DO THESE:
+
+1. **Guessing without evidence**
+   ```javascript
+   // ❌ "Maybe it's a timing issue, let me add setTimeout"
+   // ❌ "Maybe it's the form data, let me change how I read it"
+   // → Add console.log FIRST to gather evidence!
+   ```
+
+2. **Fixing multiple things at once**
+   ```javascript
+   // ❌ Changing logic + adding setTimeout + refactoring all at once
+   // ✅ Change ONE thing → Test → Next thing
+   ```
+
+3. **Skipping console.log**
+   ```javascript
+   // ❌ "I think I know what's wrong, let me fix it directly"
+   // ✅ ALWAYS verify with console.log first
+   ```
+
+4. **Not using try-catch for mysterious errors**
+   ```javascript
+   // ❌ Function silently fails, no idea why
+   // ✅ Wrap in try-catch to see the actual error
+   try {
+       // ... code
+   } catch (error) {
+       console.error('ERROR:', error);
+       console.error('Stack:', error.stack);
+   }
+   ```
+
+---
+
 ## 🧪 TESTING WORKFLOW
+
 
 ### Sau MỖI thay đổi code, tự test:
 
@@ -284,7 +402,43 @@ Tested:
 - Follow checklist "B. Thay đổi Form/Input Logic"
 - Test cả "load new lesson" và "load completed lesson"
 
+### Case Study: calculateLiveScore Not Working on Desktop
+
+**Vấn đề:**
+- Mobile hiển thị điểm tạm tính đúng
+- Desktop KHÔNG hiển thị điểm (luôn 0/10)
+- Console không có log từ `calculateLiveScore()`
+
+**Debugging Process (FAILED attempts):**
+1. ❌ Suy đoán: "Có thể do timing issue" → Thêm setTimeout → Vẫn không work
+2. ❌ Suy đoán: "Có thể do form không populate" → Sửa logic populate → Vẫn không work
+3. ❌ Suy đoán: "Có thể do đọc form sai" → Đổi cách đọc form → Vẫn không work
+
+**Root Cause (sau khi thêm console.log):**
+- Function `calculateLiveScore()` bị **scope issue**
+- Function declaration không accessible từ event handlers
+- Browser cache code cũ
+
+**Solution:**
+```javascript
+// ❌ BEFORE (không work)
+function calculateLiveScore() { ... }
+
+// ✅ AFTER (work)
+window.calculateLiveScore = function() { ... }
+```
+
+**Lessons Learned:**
+1. **ALWAYS add console.log FIRST** để verify function được gọi
+2. **DON'T guess** - gather evidence trước
+3. **Fix ONE thing at a time** - không sửa nhiều thứ cùng lúc
+4. **Scope matters** - global functions nên gán vào `window`
+5. **Hard reload properly** - đóng browser hoàn toàn nếu cache cứng đầu
+
+**Time wasted**: ~30 phút debugging vòng vo
+**Correct approach**: Nên mất 5 phút nếu add console.log từ đầu
+
 ---
 
 **Last Updated**: 2026-02-08
-**Version**: 1.0
+**Version**: 1.1

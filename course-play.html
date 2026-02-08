@@ -1480,9 +1480,7 @@
 
                 // Update live score calculation to reflect saved data
                 // Use setTimeout to ensure DOM is fully updated
-                console.log('About to call calculateLiveScore for completed lesson');
                 setTimeout(() => {
-                    console.log('setTimeout executed for completed lesson');
                     calculateLiveScore();
                 }, 100);
 
@@ -1491,9 +1489,7 @@
                 btnRelearn.style.display = 'block';
             } else {
                 // Not done - still calculate live score for new lessons
-                console.log('About to call calculateLiveScore for new lesson');
                 setTimeout(() => {
-                    console.log('setTimeout executed for new lesson');
                     calculateLiveScore();
                 }, 100);
 
@@ -1503,7 +1499,6 @@
             // ---------------------
 
             // ALSO call immediately without setTimeout as backup
-            console.log('Calling calculateLiveScore immediately as backup');
             calculateLiveScore();
 
             if (!videoId) {
@@ -1715,18 +1710,13 @@
         }
 
         // Calculate live score based on current form inputs
-        console.log('DEFINING calculateLiveScore function NOW');
         window.calculateLiveScore = function () {
             try {
-                console.log('calculateLiveScore: START');
-
                 if (currentLessonIdx === -1) {
-                    console.log('calculateLiveScore: currentLessonIdx is -1, returning');
                     return;
                 }
 
                 const lesson = curriculum[currentLessonIdx];
-                console.log('calculateLiveScore: lesson =', lesson);
 
                 // Read from BOTH mobile and desktop forms (whichever has data)
                 // This ensures we get values regardless of which form is visible
@@ -1753,17 +1743,6 @@
                 const support2Mobile = document.getElementById('discipline-support-2')?.checked || false;
                 const support2Desktop = document.getElementById('discipline-support-2-desktop')?.checked || false;
                 const support2 = support2Desktop || support2Mobile;
-
-                // Debug logging
-                console.log('calculateLiveScore called:', {
-                    reflectionMobile: reflectionMobile.length,
-                    reflectionDesktop: reflectionDesktop.length,
-                    reflection: reflection.length,
-                    link1, link2, link3,
-                    support1, support2,
-                    duration: lesson.progress.duration,
-                    maxTime: lesson.progress.maxTime
-                });
 
                 // Calculate scores
                 // 1. Video Progress (2pts)
@@ -1799,10 +1778,6 @@
                 let totalScore = videoScore + reflectionScore + practiceScore + supportScore + onTimeScore;
                 if (totalScore > 10) totalScore = 10;
 
-                console.log('Calculated scores:', {
-                    videoScore, reflectionScore, practiceScore, supportScore, onTimeScore, totalScore
-                });
-
                 // Update UI for both mobile and desktop
                 // Mobile
                 const scorep1 = document.getElementById('score-p1');
@@ -1833,8 +1808,6 @@
                 if (scorep4Desktop) scorep4Desktop.textContent = `${supportScore}/2`;
                 if (scorep5Desktop) scorep5Desktop.textContent = `${onTimeScore}/1`;
                 if (liveTotalDesktop) liveTotalDesktop.textContent = `${totalScore}/10`;
-
-                console.log('UI updated successfully');
             } catch (error) {
                 console.error('ERROR in calculateLiveScore:', error);
                 console.error('Error stack:', error.stack);
