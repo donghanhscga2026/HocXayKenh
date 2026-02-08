@@ -345,14 +345,32 @@
             background: white;
             border-left: 1px solid var(--border);
             overflow-y: auto;
-            padding: 20px;
+            padding: 12px;
         }
 
         .assignment-sidebar .assignment-box {
             background: #fffbeb;
             border: 1px solid #fef3c7;
             border-radius: 8px;
-            padding: 20px;
+            padding: 12px;
+        }
+
+        /* Reduce spacing for inputs/textareas/buttons in sidebar */
+        .assignment-sidebar .submit-input,
+        .assignment-sidebar input[type="text"],
+        .assignment-sidebar textarea {
+            font-size: 12px;
+            padding: 6px 10px;
+            margin-bottom: 6px;
+        }
+
+        .assignment-sidebar .btn-submit {
+            font-size: 13px;
+            padding: 8px 12px;
+        }
+
+        .assignment-sidebar .grading-part {
+            margin-bottom: 8px;
         }
 
         /* Hide mobile inline assignment form on desktop */
@@ -613,7 +631,7 @@
     <header>
         <div class="header-left">
             <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
-            <div id="course-header-title">Khóa học</div>
+            <div id="course-header-title">Quay lại</div>
         </div>
         <div id="user-display"></div>
     </header>
@@ -711,7 +729,7 @@
                 <div id="video-overlay" class="overlay-container">
                     <div class="overlay-icon"><i class="fas fa-check-circle"></i></div>
                     <h2 class="overlay-title">Chúc mừng bạn đã xem hết video!</h2>
-                    <p class="overlay-text">Hãy làm bài tập và ghi nhận nộp bài dưới đây để hoàn thành bài học!</p>
+                    <p class="overlay-text">Hãy làm bài tập và ghi nhận dưới đây để hoàn thành bài học và mở khóa bài tiếp theo!</p>
                     <button onclick="replayVideo()" class="overlay-btn">
                         <i class="fas fa-redo"></i> Xem lại
                     </button>
@@ -724,8 +742,8 @@
                 <h1 class="course-title-main" id="current-lesson-title" style="display: none;">Đang tải...</h1>
 
                 <div class="tabs">
-                    <div class="tab active">Tóm tắt trọng điểm</div>
-                    <div class="tab">Yêu cầu đặc biệt</div>
+                    <div class="tab active">Nội dung</div>
+                    <div class="tab">Bài tập thêm</div>
                 </div>
 
                 <div id="tab-content">
@@ -746,7 +764,7 @@
                         <!-- 1. Video Progress -->
                         <div class="grading-part">
                             <div class="part-header">
-                                <span class="part-title">1. Tiến trình Video (2đ)</span>
+                                <span class="part-title">1. Học qua Video (2đ)</span>
                                 <span class="part-score" id="score-p1">0/2</span>
                             </div>
                             <div style="font-size: 13px; color: #64748b; margin-bottom: 5px;" id="video-status-text">
@@ -761,7 +779,7 @@
                         <!-- 2. Reflection -->
                         <div class="grading-part">
                             <div class="part-header">
-                                <span class="part-title">2. Bài học tâm đắc (2đ)</span>
+                                <span class="part-title">2. Bài học Tâm đắc Ngộ (2đ)</span>
                                 <span class="part-score" id="score-p2">0/2</span>
                             </div>
                             <textarea id="reflection-input" class="submit-input" rows="3"
@@ -773,7 +791,7 @@
                         <!-- 3. Video Links -->
                         <div class="grading-part">
                             <div class="part-header">
-                                <span class="part-title">3. Link Video quay bài (3đ)</span>
+                                <span class="part-title">3. Link Video mỗi ngày (3đ)</span>
                                 <span class="part-score" id="score-p3">0/3</span>
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -795,19 +813,19 @@
                             <label class="custom-checkbox" style="margin-bottom: 8px;">
                                 <input type="checkbox" id="discipline-support-1" onchange="calculateLiveScore()">
                                 <span class="checkmark"></span>
-                                Hỗ trợ 2 đồng đội tuyến dưới (+1đ)
+                                Giúp người (+1đ)
                             </label>
                             <label class="custom-checkbox">
                                 <input type="checkbox" id="discipline-support-2" onchange="calculateLiveScore()">
                                 <span class="checkmark"></span>
-                                Giúp người dưới hỗ trợ tuyến dưới của họ (+1đ)
+                                Giúp người giúp người (+1đ)
                             </label>
                         </div>
 
                         <!-- 5. On Time (1pt or -1pt) -->
                         <div class="grading-part">
                             <div class="part-header">
-                                <span class="part-title">5. Thời gian nộp (Max 1đ)</span>
+                                <span class="part-title">5. Nộp đúng hạn (1đ)</span>
                                 <span class="part-score" id="score-p5">0/1</span>
                             </div>
                             <div
@@ -850,24 +868,24 @@
                     <style>
                         .grading-part {
                             background: white;
-                            padding: 15px;
-                            border-radius: 8px;
+                            padding: 10px;
+                            border-radius: 6px;
                             border: 1px solid #e2e8f0;
-                            margin-bottom: 15px;
+                            margin-bottom: 10px;
                             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
                         }
 
                         .part-header {
                             display: flex;
                             justify-content: space-between;
-                            margin-bottom: 10px;
+                            margin-bottom: 8px;
                             align-items: center;
                         }
 
                         .part-title {
                             font-weight: 700;
                             color: #334155;
-                            font-size: 14px;
+                            font-size: 12px;
                         }
 
                         .part-score {
@@ -876,7 +894,7 @@
                             background: #e0f2fe;
                             padding: 2px 8px;
                             border-radius: 12px;
-                            font-size: 12px;
+                            font-size: 11px;
                         }
 
                         /* Custom Checkbox */
@@ -884,7 +902,7 @@
                             display: flex;
                             align-items: center;
                             cursor: pointer;
-                            font-size: 14px;
+                            font-size: 12px;
                             user-select: none;
                             color: #475569;
                         }
@@ -898,13 +916,16 @@
                         }
 
                         .checkmark {
-                            height: 20px;
-                            width: 20px;
+                            height: 18px;
+                            width: 18px;
+                            min-width: 18px;
+                            min-height: 18px;
                             background-color: #f1f5f9;
                             border: 1px solid #cbd5e1;
                             border-radius: 4px;
-                            margin-right: 10px;
+                            margin-right: 8px;
                             position: relative;
+                            flex-shrink: 0;
                         }
 
                         .custom-checkbox:hover input~.checkmark {
@@ -955,7 +976,7 @@
                 <!-- 1. Video Progress -->
                 <div class="grading-part">
                     <div class="part-header">
-                        <span class="part-title">1. Tiến trình Video (2đ)</span>
+                        <span class="part-title">1. Học theo Video (2đ)</span>
                         <span class="part-score" id="score-p1-desktop">0/2</span>
                     </div>
                     <div style="font-size: 13px; color: #64748b; margin-bottom: 5px;" id="video-status-text-desktop">
@@ -970,7 +991,7 @@
                 <!-- 2. Reflection -->
                 <div class="grading-part">
                     <div class="part-header">
-                        <span class="part-title">2. Bài học tâm đắc (2đ)</span>
+                        <span class="part-title">2. Bài học Tâm đắc Ngộ (2đ)</span>
                         <span class="part-score" id="score-p2-desktop">0/2</span>
                     </div>
                     <textarea id="reflection-input-desktop" class="submit-input" rows="3"
@@ -982,7 +1003,7 @@
                 <!-- 3. Video Links -->
                 <div class="grading-part">
                     <div class="part-header">
-                        <span class="part-title">3. Link Video quay bài (3đ)</span>
+                        <span class="part-title">3. Link Video mỗi ngày (3đ)</span>
                         <span class="part-score" id="score-p3-desktop">0/3</span>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -1004,19 +1025,19 @@
                     <label class="custom-checkbox" style="margin-bottom: 8px;">
                         <input type="checkbox" id="discipline-support-1-desktop" onchange="calculateLiveScore()">
                         <span class="checkmark"></span>
-                        Hỗ trợ 2 đồng đội tuyến dưới (+1đ)
+                        Giúp người (+1đ)
                     </label>
                     <label class="custom-checkbox">
                         <input type="checkbox" id="discipline-support-2-desktop" onchange="calculateLiveScore()">
                         <span class="checkmark"></span>
-                        Giúp người dưới hỗ trợ tuyến dưới của họ (+1đ)
+                        Giúp người giúp người (+1đ)
                     </label>
                 </div>
 
                 <!-- 5. On Time (1pt or -1pt) -->
                 <div class="grading-part">
                     <div class="part-header">
-                        <span class="part-title">5. Thời gian nộp (Max 1đ)</span>
+                        <span class="part-title">5. Nộp đúng hạn (1đ)</span>
                         <span class="part-score" id="score-p5-desktop">0/1</span>
                     </div>
                     <div
@@ -1114,7 +1135,7 @@
             <h3 style="margin-top: 0; color: #b45309;">Quy tắc chấm điểm (Thang 10)</h3>
             <ul style="padding-left: 20px; font-size: 14px; line-height: 1.6; color: #334155;">
                 <li><strong>Video (Max 2đ)</strong>: Xem >50% (+1đ), Xem hết (+2đ).</li>
-                <li><strong>Ghi nhận bài học (Max 2đ)</strong>: Có chia sẻ (+1đ), Sâu sắc/Quiz (+1đ).</li>
+                <li><strong>Ghi nhận bài học (Max 2đ)</strong>: Có chia sẻ (+1đ), Sâu sắc (dài hơn 50 ký tự) (+1đ).</li>
                 <li><strong>Thực hành (Max 3đ)</strong>: Mỗi link video (+1đ).</li>
                 <li><strong>Kỷ luật (Max 3đ)</strong>:
                     <ul style="margin: 5px 0;">
