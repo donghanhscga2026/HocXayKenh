@@ -67,7 +67,7 @@
         }
 
         .sidebar-header {
-            padding: 20px;
+            padding: 8px 12px;
             border-bottom: 1px solid #334155;
             background: #0f172a;
         }
@@ -75,16 +75,47 @@
         #sidebar-title {
             color: #fbbf24;
             /* Amber 400 - Gold */
+            margin: 0;
+            font-size: 14px;
         }
 
         #progress-summary {
             color: #94a3b8 !important;
             /* Slate 400 */
+            margin: 2px 0 0 0 !important;
+            font-size: 11px;
         }
 
         .lesson-list {
-            flex: 1;
-            overflow-y: auto;
+            width: 100%;
+            padding: 8px 8px;
+            background: #1e293b;
+            color: #f8fafc;
+            border: 1px solid #334155;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23f8fafc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+            background-repeat: no-repeat;
+            background-position: right 6px center;
+            background-size: 18px;
+            padding-right: 30px;
+            margin: 6px 8px;
+        }
+
+        .lesson-list option {
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 8px;
+        }
+
+        .lesson-list option:checked {
+            background: #334155;
+            color: #fbbf24;
         }
 
         .lesson-item {
@@ -164,8 +195,36 @@
             aspect-ratio: 16/9;
             background: black;
             border-radius: 12px;
-            overflow: hidden;
+            overflow: visible;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        #video-progress-overlay {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 12px;
+            color: #f1f5f9;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+        }
+
+        #video-progress-overlay > div {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #video-progress-overlay i {
+            color: #0284c7;
+            font-size: 14px;
         }
 
         #player {
@@ -382,9 +441,9 @@
                 <p id="progress-summary" style="font-size: 13px; color: #64748b; margin-top: 5px;">0/0 bài học đã hoàn
                     thành</p>
             </div>
-            <div class="lesson-list" id="lesson-list">
-                <!-- Lessons dynamic -->
-            </div>
+            <select class="lesson-list" id="lesson-list">
+                <option value="-1" selected disabled>-- Hãy chọn bài học từ danh sách --</option>
+            </select>
         </aside>
 
         <main class="content">
@@ -398,6 +457,16 @@
                     <button onclick="replayVideo()" class="overlay-btn">
                         <i class="fas fa-redo"></i> Xem lại
                     </button>
+                </div>
+                <!-- Video Progress Overlay -->
+                <div id="video-progress-overlay">
+                    <div>
+                        <i class="fas fa-video"></i>
+                        <span><span id="video-prog-text">0%</span></span>
+                    </div>
+                    <div>
+                        <span id="video-score-text">0/2 điểm</span>
+                    </div>
                 </div>
             </div>
 
@@ -416,16 +485,6 @@
                     </div>
 
                     <div id="assignment-section" class="assignment-box hidden">
-                        <!-- Video Progress UI -->
-                        <div id="video-progress-display"
-                            style="background: #f0f9ff; padding: 10px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #bae6fd; display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <i class="fas fa-video" style="color: #0284c7;"></i>
-                                <span style="font-weight: 600; color: #0f172a;">Tiến độ Video:</span>
-                                <span id="video-prog-text">0%</span>
-                            </div>
-                            <span id="video-score-text" style="font-weight: bold; color: #0284c7;">0/2 điểm</span>
-                        </div>
                         <div
                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <h4 style="color: #ca8a04; margin: 0;"><i class="fas fa-edit"></i> Ghi nhận Cần mẫn mỗi ngày
@@ -680,38 +739,46 @@
 
         function renderLessonList() {
             const listEl = document.getElementById('lesson-list');
-            listEl.innerHTML = '';
+            listEl.innerHTML = '<option value="-1" selected disabled>-- Hãy chọn bài học từ danh sách --</option>';
 
             let completed = 0;
             curriculum.forEach((lesson, idx) => {
-                const item = document.createElement('div');
                 const isLocked = lesson.progress.status === "Locked";
                 const isDone = lesson.progress.status === "Completed" || lesson.progress.status === "Approved";
 
                 if (isDone) completed++;
 
-                item.className = `lesson-item ${isLocked ? 'locked' : ''} ${idx === currentLessonIdx ? 'active' : ''}`;
+                let status = isLocked ? '🔒' : (isDone ? '✓' : '▶');
+                let optionText = `${status} ${lesson.title}`;
 
-                let icon = '<i class="far fa-circle status-lock"></i>';
-                if (isDone) icon = '<i class="fas fa-check-circle status-done"></i>';
-                else if (!isLocked) icon = '<i class="fas fa-play-circle status-play"></i>';
-
-                item.innerHTML = `
-                    <div class="lesson-status">${icon}</div>
-                    <div class="lesson-info">
-                        <div class="lesson-title">${lesson.title}</div>
-                        <div class="lesson-meta">${isLocked ? 'Đang khóa' : (isDone ? 'Đã hoàn thành' : 'Sẵn sàng học')}</div>
-                    </div>
-                `;
-
-                if (!isLocked) {
-                    item.onclick = () => playLesson(idx);
+                const option = document.createElement('option');
+                option.value = idx;
+                option.textContent = optionText;
+                option.disabled = isLocked;
+                
+                if (idx === currentLessonIdx) {
+                    option.selected = true;
+                    listEl.value = idx;
                 }
-                listEl.appendChild(item);
+                
+                listEl.appendChild(option);
             });
 
             document.getElementById('progress-summary').textContent = `${completed}/${curriculum.length} bài học đã hoàn thành`;
         }
+
+        // Add change event for dropdown
+        document.addEventListener('DOMContentLoaded', () => {
+            const selectEl = document.getElementById('lesson-list');
+            if (selectEl) {
+                selectEl.addEventListener('change', (e) => {
+                    const idx = parseInt(e.target.value);
+                    if (idx !== -1) {
+                        playLesson(idx);
+                    }
+                });
+            }
+        });
 
         function playLesson(idx) {
             // Wait for YouTube API
@@ -931,7 +998,43 @@
         }
 
         function onPlayerError(event) {
-            console.error("YouTube Player Error:", event.data);
+            const errorCode = event.data;
+            const errorMessages = {
+                2: "Tham số không hợp lệ",
+                5: "HTML5 player gặp lỗi",
+                100: "Video không được tìm thấy (có thể đã bị xóa hoặc riêng tư)",
+                101: "Chủ sở hữu video không cho phép nhúng",
+                150: "Lỗi tương tự như 101",
+                153: "Video không thể phát trên trình duyệt này"
+            };
+            const msg = errorMessages[errorCode] || `Lỗi ${errorCode}`;
+            console.error("YouTube Player Error:", msg);
+            
+            if (errorCode === 153) {
+                const youtubeUrl = curriculum[currentLessonIdx]?.videoUrl;
+                const youtubeId = getYouTubeId(youtubeUrl);
+                const directLink = `https://youtu.be/${youtubeId}`;
+                
+                // Detect if on Chrome mobile
+                const isChromeMobile = /Chrome/.test(navigator.userAgent) && /Mobile/.test(navigator.userAgent);
+                
+                let msg = `Lỗi phát video: ${msg}`;
+                if (isChromeMobile) {
+                    msg += " - Vui lòng dùng Safari hoặc mở link trực tiếp";
+                    showToast(msg, "error");
+                    // Add link button
+                    const toast = document.getElementById('toast');
+                    const linkBtn = document.createElement('button');
+                    linkBtn.textContent = 'Mở trên YouTube';
+                    linkBtn.style.cssText = 'margin-left: 10px; padding: 5px 10px; background: #0284c7; border: none; color: white; border-radius: 4px; cursor: pointer; font-weight: 600;';
+                    linkBtn.onclick = () => window.open(directLink, '_blank');
+                    toast.appendChild(linkBtn);
+                } else {
+                    showToast(msg, "error");
+                }
+            } else {
+                showToast(`Lỗi phát video: ${msg}`, "error");
+            }
         }
 
         function getYouTubeId(url) {
