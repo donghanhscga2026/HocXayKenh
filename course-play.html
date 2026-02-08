@@ -737,11 +737,15 @@
 
             <div class="custom-mobile-dropdown" id="custom-mobile-dropdown">
                 <div class="custom-dropdown-header" onclick="toggleDropdown()">
-                    <span id="dropdown-selected-text">-- Chọn bài học --</span>
+                    <span id="dropdown-selected-text">Đang tải...</span>
                     <i class="fas fa-chevron-down"></i>
                 </div>
                 <div class="custom-dropdown-options" id="custom-dropdown-options">
-                    <!-- Options populated by JS -->
+                    <!-- Loading state -->
+                    <div id="mobile-dropdown-loading" style="padding: 20px; text-align: center; color: #64748b;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 20px; margin-bottom: 8px;"></i>
+                        <p style="margin: 0; font-size: 13px;">Đang tải...</p>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -1287,9 +1291,20 @@
                     setCachedCurriculum(cacheKey, curriculum);
 
                     if (curriculum.length === 0) {
+                        // Hide all loading indicators
+                        const loadingSkeleton = document.getElementById('lesson-list-loading');
+                        const mobileLoading = document.getElementById('mobile-dropdown-loading');
+                        if (loadingSkeleton) loadingSkeleton.style.display = 'none';
+                        if (mobileLoading) mobileLoading.style.display = 'none';
+
                         showToast("Khóa học này chưa có nội dung bài học nào!", "warning");
                         document.getElementById('current-lesson-title').textContent = "Chưa có nội dung";
-                        document.getElementById('lesson-summary').textContent = "Vui lòng liên hệ quản trị viên để cập nhật nội dung cho khóa học này.";
+                        document.getElementById('lesson-summary').textContent = "Đang chuyển về trang chủ...";
+
+                        // Auto redirect to homepage after 3 seconds
+                        setTimeout(() => {
+                            window.location.href = "index.html";
+                        }, 3000);
                         return;
                     }
 
@@ -1385,6 +1400,14 @@
             // Show desktop list
             if (listDesktop) listDesktop.style.display = 'block';
 
+            // Hide mobile loading
+            const mobileLoading = document.getElementById('mobile-dropdown-loading');
+            if (mobileLoading) mobileLoading.style.display = 'none';
+
+            // Update mobile dropdown text
+            const dropdownText = document.getElementById('dropdown-selected-text');
+            // Don't reset dropdown text here - it will be set by playLesson()
+
             // Reset
             if (listDesktop) listDesktop.innerHTML = '';
             if (listMobileOpts) listMobileOpts.innerHTML = '';
@@ -1477,8 +1500,6 @@
                 return;
             }
 
-            currentLessonIdx = idx;
-
             // Wait for YouTube API
             if (!isYouTubeReady) {
                 pendingLessonIdx = idx;
@@ -1489,7 +1510,20 @@
             // Clear any existing progress interval
             if (videoProgressInterval) clearInterval(videoProgressInterval);
 
+            // Check if already playing this lesson - DO THIS BEFORE SETTING currentLessonIdx!
             if (idx === currentLessonIdx && player) return;
+
+            // ===== UPDATE MOBILE DROPDOWN =====
+            // Do this AFTER duplicate check but BEFORE setting currentLessonIdx
+            const dropdownText = document.getElementById('dropdown-selected-text');
+            if (dropdownText) {
+                console.log('Updating mobile dropdown to:', lesson.title);
+                dropdownText.textContent = lesson.title;
+            }
+            // ==================================
+
+            // NOW set currentLessonIdx
+            currentLessonIdx = idx;
 
             // Hide overlay if visible
             document.getElementById('video-overlay').style.display = 'none';
@@ -1514,25 +1548,18 @@
             if (document.getElementById('grading-result-desktop')) document.getElementById('grading-result-desktop').style.display = 'none';
 
             const vProg = document.getElementById('video-prog-text');
-            // Reset Assignment section first
-            resetAssignment();
+            const vScore = document.getElementById('video-score-text');
+            const liveScoreElValue = document.getElementById('live-score-value');
 
-            // Clear live score for mobile/desktop
-            const liveScoreEl = document.getElementById('live-score');
-            const liveScoreElDesktop = document.getElementById('live-score-desktop');
-            if (liveScoreEl) { liveScoreEl.innerHTML = `0/10`; liveScoreEl.style.color = "#d97706"; }
-            if (liveScoreElDesktop) { liveScoreElDesktop.innerHTML = `0/10`; liveScoreElDesktop.style.color = "#d97706"; }
+            if (vProg) { vProg.textContent = "0%"; vProg.style.color = "#0f172a"; }
+            if (vScore) { vScore.textContent = "0/2 điểm"; vScore.style.color = "#0284c7"; }
+            if (liveScoreElValue) { liveScoreElValue.innerHTML = `0/10`; liveScoreElValue.style.color = "#d97706"; }
 
             // --------------------------------------
 
             // lesson is already declared at the top of the function
             // currentLessonIdx is already set at the top
-
-            // Update Mobile Dropdown Text
-            const dropdownText = document.getElementById('dropdown-selected-text');
-            if (dropdownText) {
-                dropdownText.textContent = lesson.title;
-            }
+            // Mobile dropdown text is already updated at the top
 
             document.getElementById('current-lesson-title').textContent = lesson.title;
             document.getElementById('lesson-summary').innerHTML = lesson.summary || "Không có tóm tắt.";
