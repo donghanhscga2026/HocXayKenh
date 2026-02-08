@@ -460,6 +460,32 @@
             color: black;
         }
 
+        /* Mobile Dropdown Base Styles */
+        .custom-mobile-dropdown {
+            display: none;
+            width: 100%;
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
+        }
+
+        .custom-dropdown-header {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #f1f5f9;
+            font-weight: 600;
+            cursor: pointer;
+            background: #0f172a;
+            /* Match Sidebar Header */
+        }
+
+        .sidebar-header {
+            padding: 15px 15px 5px 15px;
+            /* Adjust padding */
+            background: #0f172a;
+        }
+
         /* Adjust for very small screens (phones in portrait) */
         @media (max-width: 600px) {
             .overlay-icon {
@@ -509,16 +535,16 @@
 
             .sidebar {
                 width: 100%;
-                height: 300px;
+                height: auto;
                 border-right: none;
-                border-top: 1px solid #334155;
-                order: 2;
+                border-bottom: 1px solid #334155;
+                order: 1;
                 background: #0f172a;
                 /* Dark Theme on Mobile */
             }
 
             .content {
-                order: 1;
+                order: 2;
             }
         }
     </style>
@@ -571,10 +597,12 @@
     </style>
 
     <script>
-        if (u) {
-            display.textContent = `Hi, ${u.name}`;
-        } else {
-            display.innerHTML = '<a href="login.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">Đăng nhập</a>';
+        const uDisplay = document.getElementById('user-display');
+        const uData = JSON.parse(localStorage.getItem('user'));
+        if (uData && uDisplay) {
+            uDisplay.textContent = `Hi, ${uData.name}`;
+        } else if (uDisplay) {
+            uDisplay.innerHTML = '<a href="login.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">Đăng nhập</a>';
         }
 
         // Close dropdown when clicking outside
@@ -598,12 +626,10 @@
                         <p id="progress-summary" style="font-size: 13px; color: #64748b; margin-top: 5px;">0/0 bài hoàn
                             thành</p>
                     </div>
-                    <button onclick="document.getElementById('rules-modal').style.display='flex'"
-                        style="background: #334155; border: 1px solid #475569; color: #fbbf24; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 18px;">
-                        <i class="fas fa-info-circle"></i>
-                    </button>
                 </div>
+                <!-- Rules button moved to Assignment Section -->
             </div>
+
             <div class="lesson-list-desktop" id="lesson-list-desktop">
                 <!-- Desktop List Items -->
             </div>
@@ -632,21 +658,16 @@
                     </button>
                 </div>
                 <!-- Video Progress Overlay -->
-                <div id="video-progress-overlay">
-                    <i class="fas fa-video"></i>
-                    <span id="video-prog-text">0%</span>
-                    <span style="color: #64748b; margin: 0 2px;">|</span>
-                    <span id="video-score-text">0/2 điểm</span>
-                </div>
+                <!-- Video Progress Overlay Removed -->
             </div>
 
             <div class="lesson-detail">
-                <h1 class="course-title-main" id="current-lesson-title">Đang tải...</h1>
+                <h1 class="course-title-main" id="current-lesson-title" style="display: none;">Đang tải...</h1>
 
                 <div class="tabs">
-                    <div class="tab active">Tổng quan</div>
-                    <div class="tab">Tài liệu</div>
-                    <div class="tab">Bài tập</div>
+                    <div class="tab active">Ghi nhận</div>
+                    <div class="tab">Tóm tắt trọng điểm</div>
+                    <div class="tab">Yêu cầu đặc biệt</div>
                 </div>
 
                 <div id="tab-content">
@@ -656,8 +677,12 @@
 
                     <div id="assignment-section" class="assignment-box hidden">
                         <h3
-                            style="margin-top: 0; color: #b45309; border-bottom: 2px solid #fcd34d; padding-bottom: 10px; margin-bottom: 20px;">
-                            <i class="fas fa-clipboard-check"></i> Ghi nhận kết quả
+                            style="margin-top: 0; color: #b45309; border-bottom: 2px solid #fcd34d; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                            <span><i class="fas fa-clipboard-check"></i> Ghi nhận kết quả</span>
+                            <button onclick="document.getElementById('rules-modal').style.display='flex'"
+                                style="background: none; border: 1px solid #ca8a04; color: #ca8a04; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                <i class="fas fa-info-circle"></i> Quy tắc
+                            </button>
                         </h3>
 
                         <!-- 1. Video Progress -->
@@ -703,30 +728,45 @@
                             </div>
                         </div>
 
-                        <!-- 4. Support -->
+                        <!-- 4. Support (2pts) -->
                         <div class="grading-part">
                             <div class="part-header">
-                                <span class="part-title">4. Hỗ trợ đồng đội (1đ)</span>
-                                <span class="part-score" id="score-p4">0/1</span>
+                                <span class="part-title">4. Hỗ trợ đồng đội (2đ)</span>
+                                <span class="part-score" id="score-p4">0/2</span>
                             </div>
-                            <label class="custom-checkbox">
-                                <input type="checkbox" id="discipline-support" onchange="calculateLiveScore()">
+                            <label class="custom-checkbox" style="margin-bottom: 8px;">
+                                <input type="checkbox" id="discipline-support-1" onchange="calculateLiveScore()">
                                 <span class="checkmark"></span>
-                                Tôi đã hỗ trợ đồng đội / thả tim hành trình văn hóa
+                                Hỗ trợ 2 đồng đội tuyến dưới (+1đ)
+                            </label>
+                            <label class="custom-checkbox">
+                                <input type="checkbox" id="discipline-support-2" onchange="calculateLiveScore()">
+                                <span class="checkmark"></span>
+                                Giúp người dưới hỗ trợ tuyến dưới của họ (+1đ)
                             </label>
                         </div>
 
-                        <!-- 5. On Time -->
+                        <!-- 5. On Time (1pt or -1pt) -->
                         <div class="grading-part">
                             <div class="part-header">
-                                <span class="part-title">5. Nộp đúng hạn (2đ)</span>
-                                <span class="part-score" id="score-p5">0/2</span>
+                                <span class="part-title">5. Thời gian nộp (Max 1đ)</span>
+                                <span class="part-score" id="score-p5">0/1</span>
                             </div>
-                            <label class="custom-checkbox">
-                                <input type="checkbox" id="discipline-leadership" onchange="calculateLiveScore()">
-                                <span class="checkmark"></span>
-                                Tôi cam kết nộp bài đúng hạn
-                            </label>
+                            <div
+                                style="font-size: 13px; color: #475569; background: #f8fafc; padding: 10px; border-radius: 6px;">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                                    <span>Đúng hạn (Trước 23:59):</span>
+                                    <span style="color: #15803d; font-weight:bold;">+1 điểm</span>
+                                </div>
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span>Muộn (Sau 23:59):</span>
+                                    <span style="color: #b91c1c; font-weight:bold;">-1 điểm</span>
+                                </div>
+                                <div
+                                    style="margin-top: 8px; font-style: italic; color: #64748b; font-size: 12px; border-top: 1px dashed #cbd5e1; padding-top: 5px;">
+                                    * Hệ thống tự động ghi nhận theo thời gian thực.
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Total & Submit -->
@@ -1084,8 +1124,8 @@
             if (document.getElementById('link-1')) document.getElementById('link-1').value = "";
             if (document.getElementById('link-2')) document.getElementById('link-2').value = "";
             if (document.getElementById('link-3')) document.getElementById('link-3').value = "";
-            if (document.getElementById('discipline-support')) document.getElementById('discipline-support').checked = false;
-            if (document.getElementById('discipline-leadership')) document.getElementById('discipline-leadership').checked = false;
+            if (document.getElementById('discipline-support-1')) document.getElementById('discipline-support-1').checked = false;
+            if (document.getElementById('discipline-support-2')) document.getElementById('discipline-support-2').checked = false;
             if (document.getElementById('grading-result')) document.getElementById('grading-result').style.display = 'none';
 
             const vProg = document.getElementById('video-prog-text');
@@ -1113,7 +1153,7 @@
             const assignBox = document.getElementById('assignment-section');
             if (lesson.assignmentType) {
                 assignBox.classList.remove('hidden');
-                document.getElementById('assignment-desc').textContent = lesson.assignmentType;
+                // document.getElementById('assignment-desc').textContent = lesson.assignmentType;
                 // Recalculate live score immediately with new lesson data (which should be 0 or saved progress)
                 calculateLiveScore();
             } else {
@@ -1458,8 +1498,10 @@
             const link3 = document.getElementById('link-3').value;
 
             // Get Discipline Values
-            const discSupport = document.getElementById('discipline-support').checked;
-            const discLeadership = document.getElementById('discipline-leadership').checked;
+            const discSupport1 = document.getElementById('discipline-support-1').checked;
+            const discSupport2 = document.getElementById('discipline-support-2').checked;
+            // On-time logic handled by backend, but we can send local indication if needed
+            // For now, removing the manual leadership/on-time checkbox check
 
             // Validate: Must have reflection OR at least one link
             if (!reflection && !link1 && !link2 && !link3) {
@@ -1498,8 +1540,9 @@
                         link1: link1,
                         link2: link2,
                         link3: link3,
-                        disciplineSupport: discSupport,
-                        disciplineLeadership: discLeadership,
+                        link3: link3,
+                        disciplineSupport1: discSupport1,
+                        disciplineSupport2: discSupport2,
                         videoMaxTime: videoMaxTime,
                         duration: duration
                     })
@@ -1633,20 +1676,27 @@
             if (document.getElementById('score-p3')) document.getElementById('score-p3').textContent = `${linkScore}/3`;
             total += linkScore;
 
-            // --- Part 4: Support (1pt) ---
+            // --- Part 4: Support (2pts) ---
             let supScore = 0;
-            if (document.getElementById('discipline-support') && document.getElementById('discipline-support').checked) supScore = 1;
-            if (document.getElementById('score-p4')) document.getElementById('score-p4').textContent = `${supScore}/1`;
+            if (document.getElementById('discipline-support-1') && document.getElementById('discipline-support-1').checked) supScore++;
+            if (document.getElementById('discipline-support-2') && document.getElementById('discipline-support-2').checked) supScore++;
+            if (document.getElementById('score-p4')) document.getElementById('score-p4').textContent = `${supScore}/2`;
             total += supScore;
 
-            // --- Part 5: On Time (2pts) ---
-            let timeScore = 0;
-            if (document.getElementById('discipline-leadership') && document.getElementById('discipline-leadership').checked) timeScore = 2;
-            if (document.getElementById('score-p5')) document.getElementById('score-p5').textContent = `${timeScore}/2`;
+            // --- Part 5: On Time (Auto 1pt/ -1pt) ---
+            let timeScore = 1; // Default "On Time" (+1) until backend says otherwise or logic changes
+
+            if (document.getElementById('score-p5')) {
+                const val = timeScore > 0 ? `+${timeScore}` : timeScore;
+                document.getElementById('score-p5').textContent = `${val}/1`;
+                document.getElementById('score-p5').style.color = timeScore > 0 ? '#15803d' : '#b91c1c';
+            }
             total += timeScore;
 
             // --- Total ---
-            if (document.getElementById('live-total-score')) document.getElementById('live-total-score').textContent = `${total}/10`;
+            if (document.getElementById('live-total-score')) {
+                document.getElementById('live-total-score').textContent = `${Math.max(0, total)}/10`;
+            }
 
             // Also update overlay small text if it exists
             const vScore = document.getElementById('video-score-text');

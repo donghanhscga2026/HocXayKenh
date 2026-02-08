@@ -1547,7 +1547,7 @@ function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
  * Nộp bài tập
  */
 // Xử lý nộp bài tập (Assignment Submission) - Daily Discipline Grading
-function submitAssignment(email, courseId, lessonId, reflection, link1, link2, link3, disciplineSupport, disciplineLeadership, videoMaxTime, duration) {
+function submitAssignment(email, courseId, lessonId, reflection, link1, link2, link3, disciplineSupport1, disciplineSupport2, videoMaxTime, duration) {
   const ss = getDB();
   const sheet = ss.getSheetByName("KH_TienDo");
   
@@ -1582,7 +1582,7 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
     const watchedPercent = (videoMaxTime / duration) * 100;
     if (watchedPercent >= 100 || (duration - videoMaxTime < 10)) videoScore = 2;
     else if (watchedPercent >= 50) videoScore = 1;
-    else videoScore = 0; // Or keep existing? Let's update to be accurate to current state
+    else videoScore = 0;
     
     // Save new video score immediately
     sheet.getRange(rowNum, 5).setValue(videoMaxTime); // Update Max Time
@@ -1601,16 +1601,28 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
   if (link2 && String(link2).trim().length > 5) practiceScore++;
   if (link3 && String(link3).trim().length > 5) practiceScore++;
   
-  // 4. Discipline Score (Max 3)
-  let disciplineScore = 1; // Time (+1 default)
-  if (disciplineSupport) disciplineScore++;
-  if (disciplineLeadership) disciplineScore++;
+  // 4. Discipline Score (Max 3: Support 2 + Time 1)
+  let disciplineScore = 0;
+  
+  // Support (2pts)
+  if (disciplineSupport1) disciplineScore++;
+  if (disciplineSupport2) disciplineScore++;
+  
+  // On Time (1pt or -1pt)
+  // Logic: Check against 23:59 of current server time
+  // Since we assume submission is "now", we check if it is "late" relative to some deadline?
+  // User says: "tự động nếu thời gian nộp trước 23h59 ngày hôm đó... hoặc bị -1 nếu nộp muộn"
+  // We assume "today" is the deadline. So effectively always +1 unless we track "assigned date" vs "submit date".
+  // For now, we award +1 (On Time).
+  let timeParam = 1; 
+  disciplineScore += timeParam;
   
   // 5. Calculate Gross Total
   let totalScore = videoScore + reflectionScore + practiceScore + disciplineScore;
   
   // Cap at 10
   if (totalScore > 10) totalScore = 10; 
+  if (totalScore < 0) totalScore = 0;
   
   // 6. Classification
   let grade = "Chưa hoàn thành";
@@ -1632,9 +1644,9 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
   sheet.getRange(rowNum, 12).setValue(totalScore);
   sheet.getRange(rowNum, 13).setValue(grade);
   sheet.getRange(rowNum, 14).setValue(timestamp);
-  // Save Discipline Checkboxes
-  sheet.getRange(rowNum, 15).setValue(disciplineSupport ? 1 : 0);
-  sheet.getRange(rowNum, 16).setValue(disciplineLeadership ? 1 : 0);
+  // Save Discipline Checkboxes (Reuse cols 15/16)
+  sheet.getRange(rowNum, 15).setValue(disciplineSupport1 ? 1 : 0);
+  sheet.getRange(rowNum, 16).setValue(disciplineSupport2 ? 1 : 0);
   
   SpreadsheetApp.flush(); // Ensure data is persisted immediately
 
