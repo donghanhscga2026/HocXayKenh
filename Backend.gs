@@ -2100,35 +2100,63 @@ function getAllActivatedCoursesContent(userEmail) {
 function getStudentActivatedCourses(userEmail) {
   try {
     const ss = getDB();
-    const lsDangKySheet = ss.getSheetByName("LS_DangKy");
+    const userIdentifier = String(userEmail).trim();
     
+    // Step 1: Lookup MÃ CODE from DKy sheet
+    // User can login with: email / phone / code
+    // DKy columns: MÃ CODE (B/1), Số điện thoại (F/5), Địa chỉ email (G/6)
+    
+    const dkySheet = ss.getSheetByName("DKy");
+    if (!dkySheet) {
+      Logger.log("⚠️ Sheet DKy not found");
+      return [];
+    }
+    
+    const dkyData = dkySheet.getDataRange().getValues();
+    let maCode = null;
+    
+    // Search for user by email, phone, or code
+    for (let i = 1; i < dkyData.length; i++) {
+      const rowCode = String(dkyData[i][1] || "").trim();    // Column B: MÃ CODE
+      const rowPhone = String(dkyData[i][5] || "").trim();   // Column F: Số điện thoại
+      const rowEmail = String(dkyData[i][6] || "").trim();   // Column G: Địa chỉ email
+      
+      if (rowEmail === userIdentifier || rowPhone === userIdentifier || rowCode === userIdentifier) {
+        maCode = rowCode;
+        Logger.log(`✅ Found user in DKy: Email=${rowEmail}, Phone=${rowPhone}, MÃ CODE=${maCode}`);
+        break;
+      }
+    }
+    
+    if (!maCode) {
+      Logger.log(`❌ User ${userIdentifier} not found in DKy sheet`);
+      return [];
+    }
+    
+    // Step 2: Find activated courses in LS_DangKy using MÃ CODE
+    // LS_DangKy columns: MÃ CODE (B/1), Ma_Lop (O/14)
+    
+    const lsDangKySheet = ss.getSheetByName("LS_DangKy");
     if (!lsDangKySheet) {
       Logger.log("⚠️ Sheet LS_DangKy not found");
       return [];
     }
     
-    const data = lsDangKySheet.getDataRange().getValues();
-    
-    // LS_DangKy columns (0-indexed):
-    // 1: MÃ CODE (student identifier - can be email/phone/code)
-    // 14: Ma_Lop (Course code)
-    
+    const lsData = lsDangKySheet.getDataRange().getValues();
     const activatedCourses = [];
-    const userIdentifier = String(userEmail).trim();
     
-    for (let i = 1; i < data.length; i++) {
-      const maCode = String(data[i][1] || "").trim();     // Column B: MÃ CODE
-      const maLop = String(data[i][14] || "").trim();     // Column O: Ma_Lop
+    for (let i = 1; i < lsData.length; i++) {
+      const rowMaCode = String(lsData[i][1] || "").trim();   // Column B: MÃ CODE
+      const maLop = String(lsData[i][14] || "").trim();       // Column O: Ma_Lop
       
-      // Direct match: userEmail (email/phone/code) === MÃ CODE
-      if (maCode === userIdentifier && maLop) {
+      if (rowMaCode === maCode && maLop) {
         if (!activatedCourses.includes(maLop)) {
           activatedCourses.push(maLop);
         }
       }
     }
     
-    Logger.log(`✅ Found ${activatedCourses.length} activated courses for ${userEmail}: ${activatedCourses.join(', ')}`);
+    Logger.log(`✅ Found ${activatedCourses.length} activated courses for MÃ CODE ${maCode}: ${activatedCourses.join(', ')}`);
     return activatedCourses;
     
   } catch (error) {
@@ -2876,7 +2904,40 @@ function debugUserCourseAccess() {
   const data = lsDangKySheet.getDataRange().getValues();
   Logger.log(`📋 Total rows in LS_DangKy: ${data.length - 1}`);
   
-  // Step 2: Find matching rows
+  // Step 2: Check DKy sheet for user lookup
+  Logger.log("\n🔎 Step 1: Looking up user in DKy sheet...");
+  
+  const dkySheet = ss.getSheetByName("DKy");
+  if (!dkySheet) {
+    Logger.log("❌ DKy sheet NOT FOUND!");
+    return;
+  }
+  
+  const dkyData = dkySheet.getDataRange().getValues();
+  Logger.log(`✅ DKy sheet found with ${dkyData.length - 1} rows`);
+  
+  let foundMaCode = null;
+  for (let i = 1; i < dkyData.length; i++) {
+    const rowCode = String(dkyData[i][1] || "").trim();
+    const rowPhone = String(dkyData[i][5] || "").trim();
+    const rowEmail = String(dkyData[i][6] || "").trim();
+    
+    if (rowEmail === testEmail || rowPhone === testEmail || rowCode === testEmail) {
+      foundMaCode = rowCode;
+      Logger.log(`✅ FOUND in DKy at row ${i + 1}:`);
+      Logger.log(`   MÃ CODE: ${rowCode}`);
+      Logger.log(`   Email: ${rowEmail}`);
+      Logger.log(`   Phone: ${rowPhone}`);
+      break;
+    }
+  }
+  
+  if (!foundMaCode) {
+    Logger.log("❌ User NOT FOUND in DKy sheet!");
+    return;
+  }
+  
+  // Step 3: Find matching rows in LS_DangKy using MÃ CODE
   Logger.log("\n🔎 Searching for matching rows...");
   let matchCount = 0;
   
@@ -2895,9 +2956,12 @@ function debugUserCourseAccess() {
   
   if (matchCount === 0) {
     Logger.log("❌ NO MATCHES FOUND!");
-    Logger.log("📝 Sample MÃ CODE values from LS_DangKy:");
-    for (let i = 1; i < Math.min(6, data.length); i++) {
-      Logger.log(`   Row ${i + 1}: "${data[i][1]}"`);
+    Logger.log("📝 Showing ALL columns of first 3 rows to find email:");
+    for (let i = 1; i < Math.min(4, data.length); i++) {
+      Logger.log(`\n   === Row ${i + 1} ===`);
+      for (let j = 0; j < Math.min(15, data[i].length); j++) {
+        Logger.log(`   Col ${String.fromCharCode(65 + j)} (${j}): "${data[i][j]}"`);
+      }
     }
   } else {
     Logger.log(`\n✅ Found ${matchCount} matching registration(s)`);
