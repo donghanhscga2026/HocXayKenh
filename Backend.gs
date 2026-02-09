@@ -1,9 +1,21 @@
 function doGet(e) {
+  // Guard: khi chạy trực tiếp từ editor, `e` có thể undefined
+  if (!e || typeof e !== 'object') {
+    Logger.log('doGet called without event object');
+    return returnJSON({
+      status: 'error',
+      message: 'No event object provided. Invoke this function via the webapp URL or provide an event object when testing.',
+      timestamp: new Date()
+    });
+  }
+
+  e.parameter = e.parameter || {};
+
   // 1. Xử lý kích hoạt tài khoản
   if (e.parameter.action === "activate") {
     return activateAccount(e.parameter.token);
   }
-  
+
   // 2. Xử lý xác nhận đổi Email
   if (e.parameter.action === "verifyEmailChange") {
     return verifyEmailChange(e.parameter.token);
