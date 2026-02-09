@@ -719,6 +719,7 @@
                 opacity: 0;
                 transform: translateY(20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -780,6 +781,7 @@
                 opacity: 0;
                 transform: translateY(10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -843,9 +845,13 @@
         }
 
         @keyframes typing {
-            0%, 60%, 100% {
+
+            0%,
+            60%,
+            100% {
                 opacity: 0.3;
             }
+
             30% {
                 opacity: 1;
             }
@@ -2006,6 +2012,8 @@
 
             try {
                 // Send to backend
+                console.log('🤖 Sending chat request:', { message, email: isLoggedIn ? userData.email : "" });
+
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     body: JSON.stringify({
@@ -2016,7 +2024,10 @@
                     })
                 });
 
+                console.log('📡 Response status:', response.status);
                 const result = await response.json();
+                console.log('📥 Response data:', result);
+
                 removeTypingIndicator();
 
                 if (result.success) {
@@ -2034,11 +2045,13 @@
                         conversationHistory = conversationHistory.slice(-20);
                     }
                 } else {
+                    console.error('❌ Backend returned error:', result.message);
                     addMessageToUI('❌ ' + (result.message || 'Lỗi xử lý'), 'ai');
                 }
             } catch (error) {
                 removeTypingIndicator();
-                console.error('Chatbot error:', error);
+                console.error('💥 Chatbot error:', error);
+                console.error('Error details:', error.stack);
                 addMessageToUI('❌ Lỗi kết nối. Vui lòng thử lại!', 'ai');
             }
 
@@ -2082,7 +2095,7 @@
         }
 
         // Initialize chatbot when page loads
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             initChatbot();
         });
     </script>
@@ -2104,20 +2117,16 @@
                 <div class="message-bubble">
                     👋 Xin chào! Tôi là trợ lý AI của Học viện BRK.
                     <br><br>
-                    🎓 Tôi sẽ hỗ trợ bạn với các câu hỏi trong <strong>nội dung các khóa học đã kích hoạt</strong> của bạn.
+                    🎓 Tôi sẽ hỗ trợ bạn với các câu hỏi trong <strong>nội dung các khóa học đã kích hoạt</strong> của
+                    bạn.
                     <br><br>
                     📚 Hãy hỏi tôi bất cứ điều gì về các bài học hoặc nội dung khóa học. Có gì tôi giúp bạn?
                 </div>
             </div>
         </div>
         <div class="chatbot-input-area">
-            <input 
-                id="chatbot-input" 
-                class="chatbot-input" 
-                type="text" 
-                placeholder="Nhập câu hỏi của bạn..."
-                autocomplete="off"
-            >
+            <input id="chatbot-input" class="chatbot-input" type="text" placeholder="Nhập câu hỏi của bạn..."
+                autocomplete="off">
             <button id="chatbot-send" class="chatbot-send" title="Gửi">
                 <i class="fas fa-paper-plane"></i>
             </button>
