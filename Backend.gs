@@ -105,6 +105,45 @@ function doPost(e) {
     else if (action === "updateVideoProgress") {
       return returnJSON(updateVideoProgress(content.email, content.courseId, content.lessonId, content.currentTime, content.duration));
     }
+    else if (action === "chatWithAI") {
+      return returnJSON(chatWithAI(content.message, content.conversationHistory, content.email));
+    }
+    else if (action === "addVideoToCourse") {
+      return returnJSON(addVideoToCourse(content));
+    }
+    else if (action === "getYoutubeVideos") {
+      return returnJSON(getYoutubeVideos());
+    }
+    else if (action === "deleteVideo") {
+      return returnJSON(deleteVideo(content.videoId));
+    }
+    else if (action === "bulkAddVideos") {
+      return returnJSON(bulkAddVideos(content.videos));
+    }
+    else if (action === "addTextContent") {
+      return returnJSON(addTextContent(content));
+    }
+    else if (action === "addFileContent") {
+      return returnJSON(addFileContent(content));
+    }
+    else if (action === "extractYoutubeBulk") {
+      return returnJSON(extractYoutubeBulk(content.urls, content.courseId));
+    }
+    else if (action === "addYoutubeVideos") {
+      return returnJSON(addYoutubeVideos(content.videos, content.courseId));
+    }
+    else if (action === "getDataStats") {
+      return returnJSON(getDataStats());
+    }
+    else if (action === "getAllData") {
+      return returnJSON(getAllData());
+    }
+    else if (action === "deleteContent") {
+      return returnJSON(deleteContent(content.id));
+    }
+    else if (action === "clearAllData") {
+      return returnJSON(clearAllData());
+    }
     else if (action === "submitAssignment") {
       return returnJSON(submitAssignment(
         content.email, 
@@ -1906,3 +1945,769 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
   };
 }
 
+// ------------------------------------------------------------------
+// AI CHATBOT - GOOGLE GEMINI INTEGRATION
+// ------------------------------------------------------------------
+
+// ⚠️ QUAN TRỌNG: Cần cấu hình API key
+// 1. Lấy API key từ: https://aistudio.google.com/app/apikeys
+// 2. Mở Apps Script Project Settings
+// 3. Thêm Script Property: GEMINI_API_KEY = "your-api-key-here"
+
+function chatWithAI(message, conversationHistory = [], userEmail = "") {
+  try {
+    const GEMINI_API_KEY = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
+    
+    if (!GEMINI_API_KEY) {
+      return { 
+        success: false, 
+        message: "⚠️ Chưa cấu hình API Key. Liên hệ admin để khắc phục!" 
+      };
+    }
+
+    if (!message || message.trim() === "") {
+      return { 
+        success: false, 
+        message: "Vui lòng nhập tin nhắn!" 
+      };
+    }
+
+    // Lấy nội dung khóa học để làm context
+    const courseContexts = getAllActivatedCoursesContent(userEmail);
+    
+    // Prepare conversation history for Gemini (tối đa 10 tin nhắn gần nhất)
+    const recentHistory = conversationHistory.slice(-20).map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.content }]
+    }));
+
+    // Add system prompt với course context
+    const systemPrompt = `Bạn là một assistant hỗ trợ học viên của Học viện BRK. 
+
+🎯 HƯỚNG DẪN TRỢ GIÚP:
+- CHỈ trả lời các câu hỏi trong các khóa học và nội dung tôi cung cấp dưới đây
+- Nếu câu hỏi KHÔNG liên quan đến nội dung đã cung cấp, hãy nói: "Xin lỗi, câu hỏi này nằm ngoài phạm vi hỗ trợ của tôi. Vui lòng liên hệ với giảng viên hoặc admin để được giúp đỡ."
+- Luôn trả lời bằng tiếng Việt, ngắn gọn (dưới 300 ký tự)
+- Tham khảo nội dung các bài học dưới đây
+
+📚 NỘI DUNG CÁC KHÓA HỌC:
+${courseContexts}
+
+🔒 Hạn chế: Bạn KHÔNG được trả lời về các chủ đề khác ngoài các khóa học được ghi nhớ ở trên.`;
+
+    const payload = {
+      contents: [
+        ...recentHistory,
+        {
+          role: 'user',
+          parts: [
+            { text: systemPrompt + "\n\nNgười dùng: " + message }
+          ]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 500
+      },
+      safetySettings: [
+        {
+          category: 'HARM_CATEGORY_HARASSMENT',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+        }
+      ]
+    };
+
+    // Call Gemini API
+    const response = UrlFetchApp.fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'post',
+        contentType: 'application/json',
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      }
+    );
+
+    const result = JSON.parse(response.getContentText());
+
+    // Check for errors
+    if (response.getResponseCode() !== 200) {
+      Logger.log("Gemini API Error:", result);
+      return {
+        success: false,
+        message: "Có lỗi khi xử lý câu hỏi. Vui lòng thử lại!"
+      };
+    }
+
+    // Extract response
+    const aiMessage = result.candidates?.[0]?.content?.parts?.[0]?.text || "Xin lỗi, tôi không thể xử lý câu hỏi này.";
+
+    return {
+      success: true,
+      message: aiMessage,
+      timestamp: new Date()
+    };
+
+  } catch (error) {
+    Logger.log("ChatBot Error:", error.toString());
+    return {
+      success: false,
+      message: "Lỗi: " + error.toString()
+    };
+  }
+}
+
+// Lấy nội dung của tất cả khóa học đã kích hoạt của học viên
+function getAllActivatedCoursesContent(userEmail) {
+  try {
+    if (!userEmail) return "❌ Không có email. Vui lòng đăng nhập!";
+    
+    const ss = getDB();
+    const contentSheet = ss.getSheetByName("KH_NoiDung");
+    const youtubeSheet = ss.getSheetByName("YT_Videos");
+    
+    if (!contentSheet) return "⚠️ Không tìm thấy sheet nội dung khóa học";
+    
+    // Lấy danh sách khóa học đã kích hoạt của học viên
+    const activatedCourses = getStudentActivatedCourses(userEmail);
+    
+    if (!activatedCourses || activatedCourses.length === 0) {
+      return "📚 Bạn chưa kích hoạt khóa học nào.";
+    }
+    
+    const contentData = contentSheet.getDataRange().getValues();
+    const youtubeData = youtubeSheet ? youtubeSheet.getDataRange().getValues() : [];
+    
+    let courseContexts = [];
+    
+    // Lấy nội dung của từng khóa học đã kích hoạt
+    activatedCourses.forEach(courseId => {
+      let courseTitle = "";
+      let lessonsContent = [];
+      let videoContent = [];
+      
+      // Lấy nội dung bài học từ KH_NoiDung sheet
+      for (let i = 1; i < contentData.length; i++) {
+        if (String(contentData[i][0]) === String(courseId)) {
+          if (!courseTitle) {
+            courseTitle = getCourseTitle(courseId) || `Khóa học ${courseId}`;
+          }
+          
+          const lessonTitle = String(contentData[i][2] || "");
+          const lessonSummary = String(contentData[i][4] || "");
+          
+          if (lessonTitle && lessonSummary) {
+            lessonsContent.push(`- Bài: ${lessonTitle}\n  📝 ${lessonSummary}`);
+          }
+        }
+      }
+      
+      // Lấy nội dung video YouTube từ YT_Videos sheet
+      if (youtubeData.length > 1) {
+        for (let i = 1; i < youtubeData.length; i++) {
+          if (String(youtubeData[i][2]) === String(courseId)) { // Column C = Course ID
+            const lessonId = youtubeData[i][3];
+            const transcript = youtubeData[i][5] || youtubeData[i][6] || ""; // Transcript or Description
+            const youtubeUrl = youtubeData[i][1];
+            
+            if (transcript) {
+              videoContent.push(`- Video (${lessonId}): ${youtubeUrl}\n  📹 ${transcript.substring(0, 300)}${transcript.length > 300 ? '...' : ''}`);
+            }
+          }
+        }
+      }
+      
+      // Kết hợp nội dung
+      let courseSectionContent = `\n📖 Khóa học: ${courseTitle}`;
+      
+      if (lessonsContent.length > 0) {
+        courseSectionContent += `\n📚 Bài học:\n${lessonsContent.join("\n")}`;
+      }
+      
+      if (videoContent.length > 0) {
+        courseSectionContent += `\n🎥 Video YouTube:\n${videoContent.join("\n")}`;
+      }
+      
+      if (lessonsContent.length > 0 || videoContent.length > 0) {
+        courseContexts.push(courseSectionContent);
+      }
+    });
+    
+    return courseContexts.length > 0 
+      ? courseContexts.join("\n") 
+      : "📚 Không tìm thấy nội dung khóa học.";
+    
+  } catch (error) {
+    Logger.log("Error in getAllActivatedCoursesContent:", error);
+    return "⚠️ Lỗi khi tải nội dung khóa học.";
+  }
+}";
+  }
+}
+
+// Lấy danh sách khóa học đã kích hoạt của học viên
+function getStudentActivatedCourses(userEmail) {
+  try {
+    const ss = getDB();
+    const sheet = ss.getSheetByName("HocVien");
+    
+    if (!sheet) return [];
+    
+    const data = sheet.getDataRange().getValues();
+    
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]) === String(userEmail)) {
+        // Cột K chứa danh sách khóa học đã kích hoạt (dạng JSON array)
+        const activatedCoursesStr = String(data[i][10] || "");  // Index 10 = Column K
+        
+        try {
+          return JSON.parse(activatedCoursesStr);
+        } catch (e) {
+          // Nếu không phải JSON, cố gắng parse theo định dạng cũ (comma-separated)
+          return activatedCoursesStr.split(',').map(c => c.trim()).filter(c => c);
+        }
+      }
+    }
+    
+    return [];
+  } catch (error) {
+    Logger.log("Error in getStudentActivatedCourses:", error);
+    return [];
+  }
+}
+
+// Lấy tên khóa học từ ID
+function getCourseTitle(courseId) {
+  try {
+    const ss = getDB();
+    const sheet = ss.getSheetByName("KH");
+    
+    if (!sheet) return null;
+    
+    const data = sheet.getDataRange().getValues();
+    
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]) === String(courseId)) {
+        return String(data[i][1] || `Khóa học ${courseId}`);
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    Logger.log("Error in getCourseTitle:", error);
+    return null;
+  }
+}
+
+// ------------------------------------------------------------------
+// YOUTUBE VIDEO MANAGEMENT FOR BRK AI
+// ------------------------------------------------------------------
+
+// Lấy hoặc tạo sheet YouTube Videos
+function getOrCreateYoutubeSheet() {
+  const ss = getDB();
+  let sheet = ss.getSheetByName("YT_Videos");
+  
+  if (!sheet) {
+    sheet = ss.insertSheet("YT_Videos");
+    sheet.appendRow([
+      "Video ID",
+      "YouTube URL",
+      "Course ID",
+      "Lesson ID",
+      "Lesson Title",
+      "Transcript",
+      "Description",
+      "Added Date",
+      "Added By",
+      "Last Updated"
+    ]);
+  }
+  
+  return sheet;
+}
+
+// Thêm video YouTube vào khóa học
+function addVideoToCourse(data) {
+  try {
+    if (!data.videoId || !data.courseId || !data.lessonId) {
+      return { success: false, message: "Thiếu thông tin bắt buộc" };
+    }
+    
+    const sheet = getOrCreateYoutubeSheet();
+    
+    // Kiểm tra video đã tồn tại chưa
+    const allData = sheet.getDataRange().getValues();
+    for (let i = 1; i < allData.length; i++) {
+      if (String(allData[i][0]) === String(data.videoId)) {
+        return { success: false, message: "Video này đã được thêm rồi" };
+      }
+    }
+    
+    // Thêm video mới
+    sheet.appendRow([
+      data.videoId,
+      data.youtubeUrl || `https://www.youtube.com/watch?v=${data.videoId}`,
+      data.courseId,
+      data.lessonId,
+      data.lessonTitle || data.lessonId,
+      data.transcript || "",
+      data.description || "",
+      new Date(),
+      "Admin",
+      new Date()
+    ]);
+    
+    return {
+      success: true,
+      message: "Thêm video thành công!",
+      videoId: data.videoId
+    };
+    
+  } catch (error) {
+    Logger.log("Error in addVideoToCourse:", error);
+    return { success: false, message: "Lỗi: " + error.toString() };
+  }
+}
+
+// Lấy tất cả video YouTube
+function getYoutubeVideos() {
+  try {
+    const sheet = getOrCreateYoutubeSheet();
+    const allData = sheet.getDataRange().getValues();
+    
+    const videos = [];
+    for (let i = 1; i < allData.length; i++) {
+      videos.push({
+        videoId: allData[i][0],
+        youtubeUrl: allData[i][1],
+        courseId: allData[i][2],
+        lessonId: allData[i][3],
+        lessonTitle: allData[i][4],
+        transcript: allData[i][5],
+        description: allData[i][6],
+        addedDate: allData[i][7],
+        addedBy: allData[i][8],
+        lastUpdated: allData[i][9]
+      });
+    }
+    
+    return { success: true, data: videos };
+    
+  } catch (error) {
+    Logger.log("Error in getYoutubeVideos:", error);
+    return { success: false, data: [], message: "Lỗi: " + error.toString() };
+  }
+}
+
+// Xóa video YouTube
+function deleteVideo(videoId) {
+  try {
+    const sheet = getOrCreateYoutubeSheet();
+    const allData = sheet.getDataRange().getValues();
+    
+    for (let i = 1; i < allData.length; i++) {
+      if (String(allData[i][0]) === String(videoId)) {
+        sheet.deleteRow(i + 1);
+        return { success: true, message: "Xóa video thành công!" };
+      }
+    }
+    
+    return { success: false, message: "Video không tìm thấy" };
+    
+  } catch (error) {
+    Logger.log("Error in deleteVideo:", error);
+    return { success: false, message: "Lỗi: " + error.toString() };
+  }
+}
+
+// Thêm nhiều video cùng lúc (Bulk Import)
+function bulkAddVideos(videos) {
+  try {
+    if (!videos || videos.length === 0) {
+      return { success: false, message: "Không có video nào để import" };
+    }
+    
+    const sheet = getOrCreateYoutubeSheet();
+    let addedCount = 0;
+    let errors = [];
+    
+    videos.forEach((video, index) => {
+      try {
+        if (!video.videoId && video.youtubeUrl) {
+          const regex = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/;
+          const match = video.youtubeUrl.match(regex);
+          video.videoId = match ? match[1] : `VIDEO_${index}`;
+        }
+        
+        if (!video.videoId || !video.courseId || !video.lessonId) {
+          errors.push(`Row ${index + 1}: Thiếu thông tin bắt buộc`);
+          return;
+        }
+        
+        // Kiểm tra trùng
+        const allData = sheet.getDataRange().getValues();
+        for (let i = 1; i < allData.length; i++) {
+          if (String(allData[i][0]) === String(video.videoId)) {
+            errors.push(`Row ${index + 1}: Video đã tồn tại`);
+            return;
+          }
+        }
+        
+        // Thêm video
+        sheet.appendRow([
+          video.videoId,
+          video.youtubeUrl || `https://www.youtube.com/watch?v=${video.videoId}`,
+          video.courseId,
+          video.lessonId,
+          video.lessonTitle || video.lessonId,
+          video.transcript || "",
+          video.description || "",
+          new Date(),
+          "Bulk Import",
+          new Date()
+        ]);
+        
+        addedCount++;
+        
+      } catch (e) {
+        errors.push(`Row ${index + 1}: ${e.toString()}`);
+      }
+    });
+    
+    let message = `Import thành công ${addedCount}/${videos.length} video`;
+    if (errors.length > 0) {
+      message += `. Lỗi: ${errors.join('; ')}`;
+    }
+    
+    return {
+      success: addedCount > 0,
+      count: addedCount,
+      message: message,
+      errors: errors
+    };
+    
+  } catch (error) {
+    Logger.log("Error in bulkAddVideos:", error);
+    return { success: false, message: "Lỗi: " + error.toString() };
+  }
+}
+
+// Lấy nội dung video từ transcript (dùng cho BRK AI)
+function getVideoTranscriptForAI(courseId) {
+  try {
+    const sheet = getOrCreateYoutubeSheet();
+    const allData = sheet.getDataRange().getValues();
+    
+    let videoContent = [];
+    
+    for (let i = 1; i < allData.length; i++) {
+      if (String(allData[i][2]) === String(courseId)) {
+        const lessonId = allData[i][3];
+        const transcript = allData[i][5] || allData[i][6] || "";
+        
+        if (transcript) {
+          videoContent.push({
+            lessonId: lessonId,
+            transcript: transcript
+          });
+        }
+      }
+    }
+    
+    return videoContent;
+    
+  } catch (error) {
+    Logger.log("Error in getVideoTranscriptForAI:", error);
+    return [];
+  }
+}
+
+// ------------------------------------------------------------------
+// ADMIN DATA IMPORT MODULE
+// ------------------------------------------------------------------
+
+// Sheet quản lý tất cả nội dung (Text, File, Video)
+function getOrCreateContentSheet() {
+  const ss = getDB();
+  let sheet = ss.getSheetByName("AI_Content");
+  
+  if (!sheet) {
+    sheet = ss.insertSheet("AI_Content");
+    sheet.appendRow([
+      "ID",
+      "Type",
+      "Course ID",
+      "Lesson ID",
+      "Title",
+      "Content",
+      "Source",
+      "Added Date",
+      "Added By"
+    ]);
+  }
+  
+  return sheet;
+}
+
+// Thêm nội dung từ paste text
+function addTextContent(data) {
+  try {
+    const sheet = getOrCreateContentSheet();
+    const id = `TEXT_${Date.now()}`;
+    
+    sheet.appendRow([
+      id,
+      "text",
+      data.courseId || "GENERAL",
+      data.lessonId || "",
+      data.courseId || "Nội dung dán",
+      data.content,
+      data.sourceType || "paste",
+      new Date(),
+      "Admin"
+    ]);
+    
+    return {
+      success: true,
+      message: "Thêm nội dung thành công",
+      id: id
+    };
+  } catch (error) {
+    Logger.log("Error in addTextContent:", error);
+    return { success: false, message: "Lỗi: " + error.toString() };
+  }
+}
+
+// Thêm nội dung từ file upload
+function addFileContent(data) {
+  try {
+    const sheet = getOrCreateContentSheet();
+    const id = `FILE_${Date.now()}`;
+    
+    // Parse file content (detect format)
+    let content = data.content;
+    let count = 1;
+    
+    // Nếu là CSV, thêm từng dòng
+    if (data.fileName.endsWith('.csv')) {
+      const lines = content.split('\n');
+      lines.forEach((line, index) => {
+        if (index > 0 && line.trim()) {
+          const cols = line.split(',');
+          sheet.appendRow([
+            `FILE_${Date.now()}_${index}`,
+            "file",
+            (cols[0] || "GENERAL").trim(),
+            (cols[1] || "").trim(),
+            (cols[2] || data.fileName).trim(),
+            (cols[3] || line).substring(0, 500),
+            "upload_csv",
+            new Date(),
+            "Admin"
+          ]);
+          count++;
+        }
+      });
+    } else {
+      // Plain text/markdown
+      sheet.appendRow([
+        id,
+        "file",
+        "GENERAL",
+        "",
+        data.fileName,
+        content.substring(0, 10000),
+        "upload_text",
+        new Date(),
+        "Admin"
+      ]);
+    }
+    
+    return {
+      success: true,
+      message: "Thêm nội dung file thành công",
+      count: count,
+      id: id
+    };
+  } catch (error) {
+    Logger.log("Error in addFileContent:", error);
+    return { success: false, message: "Lỗi: " + error.toString() };
+  }
+}
+
+// Extract metadata từ YouTube URLs (Bulk)
+function extractYoutubeBulk(urls, courseId) {
+  try {
+    const videos = [];
+    
+    urls.forEach(url => {
+      const videoId = extractVideoId(url);
+      if (videoId) {
+        videos.push({
+          videoId: videoId,
+          youtubeUrl: url,
+          courseId: courseId,
+          // Metadata sẽ được lấy sau khi save
+          title: `Video ${videoId}`,
+          channel: "Unknown"
+        });
+      }
+    });
+    
+    if (videos.length === 0) {
+      return { success: false, message: "Không tìm được video nào từ URLs" };
+    }
+    
+    return {
+      success: true,
+      videos: videos,
+      message: `Tìm được ${videos.length} video`
+    };
+  } catch (error) {
+    Logger.log("Error in extractYoutubeBulk:", error);
+    return { success: false, message: "Lỗi: " + error.toString() };
+  }
+}
+
+// Thêm bulk YouTube videos
+function addYoutubeVideos(videos, courseId) {
+  try {
+    const sheet = getOrCreateYoutubeSheet();
+    let count = 0;
+    
+    videos.forEach(video => {
+      if (!video.videoId) return;
+      
+      // Extract proper video ID if needed
+      const videoId = video.videoId.replace(/[^a-zA-Z0-9_-]/g, '');
+      
+      sheet.appendRow([
+        videoId,
+        video.youtubeUrl,
+        courseId,
+        `BAI_${videoId.substring(0, 8)}`,
+        video.title || `Video ${videoId}`,
+        video.transcript || "",
+        video.description || "",
+        new Date(),
+        "Bulk Import",
+        new Date()
+      ]);
+      
+      count++;
+    });
+    
+    return {
+      success: true,
+      count: count,
+      message: `Thêm ${count} video thành công`
+    };
+  } catch (error) {
+    Logger.log("Error in addYoutubeVideos:", error);
+    return { success: false, message: "Lỗi: " + error.toString() };
+  }
+}
+
+// Lấy thống kê dữ liệu
+function getDataStats() {
+  try {
+    const contentSheet = getOrCreateContentSheet();
+    const youtubeSheet = getOrCreateYoutubeSheet();
+    const khSheet = getDB().getSheetByName("KH");
+    
+    const contentData = contentSheet.getDataRange().getValues();
+    const youtubeData = youtubeSheet ? youtubeSheet.getDataRange().getValues() : [];
+    const khData = khSheet ? khSheet.getDataRange().getValues() : [];
+    
+    return {
+      success: true,
+      stats: {
+        content: contentData.length - 1, // Exclude header
+        videos: youtubeData.length - 1,
+        courses: khData.length - 1
+      }
+    };
+  } catch (error) {
+    Logger.log("Error in getDataStats:", error);
+    return {
+      success: false,
+      stats: { content: 0, videos: 0, courses: 0 }
+    };
+  }
+}
+
+// Lấy tất cả dữ liệu
+function getAllData() {
+  try {
+    const contentSheet = getOrCreateContentSheet();
+    const contentData = contentSheet.getDataRange().getValues();
+    
+    const allData = [];
+    for (let i = 1; i < contentData.length; i++) {
+      allData.push({
+        id: contentData[i][0],
+        type: contentData[i][1],
+        courseId: contentData[i][2],
+        lessonId: contentData[i][3],
+        title: contentData[i][4],
+        content: contentData[i][5],
+        source: contentData[i][6],
+        addedDate: contentData[i][7],
+        addedBy: contentData[i][8]
+      });
+    }
+    
+    return {
+      success: true,
+      data: allData
+    };
+  } catch (error) {
+    Logger.log("Error in getAllData:", error);
+    return { success: false, data: [] };
+  }
+}
+
+// Xóa 1 content
+function deleteContent(id) {
+  try {
+    const sheet = getOrCreateContentSheet();
+    const data = sheet.getDataRange().getValues();
+    
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]) === String(id)) {
+        sheet.deleteRow(i + 1);
+        return { success: true, message: "Đã xóa" };
+      }
+    }
+    
+    return { success: false, message: "Không tìm thấy ID" };
+  } catch (error) {
+    Logger.log("Error in deleteContent:", error);
+    return { success: false, message: "Lỗi: " + error.toString() };
+  }
+}
+
+// Xóa tất cả dữ liệu
+function clearAllData() {
+  try {
+    const ss = getDB();
+    const contentSheet = ss.getSheetByName("AI_Content");
+    const youtubeSheet = ss.getSheetByName("YT_Videos");
+    
+    if (contentSheet && contentSheet.getLastRow() > 1) {
+      contentSheet.deleteRows(2, contentSheet.getLastRow() - 1);
+    }
+    
+    if (youtubeSheet && youtubeSheet.getLastRow() > 1) {
+      youtubeSheet.deleteRows(2, youtubeSheet.getLastRow() - 1);
+    }
+    
+    return { success: true, message: "Đã xóa tất cả dữ liệu" };
+  } catch (error) {
+    Logger.log("Error in clearAllData:", error);
+    return { success: false, message: "Lỗi: " + error.toString() };
+  }
+}

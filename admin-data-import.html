@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - BRK AI Data Import Module</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Login Screen */
+        .login-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .login-screen.show {
+            display: flex;
+        }
+
+        .login-form {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-form h2 {
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 16px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Main Content */
+        .main-content {
+            display: none;
+        }
+
+        .main-content.show {
+            display: block;
+        }
+
+        /* Header */
+        .admin-header {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-header h1 {
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 24px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logout-btn {
+            padding: 10px 20px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+
+        /* Tabs */
+        .admin-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .tab-content h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        /* Input Methods */
+        .input-method {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 2px solid #e5e7eb;
+            transition: all 0.3s;
+        }
+
+        .input-method:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-method h3 {
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+        }
+
+        .input-method i {
+            color: #667eea;
+            font-size: 20px;
+        }
+
+        /* Textarea */
+        .textarea-group {
+            margin-bottom: 15px;
+        }
+
+        .textarea-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            min-height: 150px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        .textarea-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* File Upload */
+        .file-upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f9f9ff;
+        }
+
+        .file-upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f0ff;
+        }
+
+        .file-upload-area i {
+            font-size: 40px;
+            color: #667eea;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .file-upload-area h4 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .file-upload-area p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        /* Google Drive */
+        .gdrive-section {
+            background: #f0f0ff;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .gdrive-section h4 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .gdrive-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .gdrive-input-group input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .gdrive-input-group button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .gdrive-input-group button:hover {
+            background: #764ba2;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #333;
+            border: 2px solid #e5e7eb;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        /* Preview */
+        .preview-section {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            border: 2px solid #e5e7eb;
+        }
+
+        .preview-section h4 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .preview-table th {
+            background: #e5e7eb;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .preview-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            color: #666;
+        }
+
+        .preview-table tr:nth-child(even) {
+            background: white;
+        }
+
+        .preview-table tr:nth-child(odd) {
+            background: #f9fafb;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: white;
+            color: #333;
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            display: none;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+        }
+
+        .toast.show {
+            display: block;
+        }
+
+        .toast.success {
+            border-left: 4px solid #10b981;
+            color: #10b981;
+        }
+
+        .toast.error {
+            border-left: 4px solid #ef4444;
+            color: #ef4444;
+        }
+
+        .toast.info {
+            border-left: 4px solid #3b82f6;
+            color: #3b82f6;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #e5e7eb;
+            text-align: center;
+        }
+
+        .stat-card i {
+            font-size: 32px;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .stat-card h4 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            color: #666;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        @media (max-width: 768px) {
+            .admin-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .admin-tabs {
+                flex-direction: column;
+            }
+
+            .tab-btn {
+                width: 100%;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Login Screen -->
+    <div class="login-screen show" id="login-screen">
+        <div class="login-form">
+            <h2>🔐 Admin Login</h2>
+            <div class="form-group">
+                <label for="admin-email">Email / Mã Admin</label>
+                <input type="text" id="admin-email" placeholder="admin@example.com" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label for="admin-password">Mật Khẩu</label>
+                <input type="password" id="admin-password" placeholder="••••••••">
+            </div>
+            <button class="login-btn" onclick="handleAdminLogin()">
+                <i class="fas fa-sign-in-alt"></i> Đăng Nhập
+            </button>
+            <p style="text-align: center; margin-top: 15px; color: #999; font-size: 13px;">
+                Demo: admin@brk.edu / password123
+            </p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="main-content">
+        <div class="admin-container">
+            <!-- Header -->
+            <div class="admin-header">
+                <h1>
+                    <i class="fas fa-cogs"></i> Admin - BRK AI Data Import
+                </h1>
+                <div class="user-info">
+                    <div>
+                        <p style="font-size: 14px; color: #999;">Đăng nhập:</p>
+                        <p style="font-weight: 600; color: #333;" id="admin-name">Admin</p>
+                    </div>
+                    <button class="logout-btn" onclick="handleAdminLogout()">
+                        <i class="fas fa-sign-out-alt"></i> Đăng Xuất
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <i class="fas fa-video"></i>
+                    <h4>Tổng Video</h4>
+                    <p id="stat-videos">0</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-book"></i>
+                    <h4>Khóa Học</h4>
+                    <p id="stat-courses">0</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-database"></i>
+                    <h4>Nội Dung</h4>
+                    <p id="stat-content">0</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-brain"></i>
+                    <h4>BRK AI Status</h4>
+                    <p style="color: #10b981;">🟢 Active</p>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="admin-tabs">
+                <button class="tab-btn active" onclick="switchAdminTab('paste-text')">
+                    <i class="fas fa-paste"></i> Copy-Paste Text
+                </button>
+                <button class="tab-btn" onclick="switchAdminTab('file-upload')">
+                    <i class="fas fa-file-upload"></i> Upload File
+                </button>
+                <button class="tab-btn" onclick="switchAdminTab('gdrive')">
+                    <i class="fab fa-google-drive"></i> Google Drive
+                </button>
+                <button class="tab-btn" onclick="switchAdminTab('youtube-bulk')">
+                    <i class="fab fa-youtube"></i> YouTube Bulk
+                </button>
+                <button class="tab-btn" onclick="switchAdminTab('manage')">
+                    <i class="fas fa-list"></i> Quản Lý Dữ Liệu
+                </button>
+            </div>
+
+            <!-- Tab 1: Copy-Paste Text -->
+            <div id="paste-text" class="tab-content active">
+                <h2>📝 Copy-Paste Văn Bản</h2>
+
+                <div class="input-method">
+                    <h3>
+                        <i class="fas fa-keyboard"></i> Dán Nội Dung Trực Tiếp
+                    </h3>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                        Dán nội dung bài học, transcript, hoặc thông tin khóa học. Module sẽ tự động phân tích cấu trúc.
+                    </p>
+
+                    <div class="form-group">
+                        <label for="paste-content">Nội Dung (Paste văn bản ở đây)</label>
+                        <textarea id="paste-content" placeholder="Dán văn bản của bạn ở đây...
+Hỗ trợ format:
+- Markdown
+- Plain Text
+- CSV (tab-separated)
+- JSON"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="paste-course">Khóa Học (Optional)</label>
+                        <input type="text" id="paste-course" placeholder="KH001 hoặc để trống">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="paste-lesson">Bài Học (Optional)</label>
+                        <input type="text" id="paste-lesson" placeholder="BAI001 hoặc để trống">
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="previewPastedText()">
+                            <i class="fas fa-eye"></i> Xem Preview
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearPasteForm()">
+                            <i class="fas fa-trash"></i> Xóa
+                        </button>
+                    </div>
+                </div>
+
+                <div id="paste-preview" class="preview-section" style="display: none;">
+                    <h4>📋 Preview</h4>
+                    <pre id="paste-preview-content" style="background: #f9fafb; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 12px; line-height: 1.6;"></pre>
+                    <button class="btn btn-primary" style="margin-top: 15px; width: 100%;" onclick="savePastedContent()">
+                        <i class="fas fa-save"></i> Lưu Nội Dung
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab 2: File Upload -->
+            <div id="file-upload" class="tab-content">
+                <h2>📄 Upload File</h2>
+
+                <div class="input-method">
+                    <h3>
+                        <i class="fas fa-file-import"></i> Hỗ Trợ Nhiều Định Dạng
+                    </h3>
+
+                    <div class="file-upload-area" onclick="document.getElementById('file-input').click();">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h4>Kéo file vào đây hoặc click để chọn</h4>
+                        <p>Hỗ trợ: .txt, .csv, .json, .md (Google Docs & Sheets qua Drive)</p>
+                        <small style="color: #999;">
+                            <i class="fas fa-info-circle"></i> Max 10MB
+                        </small>
+                    </div>
+
+                    <input type="file" id="file-input" class="file-input" onchange="handleFileUpload(event)">
+
+                    <div style="margin-top: 20px; padding: 15px; background: #f0f0ff; border-radius: 8px; border-left: 4px solid #667eea;">
+                        <p style="font-size: 13px; color: #666;">
+                            <strong>💡 Mẹo:</strong> Để upload Google Docs/Sheets, lưu dưới dạng:
+                        </p>
+                        <ul style="margin-top: 10px; margin-left: 20px; font-size: 13px; color: #666;">
+                            <li>Google Docs → Download as .txt hoặc .docx</li>
+                            <li>Google Sheets → Download as .csv</li>
+                            <li>Hoặc dùng tab "Google Drive" để kh khép trực tiếp</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="file-preview" class="preview-section" style="display: none;">
+                    <h4>📋 Preview File</h4>
+                    <p id="file-info" style="font-size: 13px; color: #666; margin-bottom: 15px;"></p>
+                    <div id="file-content-preview" style="max-height: 300px; overflow-y: auto; background: #f9fafb; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px;"></div>
+                    <button class="btn btn-primary" style="margin-top: 15px; width: 100%;" onclick="saveUploadedFile()">
+                        <i class="fas fa-save"></i> Lưu File
+                    </button>
+                </div>
+
+                <div id="file-loading" class="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 15px; color: #666;">Đang xử lý file...</p>
+                </div>
+            </div>
+
+            <!-- Tab 3: Google Drive -->
+            <div id="gdrive" class="tab-content">
+                <h2>☁️ Google Drive Integration</h2>
+
+                <div class="input-method">
+                    <h3>
+                        <i class="fab fa-google-drive"></i> Kết Nối & Quản Lý File Từ Drive
+                    </h3>
+
+                    <div class="gdrive-section">
+                        <h4>Lấy File Từ Google Drive</h4>
+                        <p style="font-size: 14px; color: #666; margin-bottom: 15px;">
+                            Nhập File ID hoặc Folder ID từ Google Drive
+                        </p>
+
+                        <div class="gdrive-input-group">
+                            <input type="text" id="gdrive-id" placeholder="Nhập File ID hoặc Folder ID (từ URL)...">
+                            <button onclick="loadFromGDrive()">
+                                <i class="fas fa-cloud-download-alt"></i> Tải
+                            </button>
+                        </div>
+
+                        <p style="font-size: 12px; color: #999; margin-top: 10px;">
+                            <strong>Cách lấy ID:</strong> URL: https://drive.google.com/file/d/<strong>FILE_ID</strong>/view
+                        </p>
+                    </div>
+
+                    <div class="gdrive-section">
+                        <h4>📚 Hướng Dẫn</h4>
+                        <ol style="font-size: 13px; color: #666; margin-left: 20px; line-height: 1.8;">
+                            <li>Tạo folder trong Google Drive lưu tất cả file</li>
+                            <li>Chia sẻ folder với tài khoản Google Apps Script</li>
+                            <li>Lấy Folder ID từ URL</li>
+                            <li>Dán ID vào trên và click "Tải"</li>
+                            <li>Module sẽ list tất cả file trong folder</li>
+                            <li>Chọn file cần process</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div id="gdrive-files" class="preview-section" style="display: none;">
+                    <h4>📁 File Trong Folder</h4>
+                    <div id="gdrive-list" style="max-height: 400px; overflow-y: auto;"></div>
+                </div>
+            </div>
+
+            <!-- Tab 4: YouTube Bulk -->
+            <div id="youtube-bulk" class="tab-content">
+                <h2>🎥 YouTube Bulk Import</h2>
+
+                <div class="input-method">
+                    <h3>
+                        <i class="fab fa-youtube"></i> Dán Danh Sách YouTube URLs
+                    </h3>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                        Một URL mỗi dòng. Module sẽ tự động extract metadata.
+                    </p>
+
+                    <div class="form-group">
+                        <label for="youtube-urls">YouTube URLs (Một URL Mỗi Dòng)</label>
+                        <textarea id="youtube-urls" placeholder="https://www.youtube.com/watch?v=abc123
+https://www.youtube.com/watch?v=def456
+https://www.youtube.com/watch?v=ghi789"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="youtube-course-bulk">Khóa Học (Mã)</label>
+                        <input type="text" id="youtube-course-bulk" placeholder="KH001" required>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="processYoutubeUrls()">
+                            <i class="fas fa-sync-alt"></i> Extract Metadata
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearYoutubeForm()">
+                            <i class="fas fa-trash"></i> Xóa
+                        </button>
+                    </div>
+                </div>
+
+                <div id="youtube-preview" class="preview-section" style="display: none;">
+                    <h4>📋 Preview Videos</h4>
+                    <table class="preview-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Video ID</th>
+                                <th>Title</th>
+                                <th>Channel</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="youtube-preview-table"></tbody>
+                    </table>
+                    <button class="btn btn-primary" style="margin-top: 15px; width: 100%;" onclick="saveYoutubeVideos()">
+                        <i class="fas fa-save"></i> Lưu Tất Cả Videos
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab 5: Manage Data -->
+            <div id="manage" class="tab-content">
+                <h2>📊 Quản Lý Dữ Liệu BRK AI</h2>
+
+                <div class="input-method">
+                    <h3>
+                        <i class="fas fa-database"></i> Thống Kê & Quản Lý
+                    </h3>
+
+                    <div style="margin-bottom: 20px;">
+                        <button class="btn btn-primary" onclick="loadAllData()">
+                            <i class="fas fa-sync-alt"></i> Tải Dữ Liệu
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportDataAsCSV()">
+                            <i class="fas fa-download"></i> Export CSV
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearAllDataConfirm()">
+                            <i class="fas fa-trash"></i> Xóa Toàn Bộ
+                        </button>
+                    </div>
+                </div>
+
+                <div id="manage-preview" class="preview-section" style="display: none;">
+                    <h4>📋 Tất Cả Dữ Liệu</h4>
+                    <p id="manage-info" style="font-size: 13px; color: #999; margin-bottom: 15px;"></p>
+                    <div id="manage-table-container" style="max-height: 600px; overflow-y: auto;">
+                        <table class="preview-table" id="manage-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>Course</th>
+                                    <th>Content</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="manage-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // Configuration
+        const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/usercallable'; // Update này!
+        const ADMIN_CREDENTIALS = {
+            'admin@brk.edu': 'password123',
+            'admin@hocvien.edu': 'admin2024'
+        };
+
+        let currentAdmin = null;
+        let allData = [];
+
+        // =========================
+        // AUTHENTICATION
+        // =========================
+
+        function handleAdminLogin() {
+            const email = document.getElementById('admin-email').value.trim();
+            const password = document.getElementById('admin-password').value;
+
+            if (!email || !password) {
+                showToast('Vui lòng nhập email và mật khẩu', 'error');
+                return;
+            }
+
+            // Verify credentials (In production, use backend verification!)
+            if (ADMIN_CREDENTIALS[email] && ADMIN_CREDENTIALS[email] === password) {
+                currentAdmin = email;
+                localStorage.setItem('admin_logged_in', JSON.stringify({
+                    email: email,
+                    timestamp: Date.now()
+                }));
+                showAdminPanel();
+                showToast('✅ Đăng nhập thành công!', 'success');
+            } else {
+                showToast('❌ Email hoặc mật khẩu sai!', 'error');
+                document.getElementById('admin-password').value = '';
+            }
+        }
+
+        function handleAdminLogout() {
+            if (confirm('Bạn chắc chắn muốn đăng xuất?')) {
+                currentAdmin = null;
+                localStorage.removeItem('admin_logged_in');
+                document.getElementById('admin-email').value = '';
+                document.getElementById('admin-password').value = '';
+                document.getElementById('login-screen').classList.add('show');
+                document.getElementById('main-content').classList.remove('show');
+                showToast('👋 Đã đăng xuất', 'info');
+            }
+        }
+
+        function showAdminPanel() {
+            document.getElementById('login-screen').classList.remove('show');
+            document.getElementById('main-content').classList.add('show');
+            document.getElementById('admin-name').textContent = currentAdmin;
+            loadStats();
+        }
+
+        function checkAdminSession() {
+            const stored = localStorage.getItem('admin_logged_in');
+            if (stored) {
+                try {
+                    const data = JSON.parse(stored);
+                    currentAdmin = data.email;
+                    showAdminPanel();
+                } catch (e) {
+                    // Session invalid
+                }
+            }
+        }
+
+        // =========================
+        // TAB SWITCHING
+        // =========================
+
+        function switchAdminTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // =========================
+        // METHOD 1: PASTE TEXT
+        // =========================
+
+        function previewPastedText() {
+            const content = document.getElementById('paste-content').value.trim();
+            if (!content) {
+                showToast('Vui lòng dán nội dung', 'error');
+                return;
+            }
+
+            document.getElementById('paste-preview-content').textContent = content.substring(0, 500);
+            document.getElementById('paste-preview').style.display = 'block';
+        }
+
+        async function savePastedContent() {
+            const content = document.getElementById('paste-content').value.trim();
+            const course = document.getElementById('paste-course').value.trim();
+            const lesson = document.getElementById('paste-lesson').value.trim();
+
+            if (!content) {
+                showToast('Vui lòng dán nội dung', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'addTextContent',
+                        content: content,
+                        courseId: course || 'GENERAL',
+                        lessonId: lesson || `LESSON_${Date.now()}`,
+                        sourceType: 'paste'
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast('✅ Lưu nội dung thành công!', 'success');
+                    clearPasteForm();
+                    loadStats();
+                } else {
+                    showToast('❌ ' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('❌ Lỗi kết nối', 'error');
+            }
+        }
+
+        function clearPasteForm() {
+            document.getElementById('paste-content').value = '';
+            document.getElementById('paste-course').value = '';
+            document.getElementById('paste-lesson').value = '';
+            document.getElementById('paste-preview').style.display = 'none';
+        }
+
+        // =========================
+        // METHOD 2: FILE UPLOAD
+        // =========================
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxSize) {
+                showToast('File quá lớn (max 10MB)', 'error');
+                return;
+            }
+
+            document.getElementById('file-loading').classList.add('show');
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                const fileName = file.name;
+                const fileType = file.type;
+
+                document.getElementById('file-info').innerHTML = `
+                    <strong>File:</strong> ${fileName} (${(file.size / 1024).toFixed(2)} KB)
+                    <br><strong>Type:</strong> ${fileType}
+                `;
+
+                // Preview content
+                let preview = content;
+                if (preview.length > 500) {
+                    preview = preview.substring(0, 500) + '...';
+                }
+                document.getElementById('file-content-preview').textContent = preview;
+                document.getElementById('file-preview').style.display = 'block';
+                document.getElementById('file-loading').classList.remove('show');
+
+                // Store file data for saving
+                window.uploadedFileData = {
+                    content: content,
+                    fileName: fileName,
+                    fileType: fileType
+                };
+            };
+
+            if (file.type.includes('text')) {
+                reader.readAsText(file);
+            } else if (file.name.endsWith('.csv')) {
+                reader.readAsText(file);
+            } else {
+                // For other types, try as text
+                reader.readAsText(file);
+            }
+        }
+
+        async function saveUploadedFile() {
+            if (!window.uploadedFileData) {
+                showToast('Không có file nào được chọn', 'error');
+                return;
+            }
+
+            const data = window.uploadedFileData;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'addFileContent',
+                        content: data.content,
+                        fileName: data.fileName,
+                        fileType: data.fileType,
+                        sourceType: 'upload'
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast(`✅ Lưu file thành công! (${result.count || 1} mục)`, 'success');
+                    document.getElementById('file-input').value = '';
+                    document.getElementById('file-preview').style.display = 'none';
+                    window.uploadedFileData = null;
+                    loadStats();
+                } else {
+                    showToast('❌ ' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('❌ Lỗi kết nối', 'error');
+            }
+        }
+
+        // =========================
+        // METHOD 3: YOUTUBE URLS
+        // =========================
+
+        async function processYoutubeUrls() {
+            const urls = document.getElementById('youtube-urls').value.trim().split('\n').filter(u => u.trim());
+            const course = document.getElementById('youtube-course-bulk').value.trim();
+
+            if (urls.length === 0 || !course) {
+                showToast('Vui lòng nhập URLs và chọn khóa học', 'error');
+                return;
+            }
+
+            document.getElementById('youtube-loading').classList.add('show');
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'extractYoutubeBulk',
+                        urls: urls,
+                        courseId: course
+                    })
+                });
+
+                const result = await response.json();
+                document.getElementById('youtube-loading').classList.remove('show');
+
+                if (result.success && result.videos) {
+                    renderYoutubePreview(result.videos);
+                    window.youtubeVideos = result.videos;
+                } else {
+                    showToast('❌ ' + (result.message || 'Lỗi xử lý'), 'error');
+                }
+            } catch (error) {
+                document.getElementById('youtube-loading').classList.remove('show');
+                console.error('Error:', error);
+                showToast('❌ Lỗi kết nối', 'error');
+            }
+        }
+
+        function renderYoutubePreview(videos) {
+            const table = document.getElementById('youtube-preview-table');
+            table.innerHTML = '';
+
+            videos.forEach((video, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><code style="font-size: 12px;">${video.videoId}</code></td>
+                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${video.title || 'N/A'}</td>
+                    <td>${video.channel || 'N/A'}</td>
+                    <td><span style="color: #10b981;">✓ Valid</span></td>
+                `;
+                table.appendChild(tr);
+            });
+
+            document.getElementById('youtube-preview').style.display = 'block';
+        }
+
+        async function saveYoutubeVideos() {
+            if (!window.youtubeVideos || window.youtubeVideos.length === 0) {
+                showToast('Không có video nào để lưu', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'addYoutubeVideos',
+                        videos: window.youtubeVideos,
+                        courseId: document.getElementById('youtube-course-bulk').value.trim()
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast(`✅ Lưu ${result.count || 0} video thành công!`, 'success');
+                    clearYoutubeForm();
+                    loadStats();
+                } else {
+                    showToast('❌ ' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('❌ Lỗi kết nối', 'error');
+            }
+        }
+
+        function clearYoutubeForm() {
+            document.getElementById('youtube-urls').value = '';
+            document.getElementById('youtube-preview').style.display = 'none';
+            window.youtubeVideos = null;
+        }
+
+        // =========================
+        // UTILITIES
+        // =========================
+
+        async function loadStats() {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'getDataStats'
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('stat-videos').textContent = result.stats.videos || 0;
+                    document.getElementById('stat-courses').textContent = result.stats.courses || 0;
+                    document.getElementById('stat-content').textContent = result.stats.content || 0;
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function loadAllData() {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'getAllData'
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success && result.data) {
+                    allData = result.data;
+                    renderManageTable(result.data);
+                    document.getElementById('manage-info').textContent = `Tổng: ${result.data.length} mục`;
+                    document.getElementById('manage-preview').style.display = 'block';
+                } else {
+                    showToast('Không có dữ liệu', 'info');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('❌ Lỗi kết nối', 'error');
+            }
+        }
+
+        function renderManageTable(data) {
+            const tbody = document.getElementById('manage-table-body');
+            tbody.innerHTML = '';
+
+            data.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.id || index + 1}</td>
+                    <td>${item.type || 'content'}</td>
+                    <td>${item.courseId || 'GENERAL'}</td>
+                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">${(item.content || item.title || '').substring(0, 50)}</td>
+                    <td>
+                        <button class="btn btn-secondary" style="font-size: 12px; padding: 5px 10px;" onclick="deleteItem('${item.id}')">
+                            Xóa
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function deleteItem(id) {
+            if (!confirm('Xóa mục này?')) return;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'deleteContent',
+                        id: id
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast('✅ Đã xóa', 'success');
+                    loadAllData();
+                } else {
+                    showToast('❌ Lỗi xóa', 'error');
+                }
+            } catch (error) {
+                showToast('❌ Lỗi kết nối', 'error');
+            }
+        }
+
+        function exportDataAsCSV() {
+            if (allData.length === 0) {
+                showToast('Không có dữ liệu để export', 'error');
+                return;
+            }
+
+            let csv = 'ID,Type,Course,Lesson,Content\n';
+            allData.forEach(item => {
+                const content = (item.content || item.title || '').replace(/"/g, '""').substring(0, 100);
+                csv += `"${item.id}","${item.type}","${item.courseId}","${item.lessonId}","${content}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `brk-ai-data-${new Date().toLocaleString('vi-VN').replace(/[\/:\s]/g, '-')}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            showToast('✅ Đã export CSV', 'success');
+        }
+
+        function clearAllDataConfirm() {
+            if (confirm('⚠️ Bạn chắc chắn muốn XÓA TẤT CẢ dữ liệu? Hành động này không thể hoàn tác!')) {
+                if (confirm('Xác nhận lần nữa: Xóa tất cả dữ liệu?')) {
+                    clearAllData();
+                }
+            }
+        }
+
+        async function clearAllData() {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'clearAllData'
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast('✅ Đã xóa tất cả dữ liệu', 'success');
+                    allData = [];
+                    document.getElementById('manage-preview').style.display = 'none';
+                    loadStats();
+                } else {
+                    showToast('❌ Lỗi xóa', 'error');
+                }
+            } catch (error) {
+                showToast('❌ Lỗi kết nối', 'error');
+            }
+        }
+
+        // Placeholder functions
+        async function loadFromGDrive() {
+            showToast('⏳ Tính năng đang phát triển...', 'info');
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            checkAdminSession();
+        });
+    </script>
+</body>
+
+</html>
