@@ -2013,7 +2013,7 @@ function getAllActivatedCoursesContent(userEmail) {
     if (!userEmail) return "❌ Không có email. Vui lòng đăng nhập!";
     
     const ss = getDB();
-    const contentSheet = ss.getSheetByName("KH_NoiDung");
+    const contentSheet = ss.getSheetByName("AI_Content"); // Changed from KH_NoiDung
     const youtubeSheet = ss.getSheetByName("YT_Videos");
     
     if (!contentSheet) return "⚠️ Không tìm thấy sheet nội dung khóa học";
@@ -2036,18 +2036,21 @@ function getAllActivatedCoursesContent(userEmail) {
       let lessonsContent = [];
       let videoContent = [];
       
-      // Lấy nội dung bài học từ KH_NoiDung sheet
+      // Lấy nội dung bài học từ AI_Content sheet
+      // AI_Content columns: ID(0), Type(1), Course ID(2), Lesson ID(3), Title(4), Content(5), Source(6), Added Date(7), Added By(8), Last Updated(9)
       for (let i = 1; i < contentData.length; i++) {
-        if (String(contentData[i][0]) === String(courseId)) {
+        if (String(contentData[i][2]) === String(courseId)) { // Column C = Course ID (index 2)
           if (!courseTitle) {
             courseTitle = getCourseTitle(courseId) || `Khóa học ${courseId}`;
           }
           
-          const lessonTitle = String(contentData[i][2] || "");
-          const lessonSummary = String(contentData[i][4] || "");
+          const lessonTitle = String(contentData[i][4] || ""); // Column E = Title (index 4)
+          const lessonContent = String(contentData[i][5] || ""); // Column F = Content (index 5)
           
-          if (lessonTitle && lessonSummary) {
-            lessonsContent.push(`- Bài: ${lessonTitle}\n  📝 ${lessonSummary}`);
+          if (lessonContent) {
+            // Use content with title if available
+            const contentPreview = lessonContent.substring(0, 500); // Limit to 500 chars for AI context
+            lessonsContent.push(`- Bài: ${lessonTitle || 'Nội dung khóa học'}\n  📝 ${contentPreview}${lessonContent.length > 500 ? '...' : ''}`);
           }
         }
       }
@@ -2097,29 +2100,39 @@ function getAllActivatedCoursesContent(userEmail) {
 function getStudentActivatedCourses(userEmail) {
   try {
     const ss = getDB();
-    const sheet = ss.getSheetByName("HocVien");
+    const lsDangKySheet = ss.getSheetByName("LS_DangKy");
     
-    if (!sheet) return [];
+    if (!lsDangKySheet) {
+      Logger.log("⚠️ Sheet LS_DangKy not found");
+      return [];
+    }
     
-    const data = sheet.getDataRange().getValues();
+    const data = lsDangKySheet.getDataRange().getValues();
+    
+    // LS_DangKy columns (0-indexed):
+    // 1: MÃ CODE (student identifier - can be email/phone/code)
+    // 14: Ma_Lop (Course code)
+    
+    const activatedCourses = [];
+    const userIdentifier = String(userEmail).trim();
     
     for (let i = 1; i < data.length; i++) {
-      if (String(data[i][0]) === String(userEmail)) {
-        // Cột K chứa danh sách khóa học đã kích hoạt (dạng JSON array)
-        const activatedCoursesStr = String(data[i][10] || "");  // Index 10 = Column K
-        
-        try {
-          return JSON.parse(activatedCoursesStr);
-        } catch (e) {
-          // Nếu không phải JSON, cố gắng parse theo định dạng cũ (comma-separated)
-          return activatedCoursesStr.split(',').map(c => c.trim()).filter(c => c);
+      const maCode = String(data[i][1] || "").trim();     // Column B: MÃ CODE
+      const maLop = String(data[i][14] || "").trim();     // Column O: Ma_Lop
+      
+      // Direct match: userEmail (email/phone/code) === MÃ CODE
+      if (maCode === userIdentifier && maLop) {
+        if (!activatedCourses.includes(maLop)) {
+          activatedCourses.push(maLop);
         }
       }
     }
     
-    return [];
+    Logger.log(`✅ Found ${activatedCourses.length} activated courses for ${userEmail}: ${activatedCourses.join(', ')}`);
+    return activatedCourses;
+    
   } catch (error) {
-    Logger.log("Error in getStudentActivatedCourses:", error);
+    Logger.log("❌ Error in getStudentActivatedCourses:", error);
     return [];
   }
 }
@@ -2838,5 +2851,103 @@ function listAvailableModels() {
   } catch (error) {
     Logger.log("💥 Exception: " + error.toString());
   }
+}
+// ========================================
+// DEBUG FUNCTION - BRK AI Authorization
+// ========================================
+// Run this to debug why user doesn't see course content
+function debugUserCourseAccess() {
+  const testEmail = "quelion0708@gmail.com";
+  
+  Logger.log("🔍 Starting BRK AI Debug for: " + testEmail);
+  Logger.log("=" + "=".repeat(50));
+  
+  // Step 1: Check LS_DangKy sheet
+  const ss = getDB();
+  const lsDangKySheet = ss.getSheetByName("LS_DangKy");
+  
+  if (!lsDangKySheet) {
+    Logger.log("❌ LS_DangKy sheet NOT FOUND!");
+    return;
+  }
+  
+  Logger.log("✅ LS_DangKy sheet found");
+  
+  const data = lsDangKySheet.getDataRange().getValues();
+  Logger.log(`📋 Total rows in LS_DangKy: ${data.length - 1}`);
+  
+  // Step 2: Find matching rows
+  Logger.log("\n🔎 Searching for matching rows...");
+  let matchCount = 0;
+  
+  for (let i = 1; i < data.length; i++) {
+    const maCode = String(data[i][1] || "").trim();
+    const maLop = String(data[i][14] || "").trim();
+    
+    if (maCode === testEmail) {
+      matchCount++;
+      Logger.log(`\n✅ MATCH found at row ${i + 1}:`);
+      Logger.log(`   MÃ CODE: ${maCode}`);
+      Logger.log(`   Ma_Lop: ${maLop}`);
+      Logger.log(`   Họ tên: ${data[i][2]}`);
+    }
+  }
+  
+  if (matchCount === 0) {
+    Logger.log("❌ NO MATCHES FOUND!");
+    Logger.log("📝 Sample MÃ CODE values from LS_DangKy:");
+    for (let i = 1; i < Math.min(6, data.length); i++) {
+      Logger.log(`   Row ${i + 1}: "${data[i][1]}"`);
+    }
+  } else {
+    Logger.log(`\n✅ Found ${matchCount} matching registration(s)`);
+  }
+  
+  // Step 3: Test getStudentActivatedCourses
+  Logger.log("\n" + "=".repeat(50));
+  Logger.log("🧪 Testing getStudentActivatedCourses()...");
+  const activatedCourses = getStudentActivatedCourses(testEmail);
+  Logger.log(`📚 Activated courses: ${JSON.stringify(activatedCourses)}`);
+  
+  // Step 4: Check AI_Content sheet
+  Logger.log("\n" + "=".repeat(50));
+  Logger.log("📊 Checking AI_Content sheet...");
+  
+  const aiContentSheet = ss.getSheetByName("AI_Content");
+  if (!aiContentSheet) {
+    Logger.log("❌ AI_Content sheet NOT FOUND!");
+    return;
+  }
+  
+  const contentData = aiContentSheet.getDataRange().getValues();
+  Logger.log(`✅ AI_Content sheet found with ${contentData.length - 1} rows`);
+  
+  // Check for NH course content
+  Logger.log("\n🔍 Looking for NH course content...");
+  let nhCount = 0;
+  
+  for (let i = 1; i < contentData.length; i++) {
+    const courseId = String(contentData[i][2] || "").trim();
+    if (courseId === "NH") {
+      nhCount++;
+      if (nhCount === 1) {
+        Logger.log(`✅ Found NH content at row ${i + 1}:`);
+        Logger.log(`   Title: ${contentData[i][4]}`);
+        Logger.log(`   Content preview: ${String(contentData[i][5] || "").substring(0, 100)}...`);
+      }
+    }
+  }
+  
+  Logger.log(`📝 Total NH course content rows: ${nhCount}`);
+  
+  // Step 5: Test getAllActivatedCoursesContent
+  Logger.log("\n" + "=".repeat(50));
+  Logger.log("🧪 Testing getAllActivatedCoursesContent()...");
+  const courseContent = getAllActivatedCoursesContent(testEmail);
+  Logger.log("📖 Course content returned:");
+  Logger.log(courseContent.substring(0, 500) + "...");
+  
+  Logger.log("\n" + "=".repeat(50));
+  Logger.log("✅ Debug complete!");
 }
 
