@@ -1182,7 +1182,7 @@ https://www.youtube.com/watch?v=ghi789"></textarea>
         showToast('🧹 Đã xóa form', 'info');
     }
 
-    function saveYoutubeUrls() {
+    function saveYoutubeVideos() {
         if (!window.youtubeVideos || window.youtubeVideos.length === 0) {
             showToast('Vui lòng xử lý URLs trước', 'error');
             return;
@@ -1199,6 +1199,97 @@ https://www.youtube.com/watch?v=ghi789"></textarea>
         
         showToast('✅ YouTube URLs đã được lưu', 'success');
         clearYoutubeForm();
+    }
+
+    // =========================
+    // MANAGE DATA FUNCTIONS
+    // =========================
+    function loadAllData() {
+        try {
+            const data = JSON.parse(localStorage.getItem('admin_data') || '[]');
+            allData = Array.isArray(data) ? data : [];
+            
+            const tbody = document.getElementById('manage-table-body');
+            if (!tbody) return;
+            
+            tbody.innerHTML = allData.map((item, idx) => `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td><span style="background: #e0e7ff; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${item.type}</span></td>
+                    <td>${item.course || item.fileName || 'N/A'}</td>
+                    <td>${(item.content || '').substring(0, 50)}...</td>
+                    <td>
+                        <button class="btn btn-sm" style="padding: 5px 10px; font-size: 12px; margin-right: 5px;" onclick="editData(${idx})">✏️ Sửa</button>
+                        <button class="btn btn-sm" style="padding: 5px 10px; font-size: 12px; background: #ef4444;" onclick="deleteData(${idx})">🗑️ Xóa</button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            if (allData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #999;">Không có dữ liệu. Thêm dữ liệu từ các tab khác.</td></tr>';
+            }
+            
+            showToast(`✅ Tải ${allData.length} items`, 'success');
+        } catch (e) {
+            console.error("Lỗi load data", e);
+            showToast('❌ Lỗi tải dữ liệu', 'error');
+        }
+    }
+
+    function editData(index) {
+        if (!allData[index]) return;
+        const item = allData[index];
+        showToast(`📝 Sửa item #${index + 1}`, 'info');
+        // TODO: Implement edit functionality
+    }
+
+    function deleteData(index) {
+        if (!allData[index]) return;
+        if (confirm('Bạn chắc chắn muốn xóa item này?')) {
+            allData.splice(index, 1);
+            localStorage.setItem('admin_data', JSON.stringify(allData));
+            loadAllData();
+            showToast('🗑️ Đã xóa item', 'success');
+        }
+    }
+
+    function exportDataAsCSV() {
+        if (allData.length === 0) {
+            showToast('Không có dữ liệu để export', 'error');
+            return;
+        }
+
+        const headers = ['ID', 'Type', 'Course', 'Content Preview', 'Timestamp'];
+        const rows = allData.map((item, idx) => [
+            idx + 1,
+            item.type,
+            item.course || item.fileName || 'N/A',
+            (item.content || '').substring(0, 50).replace(/"/g, '""'),
+            item.timestamp || new Date().toISOString()
+        ]);
+
+        const csv = [headers, ...rows].map(row => 
+            row.map(cell => `"${cell}"`).join(',')
+        ).join('\n');
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `brk-ai-data-${Date.now()}.csv`;
+        link.click();
+
+        showToast('✅ Đã export CSV', 'success');
+    }
+
+    function clearAllDataConfirm() {
+        if (confirm('⚠️ Bạn chắc chắn muốn xóa TẤT CẢ dữ liệu? Hành động này không thể hoàn tác!')) {
+            if (confirm('Xác nhận lần cuối: Xóa tất cả dữ liệu?')) {
+                allData = [];
+                localStorage.removeItem('admin_data');
+                loadAllData();
+                showToast('🗑️ Đã xóa tất cả dữ liệu', 'success');
+            }
+        }
     }
 
     // =========================
