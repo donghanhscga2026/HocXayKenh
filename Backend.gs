@@ -177,6 +177,7 @@ function doPost(e) {
 // CONFIG: DATABASE ID
 // ------------------------------------------------------------------
 const DB_ID = "1VWskTJhF6G_Y5SFMdaHsckeCn2H7hc03bEnGQ7UNn9A"; // New Data Source
+const FOLDER_ID = ""; // TODO: Thêm ID của Google Drive folder để lưu các file tài liệu học viên
 
 function getDB() {
   return SpreadsheetApp.openById(DB_ID);
@@ -809,92 +810,6 @@ function getCourseContent(email, courseId) {
   return { success: true, data: curriculum };
 }
 
-function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
-  const ss = getDB();
-  let progressSheet = ss.getSheetByName("KH_TienDo");
-  if (!progressSheet) {
-    // If sheet missing, create with STANDARD headers
-    progressSheet = ss.insertSheet("KH_TienDo");
-    // Append full standard headers A-U
-    progressSheet.appendRow([
-        COL_NAME_GHI_NHAN, COL_NAME_MA_CODE, COL_NAME_EMAIL, COL_NAME_TEN_HV, COL_NAME_MA_KH, COL_NAME_MA_BAI,
-        COL_NAME_HIEN_TAI, COL_NAME_XA_NHAT, COL_NAME_DIEM_VIDEO, COL_NAME_BHTDN, COL_NAME_DIEM_BHTDN,
-        COL_NAME_LINK_1, COL_NAME_LINK_2, COL_NAME_LINK_3, COL_NAME_DIEM_LINK,
-        COL_NAME_HO_TRO_1, COL_NAME_HO_TRO_2, COL_NAME_DIEM_DUNG_HAN, COL_NAME_TONG_DIEM, COL_NAME_XEP_LOAI, COL_NAME_TRANG_THAI
-    ]);
-  }
-  
-  // Get Dynamic Indexes
-  const idxEmail = getColumnIndex(progressSheet, COL_NAME_EMAIL);
-  const idxCourse = getColumnIndex(progressSheet, COL_NAME_MA_KH);
-  const idxLesson = getColumnIndex(progressSheet, COL_NAME_MA_BAI);
-  
-  if (idxEmail === -1 || idxCourse === -1 || idxLesson === -1) {
-      return { success: false, msg: "Cấu trúc Sheet không đúng (thiếu các cột định danh)." };
-  }
-
-  const data = progressSheet.getDataRange().getValues();
-  let foundRow = -1;
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][idxEmail]) == email && String(data[i][idxCourse]) == courseId && String(data[i][idxLesson]) == lessonId) {
-      foundRow = i + 1;
-      break;
-    }
-  }
-  
-  const percent = (currentTime / duration) * 100;
-  const isFinishedVideo = percent > 95;
-  
-  // Columns to Update
-  const idxCurTime = getColumnIndex(progressSheet, COL_NAME_HIEN_TAI);
-  const idxMaxTime = getColumnIndex(progressSheet, COL_NAME_XA_NHAT);
-  const idxStatus = getColumnIndex(progressSheet, COL_NAME_TRANG_THAI);
-  const idxTimestamp = getColumnIndex(progressSheet, COL_NAME_GHI_NHAN); // Optional: Update timestamp on view? No, maybe only on submit.
-
-  if (foundRow > 0) {
-    // Update existing row
-    
-    // 1. Current Time
-    if (idxCurTime !== -1) progressSheet.getRange(foundRow, idxCurTime + 1).setValue(currentTime);
-    
-    // 2. Max Time
-    if (idxMaxTime !== -1) {
-        const lastMax = Number(data[foundRow-1][idxMaxTime] || 0);
-        const newMax = Math.max(lastMax, currentTime);
-        progressSheet.getRange(foundRow, idxMaxTime + 1).setValue(newMax);
-    }
-    
-    // 3. Status
-    if (idxStatus !== -1) {
-        const currentStatus = data[foundRow-1][idxStatus];
-        if (isFinishedVideo && (currentStatus == "Available" || currentStatus == "Locked" || !currentStatus)) {
-           progressSheet.getRange(foundRow, idxStatus + 1).setValue("In Progress"); 
-        }
-    }
-    
-  } else {
-    // Append NEW Row - Construct Array based on Headers
-    const headers = progressSheet.getRange(1, 1, 1, progressSheet.getLastColumn()).getValues()[0];
-    const newRow = new Array(headers.length).fill(""); // Fill with empty strings
-    
-    // Fill known values
-    if (idxEmail !== -1) newRow[idxEmail] = email;
-    if (idxCourse !== -1) newRow[idxCourse] = courseId;
-    if (idxLesson !== -1) newRow[idxLesson] = lessonId;
-    if (idxCurTime !== -1) newRow[idxCurTime] = currentTime;
-    if (idxMaxTime !== -1) newRow[idxMaxTime] = currentTime;
-    if (idxStatus !== -1) newRow[idxStatus] = "In Progress";
-    if (idxTimestamp !== -1) newRow[idxTimestamp] = new Date(); // Record first seen time
-    
-    // Optional: Auto-fill Student Info if possible?
-    // For now, keep it simple.
-    
-    progressSheet.appendRow(newRow);
-  }
-  
-  return { success: true };
-}
-
 function submitAssignment(email, courseId, lessonId, assignmentLink) {
   const ss = getDB();
   const progressSheet = ss.getSheetByName("KH_TienDo");
@@ -1499,7 +1414,7 @@ function activateCourse(data) {
       return { success: false, message: "Không tìm thấy thông tin học viên!" };
     }
     
-    const studentInfo = getStudentInfo(data.email);
+    const studentInfo = getStudentInfoFromEmail(data.email);
     if (!studentInfo) {
       return { success: false, message: "Không tìm thấy thông tin học viên!" };
     }
@@ -2142,8 +2057,6 @@ function getAllActivatedCoursesContent(userEmail) {
   } catch (error) {
     Logger.log("Error in getAllActivatedCoursesContent:", error);
     return "⚠️ Lỗi khi tải nội dung khóa học.";
-  }
-}";
   }
 }
 
