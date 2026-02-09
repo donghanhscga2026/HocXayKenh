@@ -29,6 +29,20 @@ function doGet(e) {
   });
 }
 
+// Helper to trigger UrlFetchApp authorization from the Apps Script editor.
+// Run this function in the Apps Script UI (Run -> authorizeUrlFetchTest) and
+// accept the permission prompt. It performs a simple GET to httpbin.org.
+function authorizeUrlFetchTest() {
+  try {
+    var resp = UrlFetchApp.fetch('https://httpbin.org/get', { muteHttpExceptions: true });
+    Logger.log('authorizeUrlFetchTest response code: ' + resp.getResponseCode());
+    return returnJSON({ success: true, code: resp.getResponseCode() });
+  } catch (err) {
+    Logger.log('authorizeUrlFetchTest error: ' + err.toString());
+    return returnJSON({ success: false, error: err.toString() });
+  }
+}
+
 // ------------------------------------------------------------------
 // LOGGING SYSTEM
 // ------------------------------------------------------------------
