@@ -1964,9 +1964,9 @@ ${courseContexts}
       ]
     };
 
-    // Call Gemini API - Trying gemini-1.5-pro model
+    // Call Gemini API - Using gemini-flash-latest (stable, fast)
     const response = UrlFetchApp.fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'post',
         contentType: 'application/json',
@@ -2658,6 +2658,79 @@ function clearAllData() {
   }
 }
 // ========================================
+// ADD TEXT CONTENT FUNCTION
+// ========================================
+// Function to add text content from Admin Data Import module
+function addTextContent(data) {
+  try {
+    // Validate required fields
+    if (!data.courseId || !data.content) {
+      return { 
+        success: false, 
+        message: "Thiếu thông tin bắt buộc: courseId và content" 
+      };
+    }
+    
+    const ss = getDB();
+    let sheet = ss.getSheetByName("AI_Content");
+    
+    // Create sheet if it doesn't exist
+    if (!sheet) {
+      sheet = ss.insertSheet("AI_Content");
+      sheet.appendRow([
+        "ID",
+        "Type",
+        "Course ID",
+        "Lesson ID",
+        "Title",
+        "Content",
+        "Source",
+        "Added Date",
+        "Added By",
+        "Last Updated"
+      ]);
+      Logger.log("Created AI_Content sheet");
+    }
+    
+    // Generate unique ID
+    const contentId = `CONTENT_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+    
+    // Prepare data
+    const row = [
+      contentId,
+      "text_content",
+      data.courseId,
+      data.lessonId || `BAI_${Date.now()}`,
+      data.title || `Bài học ${data.courseId}`,
+      data.content,
+      data.source || "Admin Data Import",
+      new Date(),
+      "Admin",
+      new Date()
+    ];
+    
+    // Append to sheet
+    sheet.appendRow(row);
+    
+    Logger.log(`✅ Added text content: ${contentId} for course ${data.courseId}`);
+    
+    return {
+      success: true,
+      message: "Đã lưu nội dung thành công!",
+      contentId: contentId,
+      courseId: data.courseId
+    };
+    
+  } catch (error) {
+    Logger.log("❌ Error in addTextContent:", error);
+    return {
+      success: false,
+      message: "Lỗi: " + error.toString()
+    };
+  }
+}
+
+// ========================================
 // TEST FUNCTION - Gemini API Debug
 // ========================================
 // Run this function in Apps Script Editor to test Gemini API directly
@@ -2721,3 +2794,49 @@ function testGeminiAPI() {
   
   Logger.log("\n🏁 Test completed!");
 }
+
+// List available models for this API key
+function listAvailableModels() {
+  Logger.log("📋 Listing available Gemini models...");
+  
+  const GEMINI_API_KEY = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
+  
+  if (!GEMINI_API_KEY) {
+    Logger.log("❌ No API Key found!");
+    return;
+  }
+  
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`;
+    
+    const response = UrlFetchApp.fetch(url, {
+      method: 'get',
+      muteHttpExceptions: true
+    });
+    
+    const statusCode = response.getResponseCode();
+    Logger.log("Status Code: " + statusCode);
+    
+    if (statusCode === 200) {
+      const result = JSON.parse(response.getContentText());
+      Logger.log("✅ Available models:");
+      
+      if (result.models && result.models.length > 0) {
+        result.models.forEach(model => {
+          Logger.log("  - " + model.name);
+          Logger.log("    Methods: " + (model.supportedGenerationMethods || []).join(", "));
+        });
+      } else {
+        Logger.log("⚠️ No models available for this API key!");
+        Logger.log("Full response: " + JSON.stringify(result));
+      }
+    } else {
+      Logger.log("❌ Error listing models - Status: " + statusCode);
+      Logger.log("Response: " + response.getContentText());
+    }
+    
+  } catch (error) {
+    Logger.log("💥 Exception: " + error.toString());
+  }
+}
+

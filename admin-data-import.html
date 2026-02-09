@@ -453,6 +453,7 @@
                 transform: translateX(400px);
                 opacity: 0;
             }
+
             to {
                 transform: translateX(0);
                 opacity: 1;
@@ -481,8 +482,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         /* Stats */
@@ -668,8 +674,10 @@ Hỗ trợ format:
 
                 <div id="paste-preview" class="preview-section" style="display: none;">
                     <h4>📋 Preview</h4>
-                    <pre id="paste-preview-content" style="background: #f9fafb; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 12px; line-height: 1.6;"></pre>
-                    <button class="btn btn-primary" style="margin-top: 15px; width: 100%;" onclick="savePastedContent()">
+                    <pre id="paste-preview-content"
+                        style="background: #f9fafb; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 12px; line-height: 1.6;"></pre>
+                    <button class="btn btn-primary" style="margin-top: 15px; width: 100%;"
+                        onclick="savePastedContent()">
                         <i class="fas fa-save"></i> Lưu Nội Dung
                     </button>
                 </div>
@@ -695,7 +703,8 @@ Hỗ trợ format:
 
                     <input type="file" id="file-input" class="file-input" onchange="handleFileUpload(event)">
 
-                    <div style="margin-top: 20px; padding: 15px; background: #f0f0ff; border-radius: 8px; border-left: 4px solid #667eea;">
+                    <div
+                        style="margin-top: 20px; padding: 15px; background: #f0f0ff; border-radius: 8px; border-left: 4px solid #667eea;">
                         <p style="font-size: 13px; color: #666;">
                             <strong>💡 Mẹo:</strong> Để upload Google Docs/Sheets, lưu dưới dạng:
                         </p>
@@ -710,7 +719,9 @@ Hỗ trợ format:
                 <div id="file-preview" class="preview-section" style="display: none;">
                     <h4>📋 Preview File</h4>
                     <p id="file-info" style="font-size: 13px; color: #666; margin-bottom: 15px;"></p>
-                    <div id="file-content-preview" style="max-height: 300px; overflow-y: auto; background: #f9fafb; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px;"></div>
+                    <div id="file-content-preview"
+                        style="max-height: 300px; overflow-y: auto; background: #f9fafb; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px;">
+                    </div>
                     <button class="btn btn-primary" style="margin-top: 15px; width: 100%;" onclick="saveUploadedFile()">
                         <i class="fas fa-save"></i> Lưu File
                     </button>
@@ -745,7 +756,8 @@ Hỗ trợ format:
                         </div>
 
                         <p style="font-size: 12px; color: #999; margin-top: 10px;">
-                            <strong>Cách lấy ID:</strong> URL: https://drive.google.com/file/d/<strong>FILE_ID</strong>/view
+                            <strong>Cách lấy ID:</strong> URL:
+                            https://drive.google.com/file/d/<strong>FILE_ID</strong>/view
                         </p>
                     </div>
 
@@ -816,7 +828,8 @@ https://www.youtube.com/watch?v=ghi789"></textarea>
                         </thead>
                         <tbody id="youtube-preview-table"></tbody>
                     </table>
-                    <button class="btn btn-primary" style="margin-top: 15px; width: 100%;" onclick="saveYoutubeVideos()">
+                    <button class="btn btn-primary" style="margin-top: 15px; width: 100%;"
+                        onclick="saveYoutubeVideos()">
                         <i class="fas fa-save"></i> Lưu Tất Cả Videos
                     </button>
                 </div>
@@ -869,297 +882,321 @@ https://www.youtube.com/watch?v=ghi789"></textarea>
     <div id="toast" class="toast"></div>
 
     <script>
-    // Configuration - Đảm bảo URL này là chính xác
-    const API_URL = 'https://script.google.com/macros/s/AKfycbwd9qsO3FlcwNMOWBqPm5c7NWb0d5c8hMCd5o2YzeXlFOQMVayvHErqcUcWHrelojIbeA/exec';
-    
-    const ADMIN_CREDENTIALS = {
-        'admin@brk.edu': 'password123',
-        'admin@hocvien.edu': 'admin2024'
-    };
+        // Configuration - Đảm bảo URL này là chính xác
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwd9qsO3FlcwNMOWBqPm5c7NWb0d5c8hMCd5o2YzeXlFOQMVayvHErqcUcWHrelojIbeA/exec';
 
-    let currentAdmin = null;
-    let allData = [];
+        const ADMIN_CREDENTIALS = {
+            'admin@brk.edu': 'password123',
+            'admin@hocvien.edu': 'admin2024'
+        };
 
-    // =========================
-    // AUTHENTICATION
-    // =========================
+        let currentAdmin = null;
+        let allData = [];
 
-    function handleAdminLogin() {
-        // Lấy giá trị và xóa khoảng trắng
-        const emailInput = document.getElementById('admin-email');
-        const passwordInput = document.getElementById('admin-password');
-        
-        const email = emailInput.value.trim();
-        const password = passwordInput.value;
+        // =========================
+        // AUTHENTICATION
+        // =========================
 
-        console.log("Đang thử đăng nhập với:", email); // Dòng này để debug
+        function handleAdminLogin() {
+            // Lấy giá trị và xóa khoảng trắng
+            const emailInput = document.getElementById('admin-email');
+            const passwordInput = document.getElementById('admin-password');
 
-        if (!email || !password) {
-            showToast('Vui lòng nhập đầy đủ email và mật khẩu', 'error');
-            return;
-        }
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
 
-        // Kiểm tra thông tin đăng nhập
-        if (ADMIN_CREDENTIALS[email] && ADMIN_CREDENTIALS[email] === password) {
-            currentAdmin = email;
-            
-            // Lưu session vào localStorage
-            localStorage.setItem('admin_logged_in', JSON.stringify({
-                email: email,
-                timestamp: Date.now()
-            }));
-            
-            showAdminPanel();
-            showToast('✅ Đăng nhập thành công!', 'success');
-        } else {
-            showToast('❌ Email hoặc mật khẩu không đúng!', 'error');
-            passwordInput.value = ''; // Xóa mật khẩu sai
-        }
-    }
+            console.log("Đang thử đăng nhập với:", email); // Dòng này để debug
 
-    function showAdminPanel() {
-        console.log("Hiển thị bảng điều khiển...");
-        // Ẩn màn hình login và hiện màn hình chính
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('main-content').classList.add('show');
-        
-        // Cập nhật tên Admin
-        document.getElementById('admin-name').textContent = currentAdmin;
-        
-        // Load số liệu thống kê
-        loadStats();
-    }
+            if (!email || !password) {
+                showToast('Vui lòng nhập đầy đủ email và mật khẩu', 'error');
+                return;
+            }
 
-    function handleAdminLogout() {
-        if (confirm('Bạn chắc chắn muốn đăng xuất?')) {
-            currentAdmin = null;
-            localStorage.removeItem('admin_logged_in');
-            
-            // Reset form
-            document.getElementById('admin-email').value = '';
-            document.getElementById('admin-password').value = '';
-            
-            // Hiển thị lại màn hình login
-            document.getElementById('login-screen').style.display = 'flex';
-            document.getElementById('main-content').classList.remove('show');
-            
-            showToast('👋 Đã đăng xuất', 'info');
-        }
-    }
+            // Kiểm tra thông tin đăng nhập
+            if (ADMIN_CREDENTIALS[email] && ADMIN_CREDENTIALS[email] === password) {
+                currentAdmin = email;
 
-    function checkAdminSession() {
-        const stored = localStorage.getItem('admin_logged_in');
-        if (stored) {
-            try {
-                const data = JSON.parse(stored);
-                // Giới hạn session trong 24h
-                const oneDay = 24 * 60 * 60 * 1000;
-                if (Date.now() - data.timestamp < oneDay) {
-                    currentAdmin = data.email;
-                    showAdminPanel();
-                } else {
-                    localStorage.removeItem('admin_logged_in');
-                }
-            } catch (e) {
-                console.error("Lỗi kiểm tra session", e);
+                // Lưu session vào localStorage
+                localStorage.setItem('admin_logged_in', JSON.stringify({
+                    email: email,
+                    timestamp: Date.now()
+                }));
+
+                showAdminPanel();
+                showToast('✅ Đăng nhập thành công!', 'success');
+            } else {
+                showToast('❌ Email hoặc mật khẩu không đúng!', 'error');
+                passwordInput.value = ''; // Xóa mật khẩu sai
             }
         }
-    }
 
-    // =========================
-    // TAB SWITCHING
-    // =========================
-    function switchAdminTab(tabId) {
-        // Xóa class active ở tất cả các tab và nút
-        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        function showAdminPanel() {
+            console.log("Hiển thị bảng điều khiển...");
+            // Ẩn màn hình login và hiện màn hình chính
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-content').classList.add('show');
 
-        // Thêm class active vào tab được chọn
-        document.getElementById(tabId).classList.add('active');
-        
-        // Thêm class active vào nút đã nhấn (sử dụng event.currentTarget)
-        if (event && event.currentTarget) {
-            event.currentTarget.classList.add('active');
-        }
-    }
+            // Cập nhật tên Admin
+            document.getElementById('admin-name').textContent = currentAdmin;
 
-    // =========================
-    // TOAST NOTIFICATION
-    // =========================
-    function showToast(message, type = 'info') {
-        const toast = document.getElementById('toast');
-        toast.textContent = message;
-        toast.className = `toast ${type} show`;
-
-        // Tự động ẩn sau 3 giây
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 3000);
-    }
-
-    // =========================
-    // LOAD STATISTICS
-    // =========================
-    function loadStats() {
-        // Load từ localStorage hoặc API
-        try {
-            const stats = JSON.parse(localStorage.getItem('admin_stats') || '{"videos": 0, "courses": 0, "content": 0}');
-            document.getElementById('stat-videos').textContent = stats.videos || 0;
-            document.getElementById('stat-courses').textContent = stats.courses || 0;
-            document.getElementById('stat-content').textContent = stats.content || 0;
-        } catch (e) {
-            console.error("Lỗi load stats", e);
-            document.getElementById('stat-videos').textContent = 0;
-            document.getElementById('stat-courses').textContent = 0;
-            document.getElementById('stat-content').textContent = 0;
-        }
-    }
-
-    // =========================
-    // PASTE TEXT FUNCTIONS
-    // =========================
-    function previewPastedText() {
-        const content = document.getElementById('paste-content').value;
-        const course = document.getElementById('paste-course').value;
-        const lesson = document.getElementById('paste-lesson').value;
-
-        if (!content.trim()) {
-            showToast('Vui lòng dán nội dung trước', 'error');
-            return;
+            // Load số liệu thống kê
+            loadStats();
         }
 
-        const preview = {
-            course: course || 'N/A',
-            lesson: lesson || 'N/A',
-            content: content.substring(0, 200) + (content.length > 200 ? '...' : ''),
-            length: content.length
-        };
+        function handleAdminLogout() {
+            if (confirm('Bạn chắc chắn muốn đăng xuất?')) {
+                currentAdmin = null;
+                localStorage.removeItem('admin_logged_in');
 
-        document.getElementById('paste-preview-content').textContent = JSON.stringify(preview, null, 2);
-        document.getElementById('paste-preview').style.display = 'block';
-        showToast('✅ Xem preview thành công', 'success');
-    }
+                // Reset form
+                document.getElementById('admin-email').value = '';
+                document.getElementById('admin-password').value = '';
 
-    function clearPasteForm() {
-        document.getElementById('paste-content').value = '';
-        document.getElementById('paste-course').value = '';
-        document.getElementById('paste-lesson').value = '';
-        document.getElementById('paste-preview').style.display = 'none';
-        showToast('🧹 Đã xóa form', 'info');
-    }
+                // Hiển thị lại màn hình login
+                document.getElementById('login-screen').style.display = 'flex';
+                document.getElementById('main-content').classList.remove('show');
 
-    function savePastedContent() {
-        const content = document.getElementById('paste-content').value;
-        const course = document.getElementById('paste-course').value;
-        const lesson = document.getElementById('paste-lesson').value;
-
-        if (!content.trim()) {
-            showToast('Vui lòng dán nội dung trước', 'error');
-            return;
+                showToast('👋 Đã đăng xuất', 'info');
+            }
         }
 
-        const data = {
-            type: 'pasted_content',
-            course: course || 'N/A',
-            lesson: lesson || 'N/A',
-            content: content,
-            timestamp: new Date().toISOString()
-        };
-
-        // Lưu vào localStorage
-        allData.push(data);
-        localStorage.setItem('admin_data', JSON.stringify(allData));
-        
-        showToast('✅ Nội dung đã được lưu', 'success');
-        clearPasteForm();
-    }
-
-    // =========================
-    // FILE UPLOAD FUNCTIONS
-    // =========================
-    function handleFileUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        // Kiểm tra kích thước
-        if (file.size > 10 * 1024 * 1024) {
-            showToast('❌ File quá lớn (Max 10MB)', 'error');
-            return;
+        function checkAdminSession() {
+            const stored = localStorage.getItem('admin_logged_in');
+            if (stored) {
+                try {
+                    const data = JSON.parse(stored);
+                    // Giới hạn session trong 24h
+                    const oneDay = 24 * 60 * 60 * 1000;
+                    if (Date.now() - data.timestamp < oneDay) {
+                        currentAdmin = data.email;
+                        showAdminPanel();
+                    } else {
+                        localStorage.removeItem('admin_logged_in');
+                    }
+                } catch (e) {
+                    console.error("Lỗi kiểm tra session", e);
+                }
+            }
         }
 
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const content = e.target.result;
-            const fileInfo = `📄 ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
-            
-            document.getElementById('file-info').textContent = fileInfo;
-            document.getElementById('file-content-preview').textContent = content.substring(0, 500) + (content.length > 500 ? '\n...' : '');
-            document.getElementById('file-preview').style.display = 'block';
-            
-            // Lưu content tạm thời
-            window.fileContent = {
-                name: file.name,
-                type: file.type,
-                content: content,
-                size: file.size
+        // =========================
+        // TAB SWITCHING
+        // =========================
+        function switchAdminTab(tabId) {
+            // Xóa class active ở tất cả các tab và nút
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+            // Thêm class active vào tab được chọn
+            document.getElementById(tabId).classList.add('active');
+
+            // Thêm class active vào nút đã nhấn (sử dụng event.currentTarget)
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            }
+        }
+
+        // =========================
+        // TOAST NOTIFICATION
+        // =========================
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+
+            // Tự động ẩn sau 3 giây
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // =========================
+        // LOAD STATISTICS
+        // =========================
+        function loadStats() {
+            // Load từ localStorage hoặc API
+            try {
+                const stats = JSON.parse(localStorage.getItem('admin_stats') || '{"videos": 0, "courses": 0, "content": 0}');
+                document.getElementById('stat-videos').textContent = stats.videos || 0;
+                document.getElementById('stat-courses').textContent = stats.courses || 0;
+                document.getElementById('stat-content').textContent = stats.content || 0;
+            } catch (e) {
+                console.error("Lỗi load stats", e);
+                document.getElementById('stat-videos').textContent = 0;
+                document.getElementById('stat-courses').textContent = 0;
+                document.getElementById('stat-content').textContent = 0;
+            }
+        }
+
+        // =========================
+        // PASTE TEXT FUNCTIONS
+        // =========================
+        function previewPastedText() {
+            const content = document.getElementById('paste-content').value;
+            const course = document.getElementById('paste-course').value;
+            const lesson = document.getElementById('paste-lesson').value;
+
+            if (!content.trim()) {
+                showToast('Vui lòng dán nội dung trước', 'error');
+                return;
+            }
+
+            const preview = {
+                course: course || 'N/A',
+                lesson: lesson || 'N/A',
+                content: content.substring(0, 200) + (content.length > 200 ? '...' : ''),
+                length: content.length
             };
-        };
-        reader.readAsText(file);
-    }
 
-    function saveUploadedFile() {
-        if (!window.fileContent) {
-            showToast('Vui lòng chọn file trước', 'error');
-            return;
+            document.getElementById('paste-preview-content').textContent = JSON.stringify(preview, null, 2);
+            document.getElementById('paste-preview').style.display = 'block';
+            showToast('✅ Xem preview thành công', 'success');
         }
 
-        const data = {
-            type: 'uploaded_file',
-            fileName: window.fileContent.name,
-            fileType: window.fileContent.type,
-            content: window.fileContent.content,
-            timestamp: new Date().toISOString()
-        };
-
-        allData.push(data);
-        localStorage.setItem('admin_data', JSON.stringify(allData));
-        
-        showToast('✅ File đã được lưu', 'success');
-        document.getElementById('file-preview').style.display = 'none';
-        document.getElementById('file-input').value = '';
-    }
-
-    // =========================
-    // YOUTUBE FUNCTIONS
-    // =========================
-    function processYoutubeUrls() {
-        const urls = document.getElementById('youtube-urls').value.split('\n').filter(url => url.trim());
-        const course = document.getElementById('youtube-course-bulk').value;
-
-        if (urls.length === 0) {
-            showToast('Vui lòng nhập ít nhất một YouTube URL', 'error');
-            return;
+        function clearPasteForm() {
+            document.getElementById('paste-content').value = '';
+            document.getElementById('paste-course').value = '';
+            document.getElementById('paste-lesson').value = '';
+            document.getElementById('paste-preview').style.display = 'none';
+            showToast('🧹 Đã xóa form', 'info');
         }
 
-        if (!course) {
-            showToast('Vui lòng nhập mã khóa học', 'error');
-            return;
+        async function savePastedContent() {
+            const content = document.getElementById('paste-content').value;
+            const course = document.getElementById('paste-course').value;
+            const lesson = document.getElementById('paste-lesson').value;
+
+            if (!content.trim()) {
+                showToast('Vui lòng dán nội dung trước', 'error');
+                return;
+            }
+
+            if (!course.trim()) {
+                showToast('Vui lòng nhập mã khóa học (VD: NH)', 'error');
+                return;
+            }
+
+            showToast('⏳ Đang lưu vào database...', 'info');
+
+            try {
+                // Send to Backend API
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'addTextContent',
+                        courseId: course.trim(),
+                        lessonId: lesson.trim() || `BAI_${Date.now()}`,
+                        title: lesson.trim() || `Bài học ${course}`,
+                        content: content.trim(),
+                        source: 'Admin Data Import'
+                    })
+                });
+
+                const result = await response.json();
+                console.log('Backend response:', result);
+
+                if (result.success) {
+                    showToast('✅ Đã lưu vào database thành công!', 'success');
+                    clearPasteForm();
+
+                    // Update stats
+                    loadStats();
+                } else {
+                    showToast('❌ Lỗi: ' + (result.message || 'Không thể lưu'), 'error');
+                }
+
+            } catch (error) {
+                console.error('Save error:', error);
+                showToast('❌ Lỗi kết nối Backend: ' + error.message, 'error');
+            }
         }
 
-        const videos = urls.map((url, index) => ({
-            id: `YT_${Date.now()}_${index}`,
-            url: url.trim(),
-            course: course,
-            title: 'Video từ YouTube',
-            status: 'pending'
-        }));
+        // =========================
+        // FILE UPLOAD FUNCTIONS
+        // =========================
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-        document.getElementById('youtube-preview').style.display = 'block';
-        
-        // Hiển thị preview trong bảng
-        const previewTable = document.querySelector('#youtube-preview .preview-table tbody');
-        if (previewTable) {
-            previewTable.innerHTML = videos.map((video, idx) => `
+            // Kiểm tra kích thước
+            if (file.size > 10 * 1024 * 1024) {
+                showToast('❌ File quá lớn (Max 10MB)', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const content = e.target.result;
+                const fileInfo = `📄 ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+
+                document.getElementById('file-info').textContent = fileInfo;
+                document.getElementById('file-content-preview').textContent = content.substring(0, 500) + (content.length > 500 ? '\n...' : '');
+                document.getElementById('file-preview').style.display = 'block';
+
+                // Lưu content tạm thời
+                window.fileContent = {
+                    name: file.name,
+                    type: file.type,
+                    content: content,
+                    size: file.size
+                };
+            };
+            reader.readAsText(file);
+        }
+
+        function saveUploadedFile() {
+            if (!window.fileContent) {
+                showToast('Vui lòng chọn file trước', 'error');
+                return;
+            }
+
+            const data = {
+                type: 'uploaded_file',
+                fileName: window.fileContent.name,
+                fileType: window.fileContent.type,
+                content: window.fileContent.content,
+                timestamp: new Date().toISOString()
+            };
+
+            allData.push(data);
+            localStorage.setItem('admin_data', JSON.stringify(allData));
+
+            showToast('✅ File đã được lưu', 'success');
+            document.getElementById('file-preview').style.display = 'none';
+            document.getElementById('file-input').value = '';
+        }
+
+        // =========================
+        // YOUTUBE FUNCTIONS
+        // =========================
+        function processYoutubeUrls() {
+            const urls = document.getElementById('youtube-urls').value.split('\n').filter(url => url.trim());
+            const course = document.getElementById('youtube-course-bulk').value;
+
+            if (urls.length === 0) {
+                showToast('Vui lòng nhập ít nhất một YouTube URL', 'error');
+                return;
+            }
+
+            if (!course) {
+                showToast('Vui lòng nhập mã khóa học', 'error');
+                return;
+            }
+
+            const videos = urls.map((url, index) => ({
+                id: `YT_${Date.now()}_${index}`,
+                url: url.trim(),
+                course: course,
+                title: 'Video từ YouTube',
+                status: 'pending'
+            }));
+
+            document.getElementById('youtube-preview').style.display = 'block';
+
+            // Hiển thị preview trong bảng
+            const previewTable = document.querySelector('#youtube-preview .preview-table tbody');
+            if (previewTable) {
+                previewTable.innerHTML = videos.map((video, idx) => `
                 <tr>
                     <td>${idx + 1}</td>
                     <td><a href="${video.url}" target="_blank" style="color: #667eea;">${video.url.substring(0, 40)}...</a></td>
@@ -1167,52 +1204,52 @@ https://www.youtube.com/watch?v=ghi789"></textarea>
                     <td><span style="background: #fef08a; padding: 3px 8px; border-radius: 4px; font-size: 12px;">${video.status}</span></td>
                 </tr>
             `).join('');
+            }
+
+            showToast(`✅ Xử lý ${videos.length} URLs`, 'success');
+
+            // Lưu tạm thời
+            window.youtubeVideos = videos;
         }
 
-        showToast(`✅ Xử lý ${videos.length} URLs`, 'success');
-        
-        // Lưu tạm thời
-        window.youtubeVideos = videos;
-    }
-
-    function clearYoutubeForm() {
-        document.getElementById('youtube-urls').value = '';
-        document.getElementById('youtube-course-bulk').value = '';
-        document.getElementById('youtube-preview').style.display = 'none';
-        showToast('🧹 Đã xóa form', 'info');
-    }
-
-    function saveYoutubeVideos() {
-        if (!window.youtubeVideos || window.youtubeVideos.length === 0) {
-            showToast('Vui lòng xử lý URLs trước', 'error');
-            return;
+        function clearYoutubeForm() {
+            document.getElementById('youtube-urls').value = '';
+            document.getElementById('youtube-course-bulk').value = '';
+            document.getElementById('youtube-preview').style.display = 'none';
+            showToast('🧹 Đã xóa form', 'info');
         }
 
-        const data = {
-            type: 'youtube_urls',
-            videos: window.youtubeVideos,
-            timestamp: new Date().toISOString()
-        };
+        function saveYoutubeVideos() {
+            if (!window.youtubeVideos || window.youtubeVideos.length === 0) {
+                showToast('Vui lòng xử lý URLs trước', 'error');
+                return;
+            }
 
-        allData.push(data);
-        localStorage.setItem('admin_data', JSON.stringify(allData));
-        
-        showToast('✅ YouTube URLs đã được lưu', 'success');
-        clearYoutubeForm();
-    }
+            const data = {
+                type: 'youtube_urls',
+                videos: window.youtubeVideos,
+                timestamp: new Date().toISOString()
+            };
 
-    // =========================
-    // MANAGE DATA FUNCTIONS
-    // =========================
-    function loadAllData() {
-        try {
-            const data = JSON.parse(localStorage.getItem('admin_data') || '[]');
-            allData = Array.isArray(data) ? data : [];
-            
-            const tbody = document.getElementById('manage-table-body');
-            if (!tbody) return;
-            
-            tbody.innerHTML = allData.map((item, idx) => `
+            allData.push(data);
+            localStorage.setItem('admin_data', JSON.stringify(allData));
+
+            showToast('✅ YouTube URLs đã được lưu', 'success');
+            clearYoutubeForm();
+        }
+
+        // =========================
+        // MANAGE DATA FUNCTIONS
+        // =========================
+        function loadAllData() {
+            try {
+                const data = JSON.parse(localStorage.getItem('admin_data') || '[]');
+                allData = Array.isArray(data) ? data : [];
+
+                const tbody = document.getElementById('manage-table-body');
+                if (!tbody) return;
+
+                tbody.innerHTML = allData.map((item, idx) => `
                 <tr>
                     <td>${idx + 1}</td>
                     <td><span style="background: #e0e7ff; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${item.type}</span></td>
@@ -1224,110 +1261,110 @@ https://www.youtube.com/watch?v=ghi789"></textarea>
                     </td>
                 </tr>
             `).join('');
-            
-            if (allData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #999;">Không có dữ liệu. Thêm dữ liệu từ các tab khác.</td></tr>';
+
+                if (allData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #999;">Không có dữ liệu. Thêm dữ liệu từ các tab khác.</td></tr>';
+                }
+
+                showToast(`✅ Tải ${allData.length} items`, 'success');
+            } catch (e) {
+                console.error("Lỗi load data", e);
+                showToast('❌ Lỗi tải dữ liệu', 'error');
             }
-            
-            showToast(`✅ Tải ${allData.length} items`, 'success');
-        } catch (e) {
-            console.error("Lỗi load data", e);
-            showToast('❌ Lỗi tải dữ liệu', 'error');
-        }
-    }
-
-    function editData(index) {
-        if (!allData[index]) return;
-        const item = allData[index];
-        showToast(`📝 Sửa item #${index + 1}`, 'info');
-        // TODO: Implement edit functionality
-    }
-
-    function deleteData(index) {
-        if (!allData[index]) return;
-        if (confirm('Bạn chắc chắn muốn xóa item này?')) {
-            allData.splice(index, 1);
-            localStorage.setItem('admin_data', JSON.stringify(allData));
-            loadAllData();
-            showToast('🗑️ Đã xóa item', 'success');
-        }
-    }
-
-    function exportDataAsCSV() {
-        if (allData.length === 0) {
-            showToast('Không có dữ liệu để export', 'error');
-            return;
         }
 
-        const headers = ['ID', 'Type', 'Course', 'Content Preview', 'Timestamp'];
-        const rows = allData.map((item, idx) => [
-            idx + 1,
-            item.type,
-            item.course || item.fileName || 'N/A',
-            (item.content || '').substring(0, 50).replace(/"/g, '""'),
-            item.timestamp || new Date().toISOString()
-        ]);
+        function editData(index) {
+            if (!allData[index]) return;
+            const item = allData[index];
+            showToast(`📝 Sửa item #${index + 1}`, 'info');
+            // TODO: Implement edit functionality
+        }
 
-        const csv = [headers, ...rows].map(row => 
-            row.map(cell => `"${cell}"`).join(',')
-        ).join('\n');
-
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `brk-ai-data-${Date.now()}.csv`;
-        link.click();
-
-        showToast('✅ Đã export CSV', 'success');
-    }
-
-    function clearAllDataConfirm() {
-        if (confirm('⚠️ Bạn chắc chắn muốn xóa TẤT CẢ dữ liệu? Hành động này không thể hoàn tác!')) {
-            if (confirm('Xác nhận lần cuối: Xóa tất cả dữ liệu?')) {
-                allData = [];
-                localStorage.removeItem('admin_data');
+        function deleteData(index) {
+            if (!allData[index]) return;
+            if (confirm('Bạn chắc chắn muốn xóa item này?')) {
+                allData.splice(index, 1);
+                localStorage.setItem('admin_data', JSON.stringify(allData));
                 loadAllData();
-                showToast('🗑️ Đã xóa tất cả dữ liệu', 'success');
+                showToast('🗑️ Đã xóa item', 'success');
             }
         }
-    }
 
-    // =========================
-    // GOOGLE DRIVE FUNCTIONS
-    // =========================
-    function loadFromGDrive() {
-        const driveId = document.getElementById('gdrive-id').value;
-        if (!driveId) {
-            showToast('Vui lòng nhập Google Drive ID', 'error');
-            return;
+        function exportDataAsCSV() {
+            if (allData.length === 0) {
+                showToast('Không có dữ liệu để export', 'error');
+                return;
+            }
+
+            const headers = ['ID', 'Type', 'Course', 'Content Preview', 'Timestamp'];
+            const rows = allData.map((item, idx) => [
+                idx + 1,
+                item.type,
+                item.course || item.fileName || 'N/A',
+                (item.content || '').substring(0, 50).replace(/"/g, '""'),
+                item.timestamp || new Date().toISOString()
+            ]);
+
+            const csv = [headers, ...rows].map(row =>
+                row.map(cell => `"${cell}"`).join(',')
+            ).join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `brk-ai-data-${Date.now()}.csv`;
+            link.click();
+
+            showToast('✅ Đã export CSV', 'success');
         }
 
-        showToast('⏳ Đang tải từ Google Drive...', 'info');
-        
-        // Tạm thời hiển thị thông báo
-        document.getElementById('gdrive-files').style.display = 'block';
-        document.getElementById('gdrive-list').innerHTML = `
+        function clearAllDataConfirm() {
+            if (confirm('⚠️ Bạn chắc chắn muốn xóa TẤT CẢ dữ liệu? Hành động này không thể hoàn tác!')) {
+                if (confirm('Xác nhận lần cuối: Xóa tất cả dữ liệu?')) {
+                    allData = [];
+                    localStorage.removeItem('admin_data');
+                    loadAllData();
+                    showToast('🗑️ Đã xóa tất cả dữ liệu', 'success');
+                }
+            }
+        }
+
+        // =========================
+        // GOOGLE DRIVE FUNCTIONS
+        // =========================
+        function loadFromGDrive() {
+            const driveId = document.getElementById('gdrive-id').value;
+            if (!driveId) {
+                showToast('Vui lòng nhập Google Drive ID', 'error');
+                return;
+            }
+
+            showToast('⏳ Đang tải từ Google Drive...', 'info');
+
+            // Tạm thời hiển thị thông báo
+            document.getElementById('gdrive-files').style.display = 'block';
+            document.getElementById('gdrive-list').innerHTML = `
             <div style="padding: 20px; text-align: center; color: #999;">
                 <p>Tính năng này yêu cầu Google OAuth. Hiện tại chưa được cấu hình.</p>
                 <p style="font-size: 12px; margin-top: 10px;">ID nhập vào: ${driveId}</p>
             </div>
         `;
-    }
+        }
 
-    // =========================
-    // Khởi tạo khi trang web tải xong
-    // =========================
-    window.addEventListener('load', () => {
-        checkAdminSession();
-        
-        // Thêm sự kiện nhấn phím Enter để đăng nhập cho tiện
-        document.getElementById('admin-password').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                handleAdminLogin();
-            }
+        // =========================
+        // Khởi tạo khi trang web tải xong
+        // =========================
+        window.addEventListener('load', () => {
+            checkAdminSession();
+
+            // Thêm sự kiện nhấn phím Enter để đăng nhập cho tiện
+            document.getElementById('admin-password').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    handleAdminLogin();
+                }
+            });
         });
-    });
-</script>
+    </script>
 </body>
 
 </html>
