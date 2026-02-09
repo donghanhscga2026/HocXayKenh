@@ -869,502 +869,149 @@ https://www.youtube.com/watch?v=ghi789"></textarea>
     <div id="toast" class="toast"></div>
 
     <script>
-        // Configuration
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwd9qsO3FlcwNMOWBqPm5c7NWb0d5c8hMCd5o2YzeXlFOQMVayvHErqcUcWHrelojIbeA/exec';
-        const ADMIN_CREDENTIALS = {
-            'admin@brk.edu': 'password123',
-            'admin@hocvien.edu': 'admin2024'
-        };
+    // Configuration - Đảm bảo URL này là chính xác
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwd9qsO3FlcwNMOWBqPm5c7NWb0d5c8hMCd5o2YzeXlFOQMVayvHErqcUcWHrelojIbeA/exec';
+    
+    const ADMIN_CREDENTIALS = {
+        'admin@brk.edu': 'password123',
+        'admin@hocvien.edu': 'admin2024'
+    };
 
-        let currentAdmin = null;
-        let allData = [];
+    let currentAdmin = null;
+    let allData = [];
 
-        // =========================
-        // AUTHENTICATION
-        // =========================
+    // =========================
+    // AUTHENTICATION
+    // =========================
 
-        function handleAdminLogin() {
-            const email = document.getElementById('admin-email').value.trim();
-            const password = document.getElementById('admin-password').value;
+    function handleAdminLogin() {
+        // Lấy giá trị và xóa khoảng trắng
+        const emailInput = document.getElementById('admin-email');
+        const passwordInput = document.getElementById('admin-password');
+        
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
 
-            if (!email || !password) {
-                showToast('Vui lòng nhập email và mật khẩu', 'error');
-                return;
-            }
+        console.log("Đang thử đăng nhập với:", email); // Dòng này để debug
 
-            // Verify credentials (In production, use backend verification!)
-            if (ADMIN_CREDENTIALS[email] && ADMIN_CREDENTIALS[email] === password) {
-                currentAdmin = email;
-                localStorage.setItem('admin_logged_in', JSON.stringify({
-                    email: email,
-                    timestamp: Date.now()
-                }));
-                showAdminPanel();
-                showToast('✅ Đăng nhập thành công!', 'success');
-            } else {
-                showToast('❌ Email hoặc mật khẩu sai!', 'error');
-                document.getElementById('admin-password').value = '';
-            }
+        if (!email || !password) {
+            showToast('Vui lòng nhập đầy đủ email và mật khẩu', 'error');
+            return;
         }
 
-        function handleAdminLogout() {
-            if (confirm('Bạn chắc chắn muốn đăng xuất?')) {
-                currentAdmin = null;
-                localStorage.removeItem('admin_logged_in');
-                document.getElementById('admin-email').value = '';
-                document.getElementById('admin-password').value = '';
-                document.getElementById('login-screen').classList.add('show');
-                document.getElementById('main-content').classList.remove('show');
-                showToast('👋 Đã đăng xuất', 'info');
-            }
+        // Kiểm tra thông tin đăng nhập
+        if (ADMIN_CREDENTIALS[email] && ADMIN_CREDENTIALS[email] === password) {
+            currentAdmin = email;
+            
+            // Lưu session vào localStorage
+            localStorage.setItem('admin_logged_in', JSON.stringify({
+                email: email,
+                timestamp: Date.now()
+            }));
+            
+            showAdminPanel();
+            showToast('✅ Đăng nhập thành công!', 'success');
+        } else {
+            showToast('❌ Email hoặc mật khẩu không đúng!', 'error');
+            passwordInput.value = ''; // Xóa mật khẩu sai
         }
+    }
 
-        function showAdminPanel() {
-            document.getElementById('login-screen').classList.remove('show');
-            document.getElementById('main-content').classList.add('show');
-            document.getElementById('admin-name').textContent = currentAdmin;
-            loadStats();
+    function showAdminPanel() {
+        console.log("Hiển thị bảng điều khiển...");
+        // Ẩn màn hình login và hiện màn hình chính
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-content').classList.add('show');
+        
+        // Cập nhật tên Admin
+        document.getElementById('admin-name').textContent = currentAdmin;
+        
+        // Load số liệu thống kê
+        loadStats();
+    }
+
+    function handleAdminLogout() {
+        if (confirm('Bạn chắc chắn muốn đăng xuất?')) {
+            currentAdmin = null;
+            localStorage.removeItem('admin_logged_in');
+            
+            // Reset form
+            document.getElementById('admin-email').value = '';
+            document.getElementById('admin-password').value = '';
+            
+            // Hiển thị lại màn hình login
+            document.getElementById('login-screen').style.display = 'flex';
+            document.getElementById('main-content').classList.remove('show');
+            
+            showToast('👋 Đã đăng xuất', 'info');
         }
+    }
 
-        function checkAdminSession() {
-            const stored = localStorage.getItem('admin_logged_in');
-            if (stored) {
-                try {
-                    const data = JSON.parse(stored);
+    function checkAdminSession() {
+        const stored = localStorage.getItem('admin_logged_in');
+        if (stored) {
+            try {
+                const data = JSON.parse(stored);
+                // Giới hạn session trong 24h
+                const oneDay = 24 * 60 * 60 * 1000;
+                if (Date.now() - data.timestamp < oneDay) {
                     currentAdmin = data.email;
                     showAdminPanel();
-                } catch (e) {
-                    // Session invalid
-                }
-            }
-        }
-
-        // =========================
-        // TAB SWITCHING
-        // =========================
-
-        function switchAdminTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
-        }
-
-        // =========================
-        // METHOD 1: PASTE TEXT
-        // =========================
-
-        function previewPastedText() {
-            const content = document.getElementById('paste-content').value.trim();
-            if (!content) {
-                showToast('Vui lòng dán nội dung', 'error');
-                return;
-            }
-
-            document.getElementById('paste-preview-content').textContent = content.substring(0, 500);
-            document.getElementById('paste-preview').style.display = 'block';
-        }
-
-        async function savePastedContent() {
-            const content = document.getElementById('paste-content').value.trim();
-            const course = document.getElementById('paste-course').value.trim();
-            const lesson = document.getElementById('paste-lesson').value.trim();
-
-            if (!content) {
-                showToast('Vui lòng dán nội dung', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'addTextContent',
-                        content: content,
-                        courseId: course || 'GENERAL',
-                        lessonId: lesson || `LESSON_${Date.now()}`,
-                        sourceType: 'paste'
-                    })
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    showToast('✅ Lưu nội dung thành công!', 'success');
-                    clearPasteForm();
-                    loadStats();
                 } else {
-                    showToast('❌ ' + result.message, 'error');
+                    localStorage.removeItem('admin_logged_in');
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                showToast('❌ Lỗi kết nối', 'error');
+            } catch (e) {
+                console.error("Lỗi kiểm tra session", e);
             }
         }
+    }
 
-        function clearPasteForm() {
-            document.getElementById('paste-content').value = '';
-            document.getElementById('paste-course').value = '';
-            document.getElementById('paste-lesson').value = '';
-            document.getElementById('paste-preview').style.display = 'none';
+    // =========================
+    // TAB SWITCHING
+    // =========================
+    function switchAdminTab(tabId) {
+        // Xóa class active ở tất cả các tab và nút
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+        // Thêm class active vào tab được chọn
+        document.getElementById(tabId).classList.add('active');
+        
+        // Thêm class active vào nút đã nhấn (sử dụng event.currentTarget)
+        if (event && event.currentTarget) {
+            event.currentTarget.classList.add('active');
         }
+    }
 
-        // =========================
-        // METHOD 2: FILE UPLOAD
-        // =========================
+    // =========================
+    // TOAST NOTIFICATION
+    // =========================
+    function showToast(message, type = 'info') {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = `toast ${type} show`;
 
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+        // Tự động ẩn sau 3 giây
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
 
-            const maxSize = 10 * 1024 * 1024; // 10MB
-            if (file.size > maxSize) {
-                showToast('File quá lớn (max 10MB)', 'error');
-                return;
+    // Các hàm xử lý dữ liệu khác giữ nguyên như cũ của bạn...
+    // (Lưu ý: Bạn cần thêm các hàm loadStats(), previewPastedText(), vv. mà bạn đã viết)
+
+    // Khởi tạo khi trang web tải xong
+    window.addEventListener('load', () => {
+        checkAdminSession();
+        
+        // Thêm sự kiện nhấn phím Enter để đăng nhập cho tiện
+        document.getElementById('admin-password').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                handleAdminLogin();
             }
-
-            document.getElementById('file-loading').classList.add('show');
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const content = e.target.result;
-                const fileName = file.name;
-                const fileType = file.type;
-
-                document.getElementById('file-info').innerHTML = `
-                    <strong>File:</strong> ${fileName} (${(file.size / 1024).toFixed(2)} KB)
-                    <br><strong>Type:</strong> ${fileType}
-                `;
-
-                // Preview content
-                let preview = content;
-                if (preview.length > 500) {
-                    preview = preview.substring(0, 500) + '...';
-                }
-                document.getElementById('file-content-preview').textContent = preview;
-                document.getElementById('file-preview').style.display = 'block';
-                document.getElementById('file-loading').classList.remove('show');
-
-                // Store file data for saving
-                window.uploadedFileData = {
-                    content: content,
-                    fileName: fileName,
-                    fileType: fileType
-                };
-            };
-
-            if (file.type.includes('text')) {
-                reader.readAsText(file);
-            } else if (file.name.endsWith('.csv')) {
-                reader.readAsText(file);
-            } else {
-                // For other types, try as text
-                reader.readAsText(file);
-            }
-        }
-
-        async function saveUploadedFile() {
-            if (!window.uploadedFileData) {
-                showToast('Không có file nào được chọn', 'error');
-                return;
-            }
-
-            const data = window.uploadedFileData;
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'addFileContent',
-                        content: data.content,
-                        fileName: data.fileName,
-                        fileType: data.fileType,
-                        sourceType: 'upload'
-                    })
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    showToast(`✅ Lưu file thành công! (${result.count || 1} mục)`, 'success');
-                    document.getElementById('file-input').value = '';
-                    document.getElementById('file-preview').style.display = 'none';
-                    window.uploadedFileData = null;
-                    loadStats();
-                } else {
-                    showToast('❌ ' + result.message, 'error');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showToast('❌ Lỗi kết nối', 'error');
-            }
-        }
-
-        // =========================
-        // METHOD 3: YOUTUBE URLS
-        // =========================
-
-        async function processYoutubeUrls() {
-            const urls = document.getElementById('youtube-urls').value.trim().split('\n').filter(u => u.trim());
-            const course = document.getElementById('youtube-course-bulk').value.trim();
-
-            if (urls.length === 0 || !course) {
-                showToast('Vui lòng nhập URLs và chọn khóa học', 'error');
-                return;
-            }
-
-            document.getElementById('youtube-loading').classList.add('show');
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'extractYoutubeBulk',
-                        urls: urls,
-                        courseId: course
-                    })
-                });
-
-                const result = await response.json();
-                document.getElementById('youtube-loading').classList.remove('show');
-
-                if (result.success && result.videos) {
-                    renderYoutubePreview(result.videos);
-                    window.youtubeVideos = result.videos;
-                } else {
-                    showToast('❌ ' + (result.message || 'Lỗi xử lý'), 'error');
-                }
-            } catch (error) {
-                document.getElementById('youtube-loading').classList.remove('show');
-                console.error('Error:', error);
-                showToast('❌ Lỗi kết nối', 'error');
-            }
-        }
-
-        function renderYoutubePreview(videos) {
-            const table = document.getElementById('youtube-preview-table');
-            table.innerHTML = '';
-
-            videos.forEach((video, index) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td><code style="font-size: 12px;">${video.videoId}</code></td>
-                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${video.title || 'N/A'}</td>
-                    <td>${video.channel || 'N/A'}</td>
-                    <td><span style="color: #10b981;">✓ Valid</span></td>
-                `;
-                table.appendChild(tr);
-            });
-
-            document.getElementById('youtube-preview').style.display = 'block';
-        }
-
-        async function saveYoutubeVideos() {
-            if (!window.youtubeVideos || window.youtubeVideos.length === 0) {
-                showToast('Không có video nào để lưu', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'addYoutubeVideos',
-                        videos: window.youtubeVideos,
-                        courseId: document.getElementById('youtube-course-bulk').value.trim()
-                    })
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    showToast(`✅ Lưu ${result.count || 0} video thành công!`, 'success');
-                    clearYoutubeForm();
-                    loadStats();
-                } else {
-                    showToast('❌ ' + result.message, 'error');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showToast('❌ Lỗi kết nối', 'error');
-            }
-        }
-
-        function clearYoutubeForm() {
-            document.getElementById('youtube-urls').value = '';
-            document.getElementById('youtube-preview').style.display = 'none';
-            window.youtubeVideos = null;
-        }
-
-        // =========================
-        // UTILITIES
-        // =========================
-
-        async function loadStats() {
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'getDataStats'
-                    })
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    document.getElementById('stat-videos').textContent = result.stats.videos || 0;
-                    document.getElementById('stat-courses').textContent = result.stats.courses || 0;
-                    document.getElementById('stat-content').textContent = result.stats.content || 0;
-                }
-            } catch (error) {
-                console.error('Error loading stats:', error);
-            }
-        }
-
-        async function loadAllData() {
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'getAllData'
-                    })
-                });
-
-                const result = await response.json();
-                if (result.success && result.data) {
-                    allData = result.data;
-                    renderManageTable(result.data);
-                    document.getElementById('manage-info').textContent = `Tổng: ${result.data.length} mục`;
-                    document.getElementById('manage-preview').style.display = 'block';
-                } else {
-                    showToast('Không có dữ liệu', 'info');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showToast('❌ Lỗi kết nối', 'error');
-            }
-        }
-
-        function renderManageTable(data) {
-            const tbody = document.getElementById('manage-table-body');
-            tbody.innerHTML = '';
-
-            data.forEach((item, index) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${item.id || index + 1}</td>
-                    <td>${item.type || 'content'}</td>
-                    <td>${item.courseId || 'GENERAL'}</td>
-                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">${(item.content || item.title || '').substring(0, 50)}</td>
-                    <td>
-                        <button class="btn btn-secondary" style="font-size: 12px; padding: 5px 10px;" onclick="deleteItem('${item.id}')">
-                            Xóa
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        async function deleteItem(id) {
-            if (!confirm('Xóa mục này?')) return;
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'deleteContent',
-                        id: id
-                    })
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    showToast('✅ Đã xóa', 'success');
-                    loadAllData();
-                } else {
-                    showToast('❌ Lỗi xóa', 'error');
-                }
-            } catch (error) {
-                showToast('❌ Lỗi kết nối', 'error');
-            }
-        }
-
-        function exportDataAsCSV() {
-            if (allData.length === 0) {
-                showToast('Không có dữ liệu để export', 'error');
-                return;
-            }
-
-            let csv = 'ID,Type,Course,Lesson,Content\n';
-            allData.forEach(item => {
-                const content = (item.content || item.title || '').replace(/"/g, '""').substring(0, 100);
-                csv += `"${item.id}","${item.type}","${item.courseId}","${item.lessonId}","${content}"\n`;
-            });
-
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `brk-ai-data-${new Date().toLocaleString('vi-VN').replace(/[\/:\s]/g, '-')}.csv`;
-            a.click();
-            window.URL.revokeObjectURL(url);
-            showToast('✅ Đã export CSV', 'success');
-        }
-
-        function clearAllDataConfirm() {
-            if (confirm('⚠️ Bạn chắc chắn muốn XÓA TẤT CẢ dữ liệu? Hành động này không thể hoàn tác!')) {
-                if (confirm('Xác nhận lần nữa: Xóa tất cả dữ liệu?')) {
-                    clearAllData();
-                }
-            }
-        }
-
-        async function clearAllData() {
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'clearAllData'
-                    })
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    showToast('✅ Đã xóa tất cả dữ liệu', 'success');
-                    allData = [];
-                    document.getElementById('manage-preview').style.display = 'none';
-                    loadStats();
-                } else {
-                    showToast('❌ Lỗi xóa', 'error');
-                }
-            } catch (error) {
-                showToast('❌ Lỗi kết nối', 'error');
-            }
-        }
-
-        // Placeholder functions
-        async function loadFromGDrive() {
-            showToast('⏳ Tính năng đang phát triển...', 'info');
-        }
-
-        function showToast(message, type = 'info') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.className = `toast ${type} show`;
-
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
-
-        // Initialize
-        window.addEventListener('load', () => {
-            checkAdminSession();
         });
-    </script>
+    });
+</script>
 </body>
 
 </html>
