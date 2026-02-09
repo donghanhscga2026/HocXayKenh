@@ -13,6 +13,6 @@
   "dependencies": {},
   "webapp": {
     "access": "ANYONE",
-    "executeAs": "USER_ACCESSING"
+    "executeAs": "USER_DEPLOYING"
   }
 }
