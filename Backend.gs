@@ -2845,223 +2845,19 @@ function addTextContent(data) {
   }
 }
 
-  if (!GEMINI_API_KEY) {
-    Logger.log("❌ No API Key found!");
-    return;
-  }
-  
-  Logger.log("✅ API Key found: " + GEMINI_API_KEY.substring(0, 15) + "...");
-  
-  // List of models to try
-  const modelsToTry = [
-    { name: "gemini-pro", version: "v1beta" },
-    { name: "gemini-1.5-pro", version: "v1beta" },
-    { name: "gemini-1.5-flash", version: "v1beta" },
-    { name: "gemini-pro", version: "v1" }
-  ];
-  
-  modelsToTry.forEach((model, index) => {
-    Logger.log(`\n--- Test ${index + 1}: ${model.name} (${model.version}) ---`);
-    
-    try {
-      const url = `https://generativelanguage.googleapis.com/${model.version}/models/${model.name}:generateContent?key=${GEMINI_API_KEY}`;
-      
-      const payload = {
-        contents: [{
-          parts: [{ text: "Say hello" }]
-        }]
-      };
-      
-      const response = UrlFetchApp.fetch(url, {
-        method: 'post',
-        contentType: 'application/json',
-        payload: JSON.stringify(payload),
-        muteHttpExceptions: true
-      });
-      
-      const statusCode = response.getResponseCode();
-      const responseText = response.getContentText();
-      
-      Logger.log("Status Code: " + statusCode);
-      
-      if (statusCode === 200) {
-        Logger.log("✅ SUCCESS! This model works!");
-        const result = JSON.parse(responseText);
-        Logger.log("Response preview: " + JSON.stringify(result).substring(0, 200));
-      } else {
-        Logger.log("❌ FAILED - Status: " + statusCode);
-        Logger.log("Error: " + responseText.substring(0, 300));
-      }
-      
-    } catch (error) {
-      Logger.log("💥 Exception: " + error.toString());
-    }
-  });
-  
-  Logger.log("\n🏁 Test completed!");
-}
-
-// List available models for this API key
-function listAvailableModels() {
-  Logger.log("📋 Listing available Gemini models...");
-  
-  const GEMINI_API_KEY = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
-  
-  if (!GEMINI_API_KEY) {
-    Logger.log("❌ No API Key found!");
-    return;
-  }
-  
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`;
-    
-    const response = UrlFetchApp.fetch(url, {
-      method: 'get',
-      muteHttpExceptions: true
-    });
-    
-    const statusCode = response.getResponseCode();
-    Logger.log("Status Code: " + statusCode);
-    
-    if (statusCode === 200) {
-      const result = JSON.parse(response.getContentText());
-      Logger.log("✅ Available models:");
-      
-      if (result.models && result.models.length > 0) {
-        result.models.forEach(model => {
-          Logger.log("  - " + model.name);
-          Logger.log("    Methods: " + (model.supportedGenerationMethods || []).join(", "));
-        });
-      } else {
-        Logger.log("⚠️ No models available for this API key!");
-        Logger.log("Full response: " + JSON.stringify(result));
-      }
-    } else {
-      Logger.log("❌ Error listing models - Status: " + statusCode);
-      Logger.log("Response: " + response.getContentText());
-    }
-    
-  } catch (error) {
-    Logger.log("💥 Exception: " + error.toString());
-  }
-}
 
 // ========================================
 // RAG SYSTEM - PHASE 1: CONTENT CHUNKING
 // ========================================
 
+
+
 /**
-  
-  let foundMaCode = null;
-  for (let i = 1; i < dkyData.length; i++) {
-    const rowCode = String(dkyData[i][1] || "").trim();
-    const rowPhone = String(dkyData[i][5] || "").trim();
-    const rowEmail = String(dkyData[i][6] || "").trim();
-    
-    if (rowEmail === testEmail || rowPhone === testEmail || rowCode === testEmail) {
-      foundMaCode = rowCode;
-      Logger.log(`✅ FOUND in DKy at row ${i + 1}:`);
-      Logger.log(`   MÃ CODE: ${rowCode}`);
-      Logger.log(`   Email: ${rowEmail}`);
-      Logger.log(`   Phone: ${rowPhone}`);
-      break;
-    }
-  }
-  
-  if (!foundMaCode) {
-    Logger.log("❌ User NOT FOUND in DKy sheet!");
-    return;
-  }
-  
-  // Step 3: Find matching rows in LS_DangKy using MÃ CODE
-  Logger.log("\n🔎 Searching for matching rows...");
-  let matchCount = 0;
-  
-  for (let i = 1; i < data.length; i++) {
-    const maCode = String(data[i][1] || "").trim();
-    const maLop = String(data[i][14] || "").trim();
-    
-    if (maCode === testEmail) {
-      matchCount++;
-      Logger.log(`\n✅ MATCH found at row ${i + 1}:`);
-      Logger.log(`   MÃ CODE: ${maCode}`);
-      Logger.log(`   Ma_Lop: ${maLop}`);
-      Logger.log(`   Họ tên: ${data[i][2]}`);
-    }
-  }
-  
-  if (matchCount === 0) {
-    Logger.log("❌ NO MATCHES FOUND!");
-    Logger.log("📝 Showing ALL columns of first 3 rows to find email:");
-    for (let i = 1; i < Math.min(4, data.length); i++) {
-      Logger.log(`\n   === Row ${i + 1} ===`);
-      for (let j = 0; j < Math.min(15, data[i].length); j++) {
-        Logger.log(`   Col ${String.fromCharCode(65 + j)} (${j}): "${data[i][j]}"`);
-      }
-    }
-  } else {
-    Logger.log(`\n✅ Found ${matchCount} matching registration(s)`);
-  }
-  
-  // Step 3: Test getStudentActivatedCourses
-  Logger.log("\n" + "=".repeat(50));
-  Logger.log("🧪 Testing getStudentActivatedCourses()...");
-  const activatedCourses = getStudentActivatedCourses(testEmail);
-  Logger.log(`📚 Activated courses: ${JSON.stringify(activatedCourses)}`);
-  
-  // Step 4: Check AI_Content sheet
-  Logger.log("\n" + "=".repeat(50));
-  Logger.log("📊 Checking AI_Content sheet...");
-  
-  const aiContentSheet = ss.getSheetByName("AI_Content");
-  if (!aiContentSheet) {
-    Logger.log("❌ AI_Content sheet NOT FOUND!");
-    return;
-  }
-  
-  const contentData = aiContentSheet.getDataRange().getValues();
-  Logger.log(`✅ AI_Content sheet found with ${contentData.length - 1} rows`);
-  
-  // Check for NH course content
-  Logger.log("\n🔍 Looking for NH course content...");
-  let nhCount = 0;
-  
-  for (let i = 1; i < contentData.length; i++) {
-    const courseId = String(contentData[i][2] || "").trim();
-    if (courseId === "NH") {
-      nhCount++;
-      if (nhCount === 1) {
-        Logger.log(`✅ Found NH content at row ${i + 1}:`);
-        Logger.log(`   Title: ${contentData[i][4]}`);
-        Logger.log(`   Content preview: ${String(contentData[i][5] || "").substring(0, 100)}...`);
-      }
-    }
-  }
-  
-  Logger.log(`📝 Total NH course content rows: ${nhCount}`);
-  
-  // Step 5: Test getAllActivatedCoursesContent
-  Logger.log("\n" + "=".repeat(50));
-  Logger.log("🧪 Testing getAllActivatedCoursesContent()...");
-  const courseContent = getAllActivatedCoursesContent(testEmail);
-  Logger.log("📖 Course content returned:");
-  Logger.log(courseContent.substring(0, 500) + "...");
-  
-  Logger.log("\n" + "=".repeat(50));
-  Logger.log("✅ Debug complete!");
-}
-// ========================================
 // RAG SYSTEM - PHASE 1: CONTENT CHUNKING
 // ========================================
 
-/**
- * Smart content chunking with paragraph awareness
- * @param {string} content - Full content text
- * @param {number} chunkSize - Target chunk size in characters (default: 800)
- * @param {number} overlap - Overlap between chunks (default: 100)
- * @returns {Array} Array of chunk objects
- */
-function chunkContent(content, chunkSize = 800, overlap = 100) {
+
+ function chunkContent(content, chunkSize = 800, overlap = 100) {
   if (!content || content.trim() === "") {
     return [];
   }
@@ -3167,41 +2963,6 @@ function extractChunkMetadata(content, chunkIndex) {
   
   return metadata;
 }
-
-/**
- * Test function: Chunk a sample course content
- */
-
-
-// ========================================
-// RAG SYSTEM - PHASE 2: VECTOR EMBEDDINGS
-// ========================================
-
-/**
-
-**1.2. Triết lý Cây Cổ Thụ:**
-Xây kênh TikTok như trồng một cây cổ thụ. Giai đoạn đầu cần chăm bón, bảo vệ, chưa có quả.
-
-**1.3. Sáu chữ vàng:**
-Đơn giản - Vui vẻ - Tin tưởng - Nhẹ nhàng - Thường xuyên - Dụng tâm.`;
-
-  Logger.log("🧪 Testing chunking function...");
-  const chunks = chunkContent(sampleContent, 200, 30);
-  
-  chunks.forEach((chunk, idx) => {
-    Logger.log(`\n--- Chunk ${idx + 1} ---`);
-    Logger.log(`Length: ${chunk.length} chars`);
-    Logger.log(`Text: ${chunk.text.substring(0, 100)}...`);
-    
-    const metadata = extractChunkMetadata(chunk.text, idx);
-    Logger.log(`Metadata:`, metadata);
-  });
-  
-  Logger.log("\n✅ Test complete!");
-}
-// ========================================
-// RAG SYSTEM - PHASE 2: VECTOR EMBEDDINGS
-// ========================================
 
 /**
  * Get embedding vector for text using Gemini API
@@ -3386,80 +3147,6 @@ function processContentToChunks(courseId, lessonId, content, title = "") {
   }
 }
 
-
-// ========================================
-// RAG SYSTEM - PHASE 3: KEYWORD EXTRACTION
-// ========================================
-
-/**
-  
-  if (embedding) {
-    Logger.log(`✅ Success! Embedding length: ${embedding.length}`);
-    Logger.log(`First 5 values: [${embedding.slice(0, 5).join(', ')}...]`);
-    
-    // Test similarity
-    const embedding2 = getEmbedding("Affiliate marketing là gì?");
-    if (embedding2) {
-      const similarity = cosineSimilarity(embedding, embedding2);
-      Logger.log(`\n✅ Similarity test:`);
-      Logger.log(`  Text 1: "${testText}"`);
-      Logger.log(`  Text 2: "Affiliate marketing là gì?"`);
-      Logger.log(`  Similarity: ${similarity.toFixed(4)} (should be high ~0.7-0.9)`);
-    }
-  } else {
-    Logger.log("❌ Failed to generate embedding");
-  }
-}
-/**
- * List all available Gemini models
- */
-function listGeminiModels() {
-  try {
-    const GEMINI_API_KEY = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
-    
-    if (!GEMINI_API_KEY) {
-      Logger.log("❌ GEMINI_API_KEY not found");
-      return;
-    }
-    
-    Logger.log("🔍 Fetching available Gemini models...");
-    
-    // Try v1 API
-    const response = UrlFetchApp.fetch(
-      `https://generativelanguage.googleapis.com/v1/models?key=${GEMINI_API_KEY}`,
-      {
-        method: 'get',
-        muteHttpExceptions: true
-      }
-    );
-    
-    if (response.getResponseCode() !== 200) {
-      Logger.log(`❌ Error: ${response.getResponseCode()}`);
-      Logger.log(response.getContentText());
-      return;
-    }
-    
-    const result = JSON.parse(response.getContentText());
-    
-    Logger.log("\n✅ Available models:");
-    Logger.log("=" + "=".repeat(50));
-    
-    if (result.models) {
-      result.models.forEach(model => {
-        Logger.log(`\n📦 ${model.name}`);
-        Logger.log(`   Display: ${model.displayName || 'N/A'}`);
-        Logger.log(`   Description: ${model.description || 'N/A'}`);
-        Logger.log(`   Supported methods: ${(model.supportedGenerationMethods || []).join(', ')}`);
-      });
-    } else {
-      Logger.log("No models found in response:");
-      Logger.log(JSON.stringify(result, null, 2));
-    }
-    
-  } catch (error) {
-    Logger.log("❌ Error:", error);
-  }
-}
 // ========================================
 // RAG SYSTEM - PHASE 3: KEYWORD EXTRACTION
 // ========================================
@@ -3695,34 +3382,6 @@ function processContentToChunksV2(courseId, lessonId, content, title = "") {
   }
 }
 
-/**
- * Test keyword extraction
- */
-
-  Logger.log("🧪 Testing keyword extraction...");
-  
-  const testText = `**Tiêu chí chọn sản phẩm "Win":**
-- Đang bán chạy: Chọn top sản phẩm có lượt bán cao (trên 10.000 lượt bán).
-- Đánh giá tốt: Shop có rating từ 4.5 sao trở lên.
-- Hoa hồng: Từ 10% - 15%
-- Giá sản phẩm: Ưu tiên dưới 150.000 - 200.000 VNĐ`;
-  
-  const keywords = extractKeywords(testText);
-  
-  Logger.log(`\n✅ Extracted keywords:`);
-  keywords.forEach((kw, idx) => {
-    Logger.log(`  ${idx + 1}. ${kw}`);
-  });
-  
-  // Test matching
-  const queryKeywords = extractKeywords("cách chọn sản phẩm làm affiliate marketing");
-  const score = calculateKeywordScore(queryKeywords, keywords);
-  
-  Logger.log(`\n✅ Match score test:`);
-  Logger.log(`  Query keywords: ${queryKeywords.join(', ')}`);
-  Logger.log(`  Chunk keywords: ${keywords.slice(0, 5).join(', ')}`);
-  Logger.log(`  Score: ${score.toFixed(2)} (higher = better match)`);
-}
 // ========================================
 // RAG SYSTEM - PHASE 4: SEMANTIC SEARCH
 // ========================================
@@ -3823,51 +3482,5 @@ function findRelevantChunks(query, userEmail, topK = 5) {
   }
 }
 
-/**
- * Test semantic search
- */
 
-  Logger.log("🧪 Testing semantic search...");
-  
-  const testEmail = "quelion0708@gmail.com";
-  const testQuery = "tiêu chí chọn sản phẩm làm affiliate marketing";
-  
-  const results = findRelevantChunks(testQuery, testEmail, 3);
-  
-  Logger.log("\n" + "=".repeat(50));
-  Logger.log("✅ Search Results:");
-  
-  if (results.length === 0) {
-    Logger.log("❌ No results found. Make sure:");
-    Logger.log("  1. User has activated courses");
-    Logger.log("  2. AI_Content_Chunks sheet exists");
-    Logger.log("  3. Chunks have been processed");
-  } else {
-    results.forEach((result, idx) => {
-      Logger.log(`\n--- Result ${idx + 1} ---`);
-      Logger.log(`Course: ${result.courseId}`);
-      Logger.log(`Score: ${result.score.toFixed(2)}`);
-      Logger.log(`Text: ${result.text.substring(0, 200)}...`);
-    });
-  }
-}
-function processExistingAFCourse() {
-  const ss = getDB();
-  const contentSheet = ss.getSheetByName("AI_Content");
-  const data = contentSheet.getDataRange().getValues();
-  
-  // Find AF course row
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][2]) === "AF") {
-      const courseId = data[i][2];
-      const lessonId = data[i][3];
-      const title = data[i][4];
-      const content = data[i][5];
-      
-      Logger.log(`Processing ${courseId}...`);
-      const result = processContentToChunksV2(courseId, lessonId, content, title);
-      Logger.log(result);
-      break;
-    }
-  }
-}
+
