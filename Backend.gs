@@ -2009,7 +2009,13 @@ ${courseContexts}
     return {
       success: true,
       message: aiMessage,
-      timestamp: new Date()
+      timestamp: new Date(),
+      // Debug info
+      debug: {
+        finishReason: finishReason,
+        messageLength: aiMessage.length,
+        maxTokensConfig: 2048
+      }
     };
 
   } catch (error) {
@@ -2063,8 +2069,9 @@ function getAllActivatedCoursesContent(userEmail) {
           
           if (lessonContent) {
             // Use content with title if available
-            const contentPreview = lessonContent.substring(0, 500); // Limit to 500 chars for AI context
-            lessonsContent.push(`- Bài: ${lessonTitle || 'Nội dung khóa học'}\n  📝 ${contentPreview}${lessonContent.length > 500 ? '...' : ''}`);
+            // Increased limit to 8000 chars to capture full ebook content
+            const contentPreview = lessonContent.substring(0, 8000);
+            lessonsContent.push(`- Bài: ${lessonTitle || 'Nội dung khóa học'}\n  📝 ${contentPreview}${lessonContent.length > 8000 ? '...' : ''}`);
           }
         }
       }
@@ -3027,5 +3034,366 @@ function debugUserCourseAccess() {
   
   Logger.log("\n" + "=".repeat(50));
   Logger.log("✅ Debug complete!");
+}
+// ========================================
+// RAG SYSTEM - PHASE 1: CONTENT CHUNKING
+// ========================================
+
+/**
+ * Smart content chunking with paragraph awareness
+ * @param {string} content - Full content text
+ * @param {number} chunkSize - Target chunk size in characters (default: 800)
+ * @param {number} overlap - Overlap between chunks (default: 100)
+ * @returns {Array} Array of chunk objects
+ */
+function chunkContent(content, chunkSize = 800, overlap = 100) {
+  if (!content || content.trim() === "") {
+    return [];
+  }
+  
+  const chunks = [];
+  let startIndex = 0;
+  
+  while (startIndex < content.length) {
+    let endIndex = Math.min(startIndex + chunkSize, content.length);
+    
+    // Smart splitting: try to end at paragraph or sentence boundary
+    if (endIndex < content.length) {
+      // Look for paragraph break within last 100 chars
+      const searchStart = Math.max(endIndex - 100, startIndex);
+      const segment = content.substring(searchStart, endIndex);
+      
+      // Try to find paragraph break (\n\n)
+      const paragraphBreak = segment.lastIndexOf('\n\n');
+      if (paragraphBreak > 0) {
+        endIndex = searchStart + paragraphBreak + 2;
+      } else {
+        // Try to find sentence end (. ! ?)
+        const sentenceEnd = Math.max(
+          segment.lastIndexOf('. '),
+          segment.lastIndexOf('! '),
+          segment.lastIndexOf('? ')
+        );
+        if (sentenceEnd > 0) {
+          endIndex = searchStart + sentenceEnd + 2;
+        }
+      }
+    }
+    
+    const chunkText = content.substring(startIndex, endIndex).trim();
+    
+    if (chunkText) {
+      chunks.push({
+        text: chunkText,
+        index: chunks.length,
+        startPos: startIndex,
+        endPos: endIndex,
+        length: chunkText.length
+      });
+    }
+    
+    // Move to next chunk with overlap
+    startIndex = endIndex - overlap;
+    
+    // Prevent infinite loop
+    if (startIndex >= content.length - overlap) {
+      break;
+    }
+  }
+  
+  Logger.log(`✅ Created ${chunks.length} chunks from ${content.length} chars`);
+  return chunks;
+}
+
+/**
+ * Extract metadata from content (title, keywords, chapter info)
+ * @param {string} content - Chunk text
+ * @param {number} chunkIndex - Index of chunk in sequence
+ * @returns {Object} Metadata object
+ */
+function extractChunkMetadata(content, chunkIndex) {
+  const metadata = {
+    chunkIndex: chunkIndex,
+    hasHeading: false,
+    headingLevel: null,
+    title: "",
+    keywords: []
+  };
+  
+  // Detect markdown headings
+  const lines = content.split('\n');
+  for (let i = 0; i < Math.min(3, lines.length); i++) {
+    const line = lines[i].trim();
+    
+    // Check for markdown heading
+    if (line.startsWith('#')) {
+      const match = line.match(/^(#{1,6})\s+(.+)$/);
+      if (match) {
+        metadata.hasHeading = true;
+        metadata.headingLevel = match[1].length;
+        metadata.title = match[2].trim();
+        break;
+      }
+    }
+    
+    // Check for bold text as pseudo-heading
+    if (line.startsWith('**') && line.endsWith('**')) {
+      metadata.title = line.replace(/\*\*/g, '').trim();
+      break;
+    }
+  }
+  
+  // Extract keywords (simple: take bold/emphasized text)
+  const boldMatches = content.match(/\*\*([^*]+)\*\*/g) || [];
+  metadata.keywords = boldMatches
+    .map(m => m.replace(/\*\*/g, '').trim())
+    .filter(k => k.length > 2 && k.length < 50)
+    .slice(0, 10); // Max 10 keywords
+  
+  return metadata;
+}
+
+/**
+ * Test function: Chunk a sample course content
+ */
+function testChunking() {
+  const sampleContent = `# CHƯƠNG 1: TƯ DUY & TÂM THÁI
+
+**1.1. Sự khác biệt cốt lõi:**
+Khóa học không chỉ dạy kỹ năng kiếm tiền mà là ứng dụng **Triết lý giáo dục tận gốc** và **Hệ quy chiếu Công đức - Phước đức** vào kinh doanh.
+
+**1.2. Triết lý Cây Cổ Thụ:**
+Xây kênh TikTok như trồng một cây cổ thụ. Giai đoạn đầu cần chăm bón, bảo vệ, chưa có quả.
+
+**1.3. Sáu chữ vàng:**
+Đơn giản - Vui vẻ - Tin tưởng - Nhẹ nhàng - Thường xuyên - Dụng tâm.`;
+
+  Logger.log("🧪 Testing chunking function...");
+  const chunks = chunkContent(sampleContent, 200, 30);
+  
+  chunks.forEach((chunk, idx) => {
+    Logger.log(`\n--- Chunk ${idx + 1} ---`);
+    Logger.log(`Length: ${chunk.length} chars`);
+    Logger.log(`Text: ${chunk.text.substring(0, 100)}...`);
+    
+    const metadata = extractChunkMetadata(chunk.text, idx);
+    Logger.log(`Metadata:`, metadata);
+  });
+  
+  Logger.log("\n✅ Test complete!");
+}
+// ========================================
+// RAG SYSTEM - PHASE 2: VECTOR EMBEDDINGS
+// ========================================
+
+/**
+ * Get embedding vector for text using Gemini API
+ * @param {string} text - Text to embed
+ * @returns {Array} 768-dimensional vector or null on error
+ */
+function getEmbedding(text) {
+  try {
+    const GEMINI_API_KEY = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
+    
+    if (!GEMINI_API_KEY) {
+      Logger.log("❌ GEMINI_API_KEY not found");
+      return null;
+    }
+    
+    const payload = {
+      model: "models/text-embedding-004",
+      content: {
+        parts: [{ text: text }]
+      }
+    };
+    
+    const response = UrlFetchApp.fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'post',
+        contentType: 'application/json',
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      }
+    );
+    
+    if (response.getResponseCode() !== 200) {
+      Logger.log(`❌ Embedding API error: ${response.getResponseCode()}`);
+      Logger.log(response.getContentText());
+      return null;
+    }
+    
+    const result = JSON.parse(response.getContentText());
+    const embedding = result.embedding?.values;
+    
+    if (!embedding || !Array.isArray(embedding)) {
+      Logger.log("❌ Invalid embedding response");
+      return null;
+    }
+    
+    Logger.log(`✅ Generated embedding: ${embedding.length} dimensions`);
+    return embedding;
+    
+  } catch (error) {
+    Logger.log("❌ Error in getEmbedding:", error);
+    return null;
+  }
+}
+
+/**
+ * Cosine similarity between two vectors
+ * @param {Array} vecA - First vector
+ * @param {Array} vecB - Second vector
+ * @returns {number} Similarity score (0-1)
+ */
+function cosineSimilarity(vecA, vecB) {
+  if (!vecA || !vecB || vecA.length !== vecB.length) {
+    return 0;
+  }
+  
+  let dotProduct = 0;
+  let normA = 0;
+  let normB = 0;
+  
+  for (let i = 0; i < vecA.length; i++) {
+    dotProduct += vecA[i] * vecB[i];
+    normA += vecA[i] * vecA[i];
+    normB += vecB[i] * vecB[i];
+  }
+  
+  if (normA === 0 || normB === 0) {
+    return 0;
+  }
+  
+  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
+/**
+ * Process course content into chunks with embeddings
+ * @param {string} courseId - Course ID
+ * @param {string} lessonId - Lesson ID
+ * @param {string} content - Full content
+ * @param {string} title - Lesson title
+ * @returns {Object} Processing result
+ */
+function processContentToChunks(courseId, lessonId, content, title = "") {
+  try {
+    Logger.log(`🔄 Processing course ${courseId}, lesson ${lessonId}...`);
+    
+    // 1. Chunk the content
+    const chunks = chunkContent(content, 800, 100);
+    Logger.log(`✅ Created ${chunks.length} chunks`);
+    
+    if (chunks.length === 0) {
+      return { success: false, message: "No chunks created" };
+    }
+    
+    // 2. Get or create AI_Content_Chunks sheet
+    const ss = getDB();
+    let chunkSheet = ss.getSheetByName("AI_Content_Chunks");
+    
+    if (!chunkSheet) {
+      chunkSheet = ss.insertSheet("AI_Content_Chunks");
+      chunkSheet.appendRow([
+        "Chunk ID",
+        "Course ID",
+        "Lesson ID",
+        "Chunk Text",
+        "Chunk Index",
+        "Embedding",
+        "Metadata",
+        "Created Date"
+      ]);
+      Logger.log("✅ Created AI_Content_Chunks sheet");
+    }
+    
+    // 3. Process each chunk
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      
+      // Generate embedding
+      Logger.log(`  Processing chunk ${i + 1}/${chunks.length}...`);
+      const embedding = getEmbedding(chunk.text);
+      
+      if (!embedding) {
+        Logger.log(`  ❌ Failed to generate embedding for chunk ${i + 1}`);
+        failCount++;
+        continue;
+      }
+      
+      // Extract metadata
+      const metadata = extractChunkMetadata(chunk.text, i);
+      metadata.title = title;
+      metadata.courseId = courseId;
+      metadata.lessonId = lessonId;
+      
+      // Generate unique chunk ID
+      const chunkId = `CHUNK_${courseId}_${lessonId}_${i}_${Date.now()}`;
+      
+      // Save to sheet
+      const row = [
+        chunkId,
+        courseId,
+        lessonId,
+        chunk.text,
+        i,
+        JSON.stringify(embedding),
+        JSON.stringify(metadata),
+        new Date()
+      ];
+      
+      chunkSheet.appendRow(row);
+      successCount++;
+      
+      // Rate limiting: wait 100ms between API calls
+      Utilities.sleep(100);
+    }
+    
+    Logger.log(`\n✅ Processing complete: ${successCount} success, ${failCount} failed`);
+    
+    return {
+      success: true,
+      message: `Processed ${successCount}/${chunks.length} chunks`,
+      chunksCreated: successCount,
+      chunksFailed: failCount
+    };
+    
+  } catch (error) {
+    Logger.log("❌ Error in processContentToChunks:", error);
+    return {
+      success: false,
+      message: "Error: " + error.toString()
+    };
+  }
+}
+
+/**
+ * Test embedding API
+ */
+function testEmbedding() {
+  Logger.log("🧪 Testing Gemini Embeddings API...");
+  
+  const testText = "Tiếp thị liên kết là gì?";
+  const embedding = getEmbedding(testText);
+  
+  if (embedding) {
+    Logger.log(`✅ Success! Embedding length: ${embedding.length}`);
+    Logger.log(`First 5 values: [${embedding.slice(0, 5).join(', ')}...]`);
+    
+    // Test similarity
+    const embedding2 = getEmbedding("Affiliate marketing là gì?");
+    if (embedding2) {
+      const similarity = cosineSimilarity(embedding, embedding2);
+      Logger.log(`\n✅ Similarity test:`);
+      Logger.log(`  Text 1: "${testText}"`);
+      Logger.log(`  Text 2: "Affiliate marketing là gì?"`);
+      Logger.log(`  Similarity: ${similarity.toFixed(4)} (should be high ~0.7-0.9)`);
+    }
+  } else {
+    Logger.log("❌ Failed to generate embedding");
+  }
 }
 
