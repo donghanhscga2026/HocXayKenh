@@ -1991,7 +1991,20 @@ ${courseContexts}
     }
 
     // Extract response
-    const aiMessage = result.candidates?.[0]?.content?.parts?.[0]?.text || "Xin lỗi, tôi không thể xử lý câu hỏi này.";
+    const candidate = result.candidates?.[0];
+    const finishReason = candidate?.finishReason;
+    const aiMessage = candidate?.content?.parts?.[0]?.text || "Xin lỗi, tôi không thể xử lý câu hỏi này.";
+    
+    // Debug logging
+    Logger.log("✅ Gemini API Response received");
+    Logger.log("📊 Finish Reason: " + finishReason);
+    Logger.log("📏 Message length: " + aiMessage.length + " characters");
+    Logger.log("📝 Full message: " + aiMessage);
+    
+    // Check if response was cut due to token limit
+    if (finishReason === "MAX_TOKENS") {
+      Logger.log("⚠️ WARNING: Response truncated due to MAX_TOKENS limit!");
+    }
 
     return {
       success: true,
