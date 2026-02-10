@@ -1918,16 +1918,25 @@ function chatWithAI(message, conversationHistory = [], userEmail = "") {
     }
 
     // Lấy nội dung khóa học để làm context - USING RAG!
-    const relevantChunks = findRelevantChunks(message, userEmail, 5);
-    
     let courseContexts = "";
-    if (relevantChunks && relevantChunks.length > 0) {
-      courseContexts = "📚 NỘI DUNG LIÊN QUAN:\n\n";
-      relevantChunks.forEach((chunk, idx) => {
-        courseContexts += `${idx + 1}. [Khóa ${chunk.courseId}]\n${chunk.text}\n\n`;
-      });
-    } else {
-      // Fallback to old method if RAG returns nothing
+    
+    try {
+      const relevantChunks = findRelevantChunks(message, userEmail, 5); // Back to 5 chunks for quality
+      
+      if (relevantChunks && relevantChunks.length > 0) {
+        courseContexts = "📚 NỘI DUNG LIÊN QUAN:\n\n";
+        relevantChunks.forEach((chunk, idx) => {
+          // Limit chunk text to 1000 chars for better context
+          const chunkPreview = chunk.text.substring(0, 1000);
+          courseContexts += `${idx + 1}. [Khóa ${chunk.courseId}]\n${chunkPreview}\n\n`;
+        });
+        Logger.log(`✅ RAG provided ${relevantChunks.length} chunks`);
+      } else {
+        Logger.log("⚠️ RAG returned 0 chunks, using fallback");
+        courseContexts = getAllActivatedCoursesContent(userEmail);
+      }
+    } catch (ragError) {
+      Logger.log("⚠️ RAG error, falling back to old method:", ragError);
       courseContexts = getAllActivatedCoursesContent(userEmail);
     }
     
@@ -1938,23 +1947,40 @@ function chatWithAI(message, conversationHistory = [], userEmail = "") {
     }));
 
     // Add system prompt với course context
-    const systemPrompt = `Bạn là một assistant hỗ trợ học viên của Học viện BRK. 
+    const systemPrompt = `Bạn là assistant hỗ trợ học viên Học viện BRK.
 
-🎯 HƯỚNG DẪN TRỢ GIÚP:
-- CHỈ trả lời các câu hỏi trong các khóa học và nội dung tôi cung cấp dưới đây
-- Nếu câu hỏi KHÔNG liên quan đến nội dung đã cung cấp, hãy nói: "Xin lỗi, câu hỏi này nằm ngoài phạm vi hỗ trợ của tôi. Vui lòng liên hệ với giảng viên hoặc admin để được giúp đỡ."
+🎯 NHIỆM VỤ:
+- CHỈ trả lời dựa trên nội dung được cung cấp
+- Trả lời ĐẦY ĐỦ, CHI TIẾT
+- BẮT BUỘC format theo quy tắc dưới đây
 
-📝 QUY TẮC TRÌNH BÀY:
-- Trả lời rõ ràng, đầy đủ bằng tiếng Việt
-- Sử dụng markdown để format:
-  * Xuống dòng sau mỗi ý chính
-  * Dùng danh sách có số (1. 2. 3.) hoặc gạch đầu dòng (-)
-  * Để trống 1 dòng giữa các đoạn/mục
-  * In đậm (**text**) các từ khóa quan trọng
-- Cấu trúc câu trả lời:
-  * Mở đầu ngắn gọn
-  * Nội dung chính có cấu trúc rõ ràng
-  * Kết luận (nếu cần)
+📝 QUY TẮC FORMAT (BẮT BUỘC):
+1. Mở đầu: 1 câu ngắn gọn
+2. Nội dung chính: PHẢI có cấu trúc:
+
+**Ví dụ format chuẩn:**
+Tiêu chí chọn sản phẩm "Win" gồm:
+
+**1. Đang bán chạy:**
+- Chọn sản phẩm có >10,000 lượt bán
+- Đảm bảo xu hướng đang hot
+
+**2. Đánh giá tốt:**
+- Shop có rating ≥4.5 sao
+- Tránh shop có nhiều review xấu
+
+**3. Hoa hồng:**
+- Từ 10-15%
+
+**4. Giá sản phẩm:**
+- Ưu tiên <150-200k VNĐ
+
+3. Kết: 1 câu động viên (nếu phù hợp)
+
+⚠️ LƯU Ý:
+- BẮT BUỘC xuống dòng sau mỗi mục
+- BẮT BUỘC in đậm tiêu đề (**text**)
+- BẮT BUỘC để trống 1 dòng giữa các mục
 
 📚 NỘI DUNG CÁC KHÓA HỌC:
 ${courseContexts}
@@ -2000,13 +2026,20 @@ ${courseContexts}
 
     // Check for errors
     if (response.getResponseCode() !== 200) {
-      Logger.log("❌ Gemini API Error - Status Code: " + response.getResponseCode());
-      Logger.log("📡 Full Response: " + response.getContentText());
-      Logger.log("📝 Error Details: " + JSON.stringify(result));
+      const errorCode = response.getResponseCode();
+      const errorBody = response.getContentText();
       
-      return {
-        success: false,
-        message: "Có lỗi khi xử lý câu hỏi. Vui lòng thử lại! (Code: " + response.getResponseCode() + ")"
+      Logger.log(`❌ Gemini API Error ${errorCode}`);
+      Logger.log(`Error body: ${errorBody}`);
+      Logger.log(`Request tokens estimate: ${JSON.stringify(payload).length} chars`);
+      
+      return { 
+        success: false, 
+        message: `Có lỗi khi xử lý câu hỏi. Vui lòng thử lại! (Code: ${errorCode})`,
+        debug: {
+          errorCode: errorCode,
+          errorPreview: errorBody.substring(0, 200)
+        }
       };
     }
 
@@ -2812,15 +2845,6 @@ function addTextContent(data) {
   }
 }
 
-// ========================================
-// TEST FUNCTION - Gemini API Debug
-// ========================================
-// Run this function in Apps Script Editor to test Gemini API directly
-function testGeminiAPI() {
-  Logger.log("🧪 Starting Gemini API Test...");
-  
-  const GEMINI_API_KEY = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
-  
   if (!GEMINI_API_KEY) {
     Logger.log("❌ No API Key found!");
     return;
@@ -2921,41 +2945,12 @@ function listAvailableModels() {
     Logger.log("💥 Exception: " + error.toString());
   }
 }
+
 // ========================================
-// DEBUG FUNCTION - BRK AI Authorization
+// RAG SYSTEM - PHASE 1: CONTENT CHUNKING
 // ========================================
-// Run this to debug why user doesn't see course content
-function debugUserCourseAccess() {
-  const testEmail = "quelion0708@gmail.com";
-  
-  Logger.log("🔍 Starting BRK AI Debug for: " + testEmail);
-  Logger.log("=" + "=".repeat(50));
-  
-  // Step 1: Check LS_DangKy sheet
-  const ss = getDB();
-  const lsDangKySheet = ss.getSheetByName("LS_DangKy");
-  
-  if (!lsDangKySheet) {
-    Logger.log("❌ LS_DangKy sheet NOT FOUND!");
-    return;
-  }
-  
-  Logger.log("✅ LS_DangKy sheet found");
-  
-  const data = lsDangKySheet.getDataRange().getValues();
-  Logger.log(`📋 Total rows in LS_DangKy: ${data.length - 1}`);
-  
-  // Step 2: Check DKy sheet for user lookup
-  Logger.log("\n🔎 Step 1: Looking up user in DKy sheet...");
-  
-  const dkySheet = ss.getSheetByName("DKy");
-  if (!dkySheet) {
-    Logger.log("❌ DKy sheet NOT FOUND!");
-    return;
-  }
-  
-  const dkyData = dkySheet.getDataRange().getValues();
-  Logger.log(`✅ DKy sheet found with ${dkyData.length - 1} rows`);
+
+/**
   
   let foundMaCode = null;
   for (let i = 1; i < dkyData.length; i++) {
@@ -3176,11 +3171,13 @@ function extractChunkMetadata(content, chunkIndex) {
 /**
  * Test function: Chunk a sample course content
  */
-function testChunking() {
-  const sampleContent = `# CHƯƠNG 1: TƯ DUY & TÂM THÁI
 
-**1.1. Sự khác biệt cốt lõi:**
-Khóa học không chỉ dạy kỹ năng kiếm tiền mà là ứng dụng **Triết lý giáo dục tận gốc** và **Hệ quy chiếu Công đức - Phước đức** vào kinh doanh.
+
+// ========================================
+// RAG SYSTEM - PHASE 2: VECTOR EMBEDDINGS
+// ========================================
+
+/**
 
 **1.2. Triết lý Cây Cổ Thụ:**
 Xây kênh TikTok như trồng một cây cổ thụ. Giai đoạn đầu cần chăm bón, bảo vệ, chưa có quả.
@@ -3389,14 +3386,12 @@ function processContentToChunks(courseId, lessonId, content, title = "") {
   }
 }
 
+
+// ========================================
+// RAG SYSTEM - PHASE 3: KEYWORD EXTRACTION
+// ========================================
+
 /**
- * Test embedding API
- */
-function testEmbedding() {
-  Logger.log("🧪 Testing Gemini Embeddings API...");
-  
-  const testText = "Tiếp thị liên kết là gì?";
-  const embedding = getEmbedding(testText);
   
   if (embedding) {
     Logger.log(`✅ Success! Embedding length: ${embedding.length}`);
@@ -3703,7 +3698,7 @@ function processContentToChunksV2(courseId, lessonId, content, title = "") {
 /**
  * Test keyword extraction
  */
-function testKeywordExtraction() {
+
   Logger.log("🧪 Testing keyword extraction...");
   
   const testText = `**Tiêu chí chọn sản phẩm "Win":**
@@ -3831,7 +3826,7 @@ function findRelevantChunks(query, userEmail, topK = 5) {
 /**
  * Test semantic search
  */
-function testSemanticSearch() {
+
   Logger.log("🧪 Testing semantic search...");
   
   const testEmail = "quelion0708@gmail.com";

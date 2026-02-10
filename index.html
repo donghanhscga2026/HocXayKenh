@@ -2067,7 +2067,15 @@
 
             const bubble = document.createElement('div');
             bubble.className = 'message-bubble';
-            bubble.textContent = text;
+
+            // Convert markdown to HTML for proper rendering
+            let html = text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // **bold**
+                .replace(/\n/g, '<br>') // line breaks
+                .replace(/^- (.+)$/gm, '• $1') // bullet points
+                .replace(/^(\d+)\. (.+)$/gm, '<strong>$1.</strong> $2'); // numbered lists
+
+            bubble.innerHTML = html;
 
             messageDiv.appendChild(bubble);
             messagesContainer.appendChild(messageDiv);
