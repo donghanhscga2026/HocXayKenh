@@ -2513,31 +2513,49 @@ function getOrCreateContentSheet() {
   return sheet;
 }
 
-// Thêm nội dung từ paste text
+// Function to add text content from Admin Data Import module
 function addTextContent(data) {
   try {
-    const sheet = getOrCreateContentSheet();
-    const id = `TEXT_${Date.now()}`;
+    if (!data.courseId || !data.content) {
+      return { success: false, message: "Thiếu thông tin bắt buộc: courseId và content" };
+    }
     
+    const ss = getDB();
+    let sheet = ss.getSheetByName("AI_Content");
+    
+    // Create sheet if missing
+    if (!sheet) {
+      sheet = ss.insertSheet("AI_Content");
+      sheet.appendRow(["ID", "Type", "Course ID", "Lesson ID", "Title", "Content", "Source", "Added Date", "Added By", "Last Updated"]);
+    }
+    
+    const contentId = `CONTENT_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+    
+    // 1. Lưu nội dung gốc
     sheet.appendRow([
-      id,
-      "text",
-      data.courseId || "GENERAL",
-      data.lessonId || "",
-      data.courseId || "Nội dung dán",
-      data.content,
-      data.sourceType || "paste",
-      new Date(),
-      "Admin"
+      contentId, "text_content", data.courseId, 
+      data.lessonId || `BAI_${Date.now()}`, 
+      data.title || `Bài học ${data.courseId}`, 
+      data.content, 
+      data.source || "Admin Data Import", 
+      new Date(), "Admin", new Date()
     ]);
+    
+    Logger.log(`✅ Added text content: ${contentId}`);
+    
+    // 2. KÍCH HOẠT AI HỌC NGAY LẬP TỨC (QUAN TRỌNG)
+    // Đoạn này giúp nội dung vừa nạp vào sẽ được AI dùng để trả lời ngay
+    const processResult = processContentToChunksV2(data.courseId, data.lessonId || contentId, data.content, data.title);
     
     return {
       success: true,
-      message: "Thêm nội dung thành công",
-      id: id
+      message: "Đã lưu và AI đã học xong nội dung này!",
+      contentId: contentId,
+      aiStats: processResult
     };
+    
   } catch (error) {
-    Logger.log("Error in addTextContent:", error);
+    Logger.log("❌ Error in addTextContent:", error);
     return { success: false, message: "Lỗi: " + error.toString() };
   }
 }
@@ -2772,90 +2790,12 @@ function clearAllData() {
     return { success: false, message: "Lỗi: " + error.toString() };
   }
 }
-// ========================================
-// ADD TEXT CONTENT FUNCTION
-// ========================================
-// Function to add text content from Admin Data Import module
-function addTextContent(data) {
-  try {
-    // Validate required fields
-    if (!data.courseId || !data.content) {
-      return { 
-        success: false, 
-        message: "Thiếu thông tin bắt buộc: courseId và content" 
-      };
-    }
-    
-    const ss = getDB();
-    let sheet = ss.getSheetByName("AI_Content");
-    
-    // Create sheet if it doesn't exist
-    if (!sheet) {
-      sheet = ss.insertSheet("AI_Content");
-      sheet.appendRow([
-        "ID",
-        "Type",
-        "Course ID",
-        "Lesson ID",
-        "Title",
-        "Content",
-        "Source",
-        "Added Date",
-        "Added By",
-        "Last Updated"
-      ]);
-      Logger.log("Created AI_Content sheet");
-    }
-    
-    // Generate unique ID
-    const contentId = `CONTENT_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-    
-    // Prepare data
-    const row = [
-      contentId,
-      "text_content",
-      data.courseId,
-      data.lessonId || `BAI_${Date.now()}`,
-      data.title || `Bài học ${data.courseId}`,
-      data.content,
-      data.source || "Admin Data Import",
-      new Date(),
-      "Admin",
-      new Date()
-    ];
-    
-    // Append to sheet
-    sheet.appendRow(row);
-    
-    Logger.log(`✅ Added text content: ${contentId} for course ${data.courseId}`);
-    
-    return {
-      success: true,
-      message: "Đã lưu nội dung thành công!",
-      contentId: contentId,
-      courseId: data.courseId
-    };
-    
-  } catch (error) {
-    Logger.log("❌ Error in addTextContent:", error);
-    return {
-      success: false,
-      message: "Lỗi: " + error.toString()
-    };
-  }
-}
+
 
 
 // ========================================
 // RAG SYSTEM - PHASE 1: CONTENT CHUNKING
 // ========================================
-
-
-
-/**
-// RAG SYSTEM - PHASE 1: CONTENT CHUNKING
-// ========================================
-
 
  function chunkContent(content, chunkSize = 800, overlap = 100) {
   if (!content || content.trim() === "") {
@@ -3481,6 +3421,3 @@ function findRelevantChunks(query, userEmail, topK = 5) {
     return [];
   }
 }
-
-
-
