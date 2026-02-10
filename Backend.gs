@@ -1932,8 +1932,9 @@ function chatWithAI(message, conversationHistory = [], userEmail = "") {
 🎯 HƯỚNG DẪN TRỢ GIÚP:
 - CHỈ trả lời các câu hỏi trong các khóa học và nội dung tôi cung cấp dưới đây
 - Nếu câu hỏi KHÔNG liên quan đến nội dung đã cung cấp, hãy nói: "Xin lỗi, câu hỏi này nằm ngoài phạm vi hỗ trợ của tôi. Vui lòng liên hệ với giảng viên hoặc admin để được giúp đỡ."
-- Luôn trả lời bằng tiếng Việt, ngắn gọn (dưới 300 ký tự)
-- Tham khảo nội dung các bài học dưới đây
+- Luôn trả lời bằng tiếng Việt, rõ ràng và đầy đủ
+- Trả lời chi tiết dựa trên nội dung các bài học dưới đây
+- Có thể trả lời dài nếu cần thiết để giải thích đầy đủ
 
 📚 NỘI DUNG CÁC KHÓA HỌC:
 ${courseContexts}
@@ -1954,7 +1955,7 @@ ${courseContexts}
         temperature: 0.7,
         topK: 40,
         topP: 0.95,
-        maxOutputTokens: 500
+        maxOutputTokens: 2048  // Increased from 500 to allow full responses
       },
       safetySettings: [
         {
