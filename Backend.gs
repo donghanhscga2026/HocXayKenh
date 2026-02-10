@@ -1917,8 +1917,19 @@ function chatWithAI(message, conversationHistory = [], userEmail = "") {
       };
     }
 
-    // Lấy nội dung khóa học để làm context
-    const courseContexts = getAllActivatedCoursesContent(userEmail);
+    // Lấy nội dung khóa học để làm context - USING RAG!
+    const relevantChunks = findRelevantChunks(message, userEmail, 5);
+    
+    let courseContexts = "";
+    if (relevantChunks && relevantChunks.length > 0) {
+      courseContexts = "📚 NỘI DUNG LIÊN QUAN:\n\n";
+      relevantChunks.forEach((chunk, idx) => {
+        courseContexts += `${idx + 1}. [Khóa ${chunk.courseId}]\n${chunk.text}\n\n`;
+      });
+    } else {
+      // Fallback to old method if RAG returns nothing
+      courseContexts = getAllActivatedCoursesContent(userEmail);
+    }
     
     // Prepare conversation history for Gemini (tối đa 10 tin nhắn gần nhất)
     const recentHistory = conversationHistory.slice(-20).map(msg => ({
@@ -1932,9 +1943,18 @@ function chatWithAI(message, conversationHistory = [], userEmail = "") {
 🎯 HƯỚNG DẪN TRỢ GIÚP:
 - CHỈ trả lời các câu hỏi trong các khóa học và nội dung tôi cung cấp dưới đây
 - Nếu câu hỏi KHÔNG liên quan đến nội dung đã cung cấp, hãy nói: "Xin lỗi, câu hỏi này nằm ngoài phạm vi hỗ trợ của tôi. Vui lòng liên hệ với giảng viên hoặc admin để được giúp đỡ."
-- Luôn trả lời bằng tiếng Việt, rõ ràng và đầy đủ
-- Trả lời chi tiết dựa trên nội dung các bài học dưới đây
-- Có thể trả lời dài nếu cần thiết để giải thích đầy đủ
+
+📝 QUY TẮC TRÌNH BÀY:
+- Trả lời rõ ràng, đầy đủ bằng tiếng Việt
+- Sử dụng markdown để format:
+  * Xuống dòng sau mỗi ý chính
+  * Dùng danh sách có số (1. 2. 3.) hoặc gạch đầu dòng (-)
+  * Để trống 1 dòng giữa các đoạn/mục
+  * In đậm (**text**) các từ khóa quan trọng
+- Cấu trúc câu trả lời:
+  * Mở đầu ngắn gọn
+  * Nội dung chính có cấu trúc rõ ràng
+  * Kết luận (nếu cần)
 
 📚 NỘI DUNG CÁC KHÓA HỌC:
 ${courseContexts}
@@ -3201,14 +3221,13 @@ function getEmbedding(text) {
     }
     
     const payload = {
-      model: "models/text-embedding-004",
       content: {
         parts: [{ text: text }]
       }
     };
     
     const response = UrlFetchApp.fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1/models/text-embedding-004:embedContent?key=${GEMINI_API_KEY}`,
       {
         method: 'post',
         contentType: 'application/json',
@@ -3396,4 +3415,464 @@ function testEmbedding() {
     Logger.log("❌ Failed to generate embedding");
   }
 }
+/**
+ * List all available Gemini models
+ */
+function listGeminiModels() {
+  try {
+    const GEMINI_API_KEY = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
+    
+    if (!GEMINI_API_KEY) {
+      Logger.log("❌ GEMINI_API_KEY not found");
+      return;
+    }
+    
+    Logger.log("🔍 Fetching available Gemini models...");
+    
+    // Try v1 API
+    const response = UrlFetchApp.fetch(
+      `https://generativelanguage.googleapis.com/v1/models?key=${GEMINI_API_KEY}`,
+      {
+        method: 'get',
+        muteHttpExceptions: true
+      }
+    );
+    
+    if (response.getResponseCode() !== 200) {
+      Logger.log(`❌ Error: ${response.getResponseCode()}`);
+      Logger.log(response.getContentText());
+      return;
+    }
+    
+    const result = JSON.parse(response.getContentText());
+    
+    Logger.log("\n✅ Available models:");
+    Logger.log("=" + "=".repeat(50));
+    
+    if (result.models) {
+      result.models.forEach(model => {
+        Logger.log(`\n📦 ${model.name}`);
+        Logger.log(`   Display: ${model.displayName || 'N/A'}`);
+        Logger.log(`   Description: ${model.description || 'N/A'}`);
+        Logger.log(`   Supported methods: ${(model.supportedGenerationMethods || []).join(', ')}`);
+      });
+    } else {
+      Logger.log("No models found in response:");
+      Logger.log(JSON.stringify(result, null, 2));
+    }
+    
+  } catch (error) {
+    Logger.log("❌ Error:", error);
+  }
+}
+// ========================================
+// RAG SYSTEM - PHASE 3: KEYWORD EXTRACTION
+// ========================================
 
+/**
+ * Extract keywords from text using markdown structure + word frequency
+ * NO API calls - fast and reliable!
+ * @param {string} text - Text to extract keywords from
+ * @returns {Array} Array of keywords
+ */
+function extractKeywords(text) {
+  try {
+    const keywords = new Set();
+    
+    // 1. Extract from markdown headings (# ## ###)
+    const headingMatches = text.match(/^#{1,6}\s+(.+)$/gm) || [];
+    headingMatches.forEach(heading => {
+      const cleaned = heading.replace(/^#+\s*/, '').replace(/[:#*]/g, '').trim().toLowerCase();
+      if (cleaned.length > 3 && cleaned.length < 50) {
+        keywords.add(cleaned);
+        // Also add individual words from headings
+        cleaned.split(/\s+/).forEach(word => {
+          if (word.length > 3) keywords.add(word);
+        });
+      }
+    });
+    
+    // 2. Extract from bold text (**text**)
+    const boldMatches = text.match(/\*\*([^*]+)\*\*/g) || [];
+    boldMatches.forEach(bold => {
+      const cleaned = bold.replace(/\*\*/g, '').trim().toLowerCase();
+      if (cleaned.length > 3 && cleaned.length < 50 && !cleaned.includes(':')) {
+        keywords.add(cleaned);
+        // Add individual words
+        cleaned.split(/[,\s]+/).forEach(word => {
+          if (word.length > 3) keywords.add(word);
+        });
+      }
+    });
+    
+    // 3. Extract numbered list items (common in Vietnamese content)
+    const listMatches = text.match(/^\d+\.\s*\*?\*?([^:\n]+)/gm) || [];
+    listMatches.forEach(item => {
+      const cleaned = item.replace(/^\d+\.\s*\*?\*?/, '').replace(/[:#*]/g, '').trim().toLowerCase();
+      if (cleaned.length > 3 && cleaned.length < 50) {
+        keywords.add(cleaned);
+      }
+    });
+    
+    // 4. Word frequency analysis (top nouns/verbs)
+    const words = text.toLowerCase()
+      .replace(/[^\w\sàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 3);
+    
+    // Common stop words (Vietnamese)
+    const stopWords = new Set(['của', 'và', 'các', 'cho', 'với', 'trong', 'là', 'được', 'có', 'này', 'để', 'từ', 'theo', 'như', 'khi', 'về', 'hoặc', 'bởi', 'những', 'một', 'không', 'sẽ', 'tại', 'đã', 'cũng', 'trên', 'vào', 'sau', 'thì', 'bạn', 'mà']);
+    
+    const wordFreq = {};
+    words.forEach(word => {
+      if (!stopWords.has(word) && word.length > 3) {
+        wordFreq[word] = (wordFreq[word] || 0) + 1;
+      }
+    });
+    
+    // Top 10 most frequent words
+    const topWords = Object.entries(wordFreq)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(entry => entry[0]);
+    
+    topWords.forEach(word => keywords.add(word));
+    
+    // Convert to array and limit
+    const keywordArray = Array.from(keywords).slice(0, 20);
+    
+    Logger.log(`✅ Extracted ${keywordArray.length} keywords: ${keywordArray.slice(0, 5).join(', ')}...`);
+    return keywordArray;
+    
+  } catch (error) {
+    Logger.log("❌ Error in extractKeywords:", error);
+    return [];
+  }
+}
+
+/**
+ * Calculate keyword match score between query and chunk
+ * @param {Array} queryKeywords - Keywords from query
+ * @param {Array} chunkKeywords - Keywords from chunk  
+ * @returns {number} Match score (0-1)
+ */
+function calculateKeywordScore(queryKeywords, chunkKeywords) {
+  if (!queryKeywords.length || !chunkKeywords.length) {
+    return 0;
+  }
+  
+  let matches = 0;
+  const querySet = new Set(queryKeywords.map(k => k.toLowerCase()));
+  const chunkSet = new Set(chunkKeywords.map(k => k.toLowerCase()));
+  
+  querySet.forEach(qk => {
+    // Exact match
+    if (chunkSet.has(qk)) {
+      matches += 1.0;
+      return;
+    }
+    
+    // Word-level matching for Vietnamese phrases
+    const qWords = qk.split(' ').filter(w => w.length > 2);
+    
+    chunkSet.forEach(ck => {
+      const cWords = ck.split(' ').filter(w => w.length > 2);
+      
+      // Count common words
+      let commonWords = 0;
+      qWords.forEach(qw => {
+        if (cWords.includes(qw)) {
+          commonWords++;
+        }
+      });
+      
+      if (commonWords > 0) {
+        // Partial match score based on overlap ratio
+        const overlapRatio = commonWords / Math.max(qWords.length, cWords.length);
+        matches += overlapRatio * 0.7; // Weight partial matches less than exact
+      }
+    });
+  });
+  
+  return Math.min(matches / queryKeywords.length, 1.0);
+}
+
+/**
+ * Process course content into chunks with keywords
+ * @param {string} courseId - Course ID
+ * @param {string} lessonId - Lesson ID
+ * @param {string} content - Full content
+ * @param {string} title - Lesson title
+ * @returns {Object} Processing result
+ */
+function processContentToChunksV2(courseId, lessonId, content, title = "") {
+  try {
+    Logger.log(`🔄 Processing course ${courseId}, lesson ${lessonId}...`);
+    
+    // 1. Chunk the content
+    const chunks = chunkContent(content, 800, 100);
+    Logger.log(`✅ Created ${chunks.length} chunks`);
+    
+    if (chunks.length === 0) {
+      return { success: false, message: "No chunks created" };
+    }
+    
+    // 2. Get or create AI_Content_Chunks sheet
+    const ss = getDB();
+    let chunkSheet = ss.getSheetByName("AI_Content_Chunks");
+    
+    if (!chunkSheet) {
+      chunkSheet = ss.insertSheet("AI_Content_Chunks");
+      chunkSheet.appendRow([
+        "Chunk ID",
+        "Course ID",
+        "Lesson ID",
+        "Chunk Text",
+        "Chunk Index",
+        "Keywords",
+        "Metadata",
+        "Created Date"
+      ]);
+      Logger.log("✅ Created AI_Content_Chunks sheet");
+    }
+    
+    // 3. Process each chunk
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      
+      // Extract keywords
+      Logger.log(`  Processing chunk ${i + 1}/${chunks.length}...`);
+      const keywords = extractKeywords(chunk.text);
+      
+      if (keywords.length === 0) {
+        Logger.log(`  ⚠️ No keywords extracted for chunk ${i + 1}, using manual metadata`);
+        // Fallback to manual keyword extraction from metadata
+        const metadata = extractChunkMetadata(chunk.text, i);
+        keywords.push(...metadata.keywords);
+      }
+      
+      // Extract metadata
+      const metadata = extractChunkMetadata(chunk.text, i);
+      metadata.title = title;
+      metadata.courseId = courseId;
+      metadata.lessonId = lessonId;
+      
+      // Generate unique chunk ID
+      const chunkId = `CHUNK_${courseId}_${lessonId}_${i}_${Date.now()}`;
+      
+      // Save to sheet
+      const row = [
+        chunkId,
+        courseId,
+        lessonId,
+        chunk.text,
+        i,
+        JSON.stringify(keywords),
+        JSON.stringify(metadata),
+        new Date()
+      ];
+      
+      chunkSheet.appendRow(row);
+      successCount++;
+      
+      // Rate limiting: wait 1 second between API calls (Gemini quota)
+      Utilities.sleep(1000);
+    }
+    
+    Logger.log(`\n✅ Processing complete: ${successCount} success, ${failCount} failed`);
+    
+    return {
+      success: true,
+      message: `Processed ${successCount}/${chunks.length} chunks`,
+      chunksCreated: successCount,
+      chunksFailed: failCount
+    };
+    
+  } catch (error) {
+    Logger.log("❌ Error in processContentToChunksV2:", error);
+    return {
+      success: false,
+      message: "Error: " + error.toString()
+    };
+  }
+}
+
+/**
+ * Test keyword extraction
+ */
+function testKeywordExtraction() {
+  Logger.log("🧪 Testing keyword extraction...");
+  
+  const testText = `**Tiêu chí chọn sản phẩm "Win":**
+- Đang bán chạy: Chọn top sản phẩm có lượt bán cao (trên 10.000 lượt bán).
+- Đánh giá tốt: Shop có rating từ 4.5 sao trở lên.
+- Hoa hồng: Từ 10% - 15%
+- Giá sản phẩm: Ưu tiên dưới 150.000 - 200.000 VNĐ`;
+  
+  const keywords = extractKeywords(testText);
+  
+  Logger.log(`\n✅ Extracted keywords:`);
+  keywords.forEach((kw, idx) => {
+    Logger.log(`  ${idx + 1}. ${kw}`);
+  });
+  
+  // Test matching
+  const queryKeywords = extractKeywords("cách chọn sản phẩm làm affiliate marketing");
+  const score = calculateKeywordScore(queryKeywords, keywords);
+  
+  Logger.log(`\n✅ Match score test:`);
+  Logger.log(`  Query keywords: ${queryKeywords.join(', ')}`);
+  Logger.log(`  Chunk keywords: ${keywords.slice(0, 5).join(', ')}`);
+  Logger.log(`  Score: ${score.toFixed(2)} (higher = better match)`);
+}
+// ========================================
+// RAG SYSTEM - PHASE 4: SEMANTIC SEARCH
+// ========================================
+
+/**
+ * Find relevant chunks for a query using keyword matching
+ * @param {string} query - User's question
+ * @param {string} userEmail - User email to filter activated courses
+ * @param {number} topK - Number of top chunks to return (default: 5)
+ * @returns {Array} Array of relevant chunks with scores
+ */
+function findRelevantChunks(query, userEmail, topK = 5) {
+  try {
+    Logger.log(`🔍 Searching for: "${query}"`);
+    
+    // 1. Extract keywords from query
+    const queryKeywords = extractKeywords(query);
+    Logger.log(`📝 Query keywords: ${queryKeywords.join(', ')}`);
+    
+    if (queryKeywords.length === 0) {
+      Logger.log("⚠️ No keywords extracted from query");
+      return [];
+    }
+    
+    // 2. Get activated courses
+    const activatedCourses = getStudentActivatedCourses(userEmail);
+    Logger.log(`📚 Activated courses: ${activatedCourses.join(', ')}`);
+    
+    if (activatedCourses.length === 0) {
+      Logger.log("⚠️ No activated courses");
+      return [];
+    }
+    
+    // 3. Load chunks from AI_Content_Chunks
+    const ss = getDB();
+    const chunkSheet = ss.getSheetByName("AI_Content_Chunks");
+    
+    if (!chunkSheet) {
+      Logger.log("⚠️ AI_Content_Chunks sheet not found");
+      return [];
+    }
+    
+    const data = chunkSheet.getDataRange().getValues();
+    Logger.log(`📊 Total chunks in sheet: ${data.length - 1}`);
+    
+    // 4. Calculate scores for each chunk
+    const scores = [];
+    
+    for (let i = 1; i < data.length; i++) {
+      const courseId = String(data[i][1] || "").trim();
+      
+      // Filter by activated courses
+      if (!activatedCourses.includes(courseId)) {
+        continue;
+      }
+      
+      const chunkId = data[i][0];
+      const chunkText = data[i][3];
+      const keywordsJson = data[i][5];
+      
+      let chunkKeywords = [];
+      try {
+        chunkKeywords = JSON.parse(keywordsJson);
+      } catch (e) {
+        // Fallback: extract keywords from chunk text
+        chunkKeywords = extractKeywords(chunkText);
+      }
+      
+      // Calculate similarity score
+      const score = calculateKeywordScore(queryKeywords, chunkKeywords);
+      
+      if (score > 0) {
+        scores.push({
+          chunkId: chunkId,
+          courseId: courseId,
+          text: chunkText,
+          keywords: chunkKeywords,
+          score: score
+        });
+      }
+    }
+    
+    // 5. Sort by score and return top K
+    scores.sort((a, b) => b.score - a.score);
+    const topChunks = scores.slice(0, topK);
+    
+    Logger.log(`\n✅ Found ${topChunks.length} relevant chunks:`);
+    topChunks.forEach((chunk, idx) => {
+      Logger.log(`  ${idx + 1}. [${chunk.courseId}] Score: ${chunk.score.toFixed(2)}`);
+      Logger.log(`     Preview: ${chunk.text.substring(0, 100)}...`);
+    });
+    
+    return topChunks;
+    
+  } catch (error) {
+    Logger.log("❌ Error in findRelevantChunks:", error);
+    return [];
+  }
+}
+
+/**
+ * Test semantic search
+ */
+function testSemanticSearch() {
+  Logger.log("🧪 Testing semantic search...");
+  
+  const testEmail = "quelion0708@gmail.com";
+  const testQuery = "tiêu chí chọn sản phẩm làm affiliate marketing";
+  
+  const results = findRelevantChunks(testQuery, testEmail, 3);
+  
+  Logger.log("\n" + "=".repeat(50));
+  Logger.log("✅ Search Results:");
+  
+  if (results.length === 0) {
+    Logger.log("❌ No results found. Make sure:");
+    Logger.log("  1. User has activated courses");
+    Logger.log("  2. AI_Content_Chunks sheet exists");
+    Logger.log("  3. Chunks have been processed");
+  } else {
+    results.forEach((result, idx) => {
+      Logger.log(`\n--- Result ${idx + 1} ---`);
+      Logger.log(`Course: ${result.courseId}`);
+      Logger.log(`Score: ${result.score.toFixed(2)}`);
+      Logger.log(`Text: ${result.text.substring(0, 200)}...`);
+    });
+  }
+}
+function processExistingAFCourse() {
+  const ss = getDB();
+  const contentSheet = ss.getSheetByName("AI_Content");
+  const data = contentSheet.getDataRange().getValues();
+  
+  // Find AF course row
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][2]) === "AF") {
+      const courseId = data[i][2];
+      const lessonId = data[i][3];
+      const title = data[i][4];
+      const content = data[i][5];
+      
+      Logger.log(`Processing ${courseId}...`);
+      const result = processContentToChunksV2(courseId, lessonId, content, title);
+      Logger.log(result);
+      break;
+    }
+  }
+}
