@@ -624,6 +624,258 @@
                 display: block !important;
             }
         }
+
+    /* Chatbot Styles */
+    .chatbot-fab {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        transition: all 0.3s ease;
+        z-index: 999;
+    }
+
+    .chatbot-fab:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5);
+    }
+
+    .chatbot-fab.active {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+
+    .chatbot-container {
+        position: fixed;
+        bottom: 100px;
+        right: 30px;
+        width: 380px;
+        height: 500px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 40px rgba(0, 0, 0, 0.16);
+        display: none;
+        flex-direction: column;
+        z-index: 998;
+        animation: slideUp 0.3s ease;
+    }
+
+    .chatbot-container.active {
+        display: flex;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .chatbot-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 15px 15px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .chatbot-header h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .chatbot-close {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+    }
+
+    .chatbot-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .chatbot-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        background: #f9fafb;
+    }
+
+    .message {
+        display: flex;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .message.user {
+        justify-content: flex-end;
+    }
+
+    .message.ai {
+        justify-content: flex-start;
+    }
+
+    .message-bubble {
+        max-width: 75%;
+        padding: 12px 16px;
+        border-radius: 12px;
+        word-wrap: break-word;
+        line-height: 1.4;
+        font-size: 14px;
+    }
+
+    .message.user .message-bubble {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-bottom-right-radius: 4px;
+    }
+
+    .message.ai .message-bubble {
+        background: white;
+        color: #333;
+        border: 1px solid #e5e7eb;
+        border-bottom-left-radius: 4px;
+    }
+
+    .typing-indicator {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+        padding: 12px 16px;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+    }
+
+    .typing-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #ccc;
+        animation: typing 1.4s infinite;
+    }
+
+    .typing-dot:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .typing-dot:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes typing {
+
+        0%,
+        60%,
+        100% {
+            opacity: 0.3;
+        }
+
+        30% {
+            opacity: 1;
+        }
+    }
+
+    .chatbot-input-area {
+        padding: 15px;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        gap: 10px;
+    }
+
+    .chatbot-input {
+        flex: 1;
+        padding: 10px 15px;
+        border: 1px solid #e5e7eb;
+        border-radius: 25px;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.3s;
+    }
+
+    .chatbot-input:focus {
+        border-color: #667eea;
+    }
+
+    .chatbot-send {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        transition: all 0.3s;
+    }
+
+    .chatbot-send:hover {
+        transform: scale(1.05);
+    }
+
+    .chatbot-send:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    @media (max-width: 600px) {
+        .chatbot-container {
+            width: calc(100% - 40px);
+            height: 400px;
+            bottom: 90px;
+            right: 20px;
+        }
+
+        .chatbot-fab {
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+        }
+    }
     </style>
 </head>
 
@@ -789,6 +1041,11 @@
                                 <i class="fas fa-info-circle"></i> Quy tắc
                             </button>
                         </h3>
+
+                        <!-- Assigned Date -->
+                        <div style="margin-bottom:10px;color:#475569;font-size:14px;">
+                            <strong>Ngày được gán:</strong> <span id="assignment-assigned-date">--/--/----</span>
+                        </div>
 
                         <!-- 1. Video Progress -->
                         <div class="grading-part">
@@ -1001,6 +1258,12 @@
                         <i class="fas fa-info-circle"></i> Quy tắc
                     </button>
                 </h3>
+
+                <!-- 1. Video Progress -->
+                <!-- Assigned Date -->
+                <div style="margin-bottom:10px;color:#475569;font-size:14px;">
+                    <strong>Ngày được gán:</strong> <span id="assignment-assigned-date-desktop">--/--/----</span>
+                </div>
 
                 <!-- 1. Video Progress -->
                 <div class="grading-part">
@@ -1417,7 +1680,8 @@
                 const isLocked = lesson.progress.status === "Locked";
                 const isDone = lesson.progress.status === "Completed" || lesson.progress.status === "Approved";
 
-                if (isDone) completed++;
+                // Don't count daily challenge in completion count
+                if (isDone && !lesson.isDailyChallenge) completed++;
 
                 // --- 1. Desktop Item (Div) ---
                 if (listDesktop) {
@@ -1427,13 +1691,40 @@
                     // Status Icon
                     let statusIcon = '<i class="far fa-circle status-lock"></i>';
                     if (isDone) statusIcon = '<i class="fas fa-check-circle status-done"></i>';
-                    else if (!isLocked) statusIcon = '<i class="fas fa-play-circle status-play"></i>';
+                    else if (!isLocked) statusIcon = lesson.isDailyChallenge ? '<i class="fas fa-star" style="color: #fbbf24;"></i>' : '<i class="fas fa-play-circle status-play"></i>';
+
+                    // Assigned date display (DD/MM/YYYY) - use assignedDate if provided, otherwise for daily challenge show today
+                    let assignedDateText = '';
+                    if (lesson.progress && lesson.progress.assignedDate) {
+                        assignedDateText = ' • ' + lesson.progress.assignedDate;
+                    } else if (lesson.isDailyChallenge) {
+                        assignedDateText = ' • ' + new Date().toLocaleDateString('vi-VN');
+                    }
+
+                    const lateIndicator = (lesson.progress && lesson.progress.nopTre) ? ' <span title="Nộp sau hạn: bị -1 điểm" style="color:#b91c1c; font-weight:700;">• Nộp trễ</span>' : '';
+                    const lessonMeta = lesson.isDailyChallenge
+                        ? '🌟 Ghi nhận hàng ngày' + assignedDateText + lateIndicator
+                        : ((lesson.duration ? Math.floor(lesson.duration / 60) + ' phút' : 'Video bài học') + assignedDateText + lateIndicator);
+
+                    const lessonItemClass = lesson.isDailyChallenge 
+                        ? `lesson-item ${idx === currentLessonIdx ? 'active' : ''} ${isLocked ? 'locked' : ''} daily-challenge-item`
+                        : `lesson-item ${idx === currentLessonIdx ? 'active' : ''} ${isLocked ? 'locked' : ''}`;
+
+                    item.className = lessonItemClass;
+                    
+                    if (lesson.isDailyChallenge) {
+                        item.style.cssText = `
+                            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+                            border-left: 4px solid #667eea;
+                            border-radius: 8px;
+                        `;
+                    }
 
                     item.innerHTML = `
                         <div class="lesson-status">${statusIcon}</div>
                         <div class="lesson-info">
                             <div class="lesson-title">${lesson.title}</div>
-                            <div class="lesson-meta">${lesson.duration ? Math.floor(lesson.duration / 60) + ' phút' : 'Video bài học'}</div>
+                            <div class="lesson-meta">${lessonMeta}</div>
                         </div>
                         ${isLocked ? '<i class="fas fa-lock" style="color: #94a3b8;"></i>' : ''}
                     `;
@@ -1449,8 +1740,16 @@
                     const option = document.createElement('div');
                     option.className = `custom-option ${isLocked ? 'locked' : ''} ${idx === currentLessonIdx ? 'selected' : ''}`;
 
-                    let status = isLocked ? '🔒' : (isDone ? '✓' : '▶');
+                    let status;
+                    if (lesson.isDailyChallenge) {
+                        status = isLocked ? '🔒' : (isDone ? '✨' : '⭐');
+                    } else {
+                        status = isLocked ? '🔒' : (isDone ? '✓' : '▶');
+                    }
+                    
+                    const optionStyle = lesson.isDailyChallenge ? 'style="background: rgba(102, 126, 234, 0.1); border-left: 3px solid #667eea;"' : '';
                     option.innerHTML = `<span style="margin-right:8px">${status}</span> ${lesson.title}`;
+                    if (optionStyle) option.setAttribute('style', optionStyle);
 
                     if (!isLocked) {
                         option.onclick = () => selectMobileLesson(idx);
@@ -1460,7 +1759,11 @@
             });
 
             const summaryEl = document.getElementById('progress-summary');
-            if (summaryEl) summaryEl.textContent = `${completed}/${curriculum.length} bài học đã hoàn thành`;
+            if (summaryEl) {
+                // Count only regular lessons, not daily challenge
+                const regularLessonCount = curriculum.filter(l => !l.isDailyChallenge).length;
+                summaryEl.textContent = `${completed}/${regularLessonCount} bài học đã hoàn thành`;
+            }
         }
 
         function toggleDropdown() {
@@ -1472,8 +1775,6 @@
             playLesson(idx);
             toggleDropdown(); // Close after selection
         }
-
-
 
         function playLesson(idx) {
             console.log(`playLesson called with idx: ${idx}`);
@@ -1574,6 +1875,15 @@
                 if (assignBox) assignBox.classList.add('hidden');
             }
 
+            // Show assigned date in assignment form (if form has elements)
+            try {
+                const assignedDateStr = lesson.progress && lesson.progress.assignedDate ? lesson.progress.assignedDate : (lesson.isDailyChallenge ? new Date().toLocaleDateString('vi-VN') : '');
+                const assignDateEl = document.getElementById('assignment-assigned-date');
+                const assignDateElDesktop = document.getElementById('assignment-assigned-date-desktop');
+                if (assignDateEl) assignDateEl.textContent = assignedDateStr;
+                if (assignDateElDesktop) assignDateElDesktop.textContent = assignedDateStr;
+            } catch (e) { /* ignore */ }
+
             renderLessonList(); // Update active state
 
             const videoId = getYouTubeId(lesson.youtubeId);
@@ -1665,8 +1975,8 @@
                 const hoTro1 = (lesson.progress.disciplineSupport1) ? 1 : 0;
                 const hoTro2 = (lesson.progress.disciplineSupport2) ? 1 : 0;
 
-                // Diem_Dung_Han (+1)
-                const diemDungHan = 1; // Default +1
+                // Diem_Dung_Han (+1 or -1)
+                const diemDungHan = (lesson.progress && lesson.progress.nopTre) ? -1 : 1;
 
                 // Calculate Total
                 let totalScore = vidScore + refScore + pracScore + hoTro1 + hoTro2 + diemDungHan;
@@ -1726,6 +2036,38 @@
 
             // ALSO call immediately without setTimeout as backup
             calculateLiveScore();
+
+            // === HANDLE DAILY CHALLENGE LESSON ===
+            if (lesson.isDailyChallenge) {
+                // Hide video player
+                const videoWrapper = document.querySelector('.video-wrapper');
+                if (videoWrapper) videoWrapper.style.display = 'none';
+                
+                // Update summary with daily challenge message
+                const summaryEl = document.getElementById('lesson-summary');
+                if (summaryEl) {
+                    summaryEl.innerHTML = `
+                        <div style="padding: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-radius: 12px; border-left: 4px solid #667eea;">
+                            <h3 style="margin: 0 0 10px 0; color: #667eea;">🌟 Thử Thách Mỗi Ngày</h3>
+                            <p style="margin: 0; color: #475569; font-size: 14px; line-height: 1.6;">
+                                Hãy ghi nhận hành động học tập của bạn hôm nay. Mỗi ngày một bước, bạn sẽ thấy sự tiến bộ thần kỳ!<br><br>
+                                <strong>Điểm xem video: +2 điểm</strong> (mặc định cho bài ghi nhận hàng ngày)
+                            </p>
+                        </div>
+                    `;
+                }
+                
+                // Set video score to 2 by default for daily challenge
+                lesson.progress.videoScore = 2;
+                
+                // Show assignment form
+                const assignBox = document.getElementById('assignment-section');
+                if (assignBox) assignBox.classList.remove('hidden');
+                
+                calculateLiveScore();
+                return; // Don't load video player for daily challenge
+            }
+            // ======================================
 
             if (!videoId) {
                 showToast("ID Video không hợp lệ! Vui lòng kiểm tra dữ liệu.", "error");
@@ -2323,14 +2665,16 @@
         async function checkGraduation() {
             if (!curriculum || curriculum.length === 0) return;
 
-            const allDone = curriculum.every(l => l.progress.status === "Completed" || l.progress.status === "Approved");
+            // Only check completion for regular lessons (not daily challenge)
+            const regularLessons = curriculum.filter(l => !l.isDailyChallenge);
+            const allDone = regularLessons.every(l => l.progress.status === "Completed" || l.progress.status === "Approved");
 
             if (allDone) {
                 let totalCourseScore = 0;
-                let maxCourseScore = curriculum.length * 10;
+                let maxCourseScore = regularLessons.length * 10;
                 let tableHtml = "";
 
-                curriculum.forEach(lesson => {
+                regularLessons.forEach(lesson => {
                     const s = lesson.progress.totalScore || 0;
                     totalCourseScore += s;
 
@@ -2373,8 +2717,206 @@
             }
             bindLiveInputs();
             loadCurriculum(); // Load content immediately
+            initChatbot(); // Initialize chatbot
         });
+
+        // ===== CHATBOT FUNCTIONS =====
+        let conversationHistory = [];
+
+        function initChatbot() {
+            const fab = document.getElementById('chatbot-fab');
+            const closeBtn = document.getElementById('chatbot-close');
+            const sendBtn = document.getElementById('chatbot-send');
+            const input = document.getElementById('chatbot-input');
+
+            if (!fab) return; // Ensure elements exist
+
+            // Set course name in welcome message
+            const courseNameSpan = document.getElementById('chatbot-course-name');
+            if (courseNameSpan && courseTitle) {
+                courseNameSpan.textContent = courseTitle;
+            }
+
+            // Reset conversation history for new course
+            conversationHistory = [];
+
+            fab.addEventListener('click', toggleChatbot);
+            closeBtn.addEventListener('click', closeChatbot);
+            sendBtn.addEventListener('click', sendMessage);
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        }
+
+        function toggleChatbot() {
+            const container = document.getElementById('chatbot-container');
+            const fab = document.getElementById('chatbot-fab');
+            container.classList.toggle('active');
+            fab.classList.toggle('active');
+
+            if (container.classList.contains('active')) {
+                document.getElementById('chatbot-input').focus();
+            }
+        }
+
+        function closeChatbot() {
+            const container = document.getElementById('chatbot-container');
+            const fab = document.getElementById('chatbot-fab');
+            container.classList.remove('active');
+            fab.classList.remove('active');
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatbot-input');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // Add user message to UI
+            addMessageToUI(message, 'user');
+            input.value = '';
+
+            // Add to conversation history
+            conversationHistory.push({
+                role: 'user',
+                content: message
+            });
+
+            // Show typing indicator
+            showTypingIndicator();
+
+            try {
+                // Get user data
+                const userData = JSON.parse(localStorage.getItem('user')) || {};
+                
+                // Send to backend with courseId and courseTitle
+                console.log('🤖 Sending chat request:', { message, courseId, courseTitle });
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'chatWithAI',
+                        message: message,
+                        conversationHistory: conversationHistory,
+                        email: userData.email || "",
+                        courseId: courseId,
+                        courseTitle: courseTitle
+                    })
+                });
+
+                console.log('📡 Response status:', response.status);
+                const result = await response.json();
+                console.log('📥 Response data:', result);
+
+                removeTypingIndicator();
+
+                if (result.success) {
+                    const aiMessage = result.message;
+                    addMessageToUI(aiMessage, 'ai');
+
+                    // Add to conversation history
+                    conversationHistory.push({
+                        role: 'ai',
+                        content: aiMessage
+                    });
+
+                    // Keep conversation history limited (last 20 messages)
+                    if (conversationHistory.length > 20) {
+                        conversationHistory = conversationHistory.slice(-20);
+                    }
+                } else {
+                    console.error('❌ Backend returned error:', result.message);
+                    addMessageToUI('❌ ' + (result.message || 'Lỗi xử lý'), 'ai');
+                }
+            } catch (error) {
+                removeTypingIndicator();
+                console.error('💥 Chatbot error:', error);
+                console.error('Error details:', error.stack);
+                addMessageToUI('❌ Lỗi kết nối. Vui lòng thử lại!', 'ai');
+            }
+
+            // Auto-scroll to bottom
+            const messagesContainer = document.getElementById('chatbot-messages');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function addMessageToUI(text, sender) {
+            const messagesContainer = document.getElementById('chatbot-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+
+            // Convert markdown to HTML for proper rendering
+            let html = text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // **bold**
+                .replace(/\n/g, '<br>') // line breaks
+                .replace(/^- (.+)$/gm, '• $1') // bullet points
+                .replace(/^(\d+)\. (.+)$/gm, '<strong>$1.</strong> $2'); // numbered lists
+
+            bubble.innerHTML = html;
+
+            messageDiv.appendChild(bubble);
+            messagesContainer.appendChild(messageDiv);
+        }
+
+        function showTypingIndicator() {
+            const messagesContainer = document.getElementById('chatbot-messages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message ai';
+            typingDiv.id = 'typing-indicator';
+            typingDiv.innerHTML = `
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) indicator.remove();
+        }
     </script>
+
+    <!-- Chatbot UI -->
+    <button id="chatbot-fab" class="chatbot-fab" title="Trợ lý AI">
+        <i class="fas fa-comments"></i>
+    </button>
+
+    <div id="chatbot-container" class="chatbot-container">
+        <div class="chatbot-header">
+            <h3>🤖 Trợ lý AI</h3>
+            <button id="chatbot-close" class="chatbot-close" title="Đóng">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="chatbot-messages" class="chatbot-messages">
+            <div class="message ai">
+                <div class="message-bubble">
+                    👋 Xin chào! Tôi là trợ lý AI của Học viện BRK.
+                    <br><br>
+                    🎓 Tôi sẽ hỗ trợ bạn với các câu hỏi về <strong><span id="chatbot-course-name">khóa học này</span></strong>.
+                    <br><br>
+                    📚 Hãy hỏi tôi bất cứ điều gì về nội dung bài học. Có gì tôi giúp bạn?
+                </div>
+            </div>
+        </div>
+        <div class="chatbot-input-area">
+            <input id="chatbot-input" class="chatbot-input" type="text" placeholder="Nhập câu hỏi của bạn..."
+                autocomplete="off">
+            <button id="chatbot-send" class="chatbot-send" title="Gửi">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
 </body>
 
 </html>

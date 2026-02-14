@@ -132,7 +132,7 @@ function doPost(e) {
       return returnJSON(updateVideoProgress(content.email, content.courseId, content.lessonId, content.currentTime, content.duration));
     }
     else if (action === "chatWithAI") {
-      return returnJSON(chatWithAI(content.message, content.conversationHistory, content.email));
+      return returnJSON(chatWithAI(content.message, content.conversationHistory, content.email, content.courseId, content.courseTitle));
     }
     else if (action === "addVideoToCourse") {
       return returnJSON(addVideoToCourse(content));
@@ -694,6 +694,8 @@ const COL_NAME_DIEM_DUNG_HAN = "Diem_Dung_Han";
 const COL_NAME_TONG_DIEM = "Tong_Diem";
 const COL_NAME_XEP_LOAI = "Xep_Loai"; // Wait, user sheet doesn't seem to show Xep_Loai in the partial view, but usually it's there.
 const COL_NAME_TRANG_THAI = "Trang_Thai"; // Need to check if this exists or if it's derived.
+const COL_NAME_START_DATE = "StartDate"; // New: enrollment start date (DD/MM/YYYY)
+const COL_NAME_NOP_TRE = "Nop_Tre"; // New: flag for late submission
 
 function calculateCourseProgress(email, courseId, ss) {
   const contentSheet = ss.getSheetByName("KH_NoiDung");
@@ -744,6 +746,9 @@ function getCourseContent(email, courseId) {
   // FORCE reading ALL columns to ensure we catch new columns added by user
   const progressData = (progressSheet && progressSheet.getLastRow() > 0) ? progressSheet.getDataRange().getValues() : [];
   
+  // Ensure required progress columns exist
+  ensureProgressColumns(progressSheet);
+
   const curriculum = [];
   for (let i = 1; i < contentData.length; i++) {
     if (contentData[i][0] == courseId) {
@@ -761,6 +766,7 @@ function getCourseContent(email, courseId) {
       const idxCurTime = getColumnIndex(progressSheet, COL_NAME_HIEN_TAI);
       const idxMaxTime = getColumnIndex(progressSheet, COL_NAME_XA_NHAT);
       const idxStatus = getColumnIndex(progressSheet, COL_NAME_TRANG_THAI);
+      const idxNopTre = getColumnIndex(progressSheet, COL_NAME_NOP_TRE);
       const idxLink1 = getColumnIndex(progressSheet, COL_NAME_LINK_1);
       const idxVidScore = getColumnIndex(progressSheet, COL_NAME_DIEM_VIDEO);
       const idxReflect = getColumnIndex(progressSheet, COL_NAME_BHTDN);
@@ -799,7 +805,8 @@ function getCourseContent(email, courseId) {
                 totalScore: getNum(idxTotal),
                 grade: getVal(idxGrade) || "",
                 disciplineSupport1: getBool(idxSupp1),
-                disciplineSupport2: getBool(idxSupp2)
+                disciplineSupport2: getBool(idxSupp2),
+                nopTre: getBool(idxNopTre)
               };
               break;
             }
@@ -820,6 +827,52 @@ function getCourseContent(email, courseId) {
   
   // Sắp xếp theo order
   curriculum.sort((a, b) => a.order - b.order);
+
+  // --- Assigned Date Logic ---
+  // Determine enrollment start date from KH_TienDo (column: StartDate) if present; otherwise default to today
+  const idxStartDate = getColumnIndex(progressSheet, COL_NAME_START_DATE);
+  const parseDDMMYYYY = (s) => {
+    try {
+      if (!s) return null;
+      const parts = String(s).split('/');
+      if (parts.length !== 3) return null;
+      const d = Number(parts[0]);
+      const m = Number(parts[1]) - 1;
+      const y = Number(parts[2]);
+      return new Date(y, m, d);
+    } catch (e) { return null; }
+  };
+
+  // Find enrollment startDate from any progress row for this student+course
+  let enrollmentStart = null;
+  if (idxStartDate !== -1 && progressData && progressData.length > 1) {
+    for (let j = 1; j < progressData.length; j++) {
+      const pEmail = String(progressData[j][getColumnIndex(progressSheet, COL_NAME_EMAIL)] || "");
+      const pCourseId = String(progressData[j][getColumnIndex(progressSheet, COL_NAME_MA_KH)] || "");
+      if (pEmail === email && pCourseId === courseId) {
+        const s = progressData[j][idxStartDate];
+        const d = parseDDMMYYYY(s);
+        if (d) { enrollmentStart = d; break; }
+      }
+    }
+  }
+  if (!enrollmentStart) {
+    // default to today (server timezone Asia/Ho_Chi_Minh)
+    const now = new Date();
+    enrollmentStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+
+  // Assign dates to curriculum lessons (one lesson per day from enrollmentStart)
+  for (let i = 0; i < curriculum.length; i++) {
+    if (curriculum[i].isDailyChallenge) {
+      // Daily challenge uses dynamic date (submission date = today)
+      curriculum[i].progress.assignedDate = null;
+    } else {
+      const assigned = new Date(enrollmentStart.getTime());
+      assigned.setDate(assigned.getDate() + i); // day offset
+      curriculum[i].progress.assignedDate = Utilities.formatDate(assigned, "Asia/Ho_Chi_Minh", "dd/MM/yyyy");
+    }
+  }
   
   // Logic khóa bài: Bài n+1 chỉ mở khi bài n hoàn thành
   for (let i = 0; i < curriculum.length; i++) {
@@ -833,7 +886,184 @@ function getCourseContent(email, courseId) {
     }
   }
   
+  // Thêm bài "Thử thách mỗi ngày" sau tất cả bài học bình thường
+  // Ensure progress row exists for daily challenge
+  ensureDailyChallengeProgressRow(email, courseId, progressSheet);
+  
+  // Get daily challenge progress data
+  let dailyChallengeProgress = { 
+    currentTime: 0, 
+    maxTime: 0, 
+    status: curriculum.length > 0 && (curriculum[curriculum.length - 1].progress.status === "Completed" || curriculum[curriculum.length - 1].progress.status === "Approved") ? "Available" : "Locked",
+    link1: "",
+    videoScore: 0,
+    reflection: "",
+    link2: "",
+    link3: "",
+    totalScore: 0,
+    grade: "",
+    disciplineSupport1: false,
+    disciplineSupport2: false
+  };
+  
+  // Load daily challenge progress from KH_TienDo
+  if (progressData && progressData.length > 1) {
+    const getNum = (idx, j) => (idx !== -1 ? Number(progressData[j][idx] || 0) : 0);
+    const getVal = (idx, j) => (idx !== -1 ? progressData[j][idx] : undefined);
+    const getBool = (idx, j) => {
+      if (idx === -1) return false;
+      const v = progressData[j][idx];
+      return v === true || v === "true" || v === 1;
+    };
+    const idxNopTre = getColumnIndex(progressSheet, COL_NAME_NOP_TRE);
+    
+    for (let j = 1; j < progressData.length; j++) {
+      const pEmail = String(progressData[j][idxEmail] || "");
+      const pCourseId = String(progressData[j][idxCourse] || "");
+      const pLessonId = String(progressData[j][idxLesson] || "");
+      
+      if (pEmail === email && pCourseId === courseId && pLessonId === "DAILY_CHALLENGE") {
+        dailyChallengeProgress = {
+          currentTime: getNum(idxCurTime, j),
+          maxTime: getNum(idxMaxTime, j),
+          status: getVal(idxStatus, j) || dailyChallengeProgress.status,
+          link1: getVal(idxLink1, j) || "",
+          videoScore: getNum(idxVidScore, j),
+          reflection: getVal(idxReflect, j) || "",
+          link2: getVal(idxLink2, j) || "",
+          link3: getVal(idxLink3, j) || "",
+          totalScore: getNum(idxTotal, j),
+          grade: getVal(idxGrade, j) || "",
+          disciplineSupport1: getBool(idxSupp1, j),
+          disciplineSupport2: getBool(idxSupp2, j),
+          nopTre: getBool(idxNopTre, j)
+        };
+        break;
+      }
+    }
+  }
+  
+  curriculum.push({
+    id: "DAILY_CHALLENGE",
+    title: "🌟 Thử thách mỗi ngày",
+    youtubeId: "",
+    summary: "Ghi nhận hành động mỗi ngày để duy trì động lực học tập",
+    assignmentType: "daily_challenge",
+    isDailyChallenge: true,
+    order: curriculum.length + 1,
+    progress: dailyChallengeProgress
+  });
+  
   return { success: true, data: curriculum };
+}
+
+// Ensure KH_TienDo has StartDate and Nop_Tre columns (create header cells if missing)
+function ensureProgressColumns(progressSheet) {
+  try {
+    if (!progressSheet) return;
+    const headersRange = progressSheet.getRange(1, 1, 1, progressSheet.getLastColumn());
+    const headers = headersRange.getValues()[0].map(h => String(h || "").trim());
+    const need = [COL_NAME_START_DATE, COL_NAME_NOP_TRE];
+    let lastCol = headers.length;
+    need.forEach(name => {
+      if (headers.indexOf(name) === -1) {
+        lastCol += 1;
+        progressSheet.getRange(1, lastCol).setValue(name);
+      }
+    });
+  } catch (e) {
+    Logger.log('ensureProgressColumns error: ' + e);
+  }
+}
+
+// Ensure daily challenge progress row exists in KH_TienDo
+function ensureDailyChallengeProgressRow(email, courseId, progressSheet) {
+  try {
+    if (!progressSheet) return;
+    
+    const data = progressSheet.getDataRange().getValues();
+    
+    // Check if row already exists
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] === email && data[i][1] === courseId && data[i][2] === "DAILY_CHALLENGE") {
+        return; // Already exists
+      }
+    }
+    
+    // Create new row for daily challenge
+    progressSheet.appendRow([
+      email,
+      courseId,
+      "DAILY_CHALLENGE",
+      "", // lesson title placeholder
+      "", // summary placeholder
+      "Locked", // initial status
+      0, // current time
+      0, // max time
+      "", // link1
+      0, // video score
+      "", // reflection
+      "", // link2
+      "", // link3
+      0, // total score
+      "", // grade
+      false, // discipline support 1
+      false  // discipline support 2
+    ]);
+    // After append, set StartDate and Nop_Tre if those columns exist
+    const lastRow = progressSheet.getLastRow();
+    const idxStart = getColumnIndex(progressSheet, COL_NAME_START_DATE);
+    const idxNopTre = getColumnIndex(progressSheet, COL_NAME_NOP_TRE);
+    if (idxStart !== -1) {
+      const todayStr = Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "dd/MM/yyyy");
+      progressSheet.getRange(lastRow, idxStart + 1).setValue(todayStr);
+    }
+    if (idxNopTre !== -1) {
+      progressSheet.getRange(lastRow, idxNopTre + 1).setValue(false);
+    }
+    
+    Logger.log(`Created daily challenge progress row for ${email} in course ${courseId}`);
+  } catch (error) {
+    Logger.log("Error in ensureDailyChallengeProgressRow:", error);
+  }
+}
+
+// Kiểm tra xem học viên đã ghi nhận hôm nay chưa
+function getDailyChallengeStatus(email, courseId) {
+  try {
+    const ss = getDB();
+    let sheet = ss.getSheetByName("KH_GhiNhanHangNgay");
+    
+    if (!sheet) {
+      // Tự tạo sheet nếu chưa có
+      sheet = ss.insertSheet("KH_GhiNhanHangNgay");
+      sheet.appendRow(["Email", "Ma_KH", "Ngay_Ghi_Nhan", "Ghi_Nhan_Noi_Dung", "Timestamp"]);
+      return { submitted: false, submissionDate: "", todayReflection: "" };
+    }
+    
+    const data = sheet.getDataRange().getValues();
+    const today = new Date().toLocaleDateString('vi-VN'); // Format: DD/MM/YYYY
+    
+    for (let i = 1; i < data.length; i++) {
+      const rowEmail = String(data[i][0] || "").trim();
+      const rowCourseId = String(data[i][1] || "").trim();
+      const rowDate = String(data[i][2] || "").trim();
+      const reflection = String(data[i][3] || "").trim();
+      
+      if (rowEmail === email && rowCourseId === courseId && rowDate === today) {
+        return {
+          submitted: true,
+          submissionDate: rowDate,
+          todayReflection: reflection
+        };
+      }
+    }
+    
+    return { submitted: false, submissionDate: "", todayReflection: "" };
+  } catch (error) {
+    Logger.log("Error in getDailyChallengeStatus:", error);
+    return { submitted: false, submissionDate: "", todayReflection: "" };
+  }
 }
 
 function submitAssignment(email, courseId, lessonId, assignmentLink) {
@@ -844,13 +1074,122 @@ function submitAssignment(email, courseId, lessonId, assignmentLink) {
   for (let i = 1; i < data.length; i++) {
     if (data[i][0] == email && data[i][1] == courseId && data[i][2] == lessonId) {
       progressSheet.getRange(i + 1, 6).setValue("Submitted");
+      
+      // If this is a daily challenge, also save to KH_GhiNhanHangNgay
+      if (lessonId === "DAILY_CHALLENGE") {
+        saveDailyChallengeRecord(email, courseId, assignmentLink);
+      }
+      
       return { success: true, message: "Đã nộp bài tập thành công!" };
     }
   }
   return { success: false, message: "Vui lòng xem video trước khi nộp bài tập!" };
 }
 
-// Hàm giả định kiểm tra đăng ký (Sau này sẽ check sheet "DangKy")
+// Save daily challenge record to KH_GhiNhanHangNgay sheet
+function saveDailyChallengeRecord(email, courseId, reflection) {
+  try {
+    if (!email || !courseId || !reflection) {
+      Logger.log("Missing required fields for daily challenge record");
+      return;
+    }
+    
+    const ss = getDB();
+    let sheet = ss.getSheetByName("KH_GhiNhanHangNgay");
+    
+    if (!sheet) {
+      sheet = ss.insertSheet("KH_GhiNhanHangNgay");
+      sheet.appendRow(["Email", "Ma_KH", "Ngay_Ghi_Nhan", "Ghi_Nhan_Noi_Dung", "Timestamp"]);
+    }
+    
+    const today = new Date().toLocaleDateString('vi-VN'); // DD/MM/YYYY
+    const timestamp = new Date();
+    
+    // Check if already submitted today
+    const data = sheet.getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      const rowEmail = String(data[i][0] || "").trim();
+      const rowCourseId = String(data[i][1] || "").trim();
+      const rowDate = String(data[i][2] || "").trim();
+      
+      if (rowEmail === email && rowCourseId === courseId && rowDate === today) {
+        // Already submitted today, update
+        sheet.getRange(i + 1, 4).setValue(reflection);
+        sheet.getRange(i + 1, 5).setValue(timestamp);
+        Logger.log(`Updated daily challenge record for ${email} in course ${courseId}`);
+        return;
+      }
+    }
+    
+    // New record for today
+    sheet.appendRow([email, courseId, today, reflection, timestamp]);
+    Logger.log(`Saved new daily challenge record for ${email} in course ${courseId}`);
+    
+  } catch (error) {
+    Logger.log("Error in saveDailyChallengeRecord:", error);
+  }
+}
+
+// Lưu ghi nhận hàng ngày (Daily Challenge submission)
+function submitDailyChallenge(email, courseId, reflection) {
+  try {
+    if (!email || !courseId || !reflection) {
+      return { 
+        success: false, 
+        message: "Email, khóa học và ghi nhận không được để trống!" 
+      };
+    }
+    
+    const ss = getDB();
+    let sheet = ss.getSheetByName("KH_GhiNhanHangNgay");
+    
+    if (!sheet) {
+      sheet = ss.insertSheet("KH_GhiNhanHangNgay");
+      sheet.appendRow(["Email", "Ma_KH", "Ngay_Ghi_Nhan", "Ghi_Nhan_Noi_Dung", "Timestamp"]);
+    }
+    
+    const today = new Date().toLocaleDateString('vi-VN'); // DD/MM/YYYY
+    const timestamp = new Date();
+    
+    // Kiểm tra xem đã ghi nhận ngày hôm nay chưa
+    const data = sheet.getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      const rowEmail = String(data[i][0] || "").trim();
+      const rowCourseId = String(data[i][1] || "").trim();
+      const rowDate = String(data[i][2] || "").trim();
+      
+      if (rowEmail === email && rowCourseId === courseId && rowDate === today) {
+        // Đã ghi nhận rồi, cập nhật
+        sheet.getRange(i + 1, 4).setValue(reflection);
+        sheet.getRange(i + 1, 5).setValue(timestamp);
+        
+        return { 
+          success: true, 
+          message: "✅ Cập nhật ghi nhận ngày hôm nay thành công! Tiếp tục cố gắng ngày mai!",
+          submitted: true,
+          today: today
+        };
+      }
+    }
+    
+    // Chưa ghi nhận, thêm dòng mới
+    sheet.appendRow([email, courseId, today, reflection, timestamp]);
+    
+    return { 
+      success: true, 
+      message: "🎉 Chúc mừng bạn đã ghi nhận hôm nay! Tiếp tục duy trì thói quen học tập tốt này!",
+      submitted: true,
+      today: today
+    };
+    
+  } catch (error) {
+    Logger.log("Error in submitDailyChallenge:", error);
+    return { 
+      success: false, 
+      message: "❌ Lỗi khi lưu ghi nhận: " + error.toString()
+    };
+  }
+}
 function checkRegistration(email, courseId) {
   if (courseId === "C01") return true; // Demo: Đã đăng ký khóa 1
   return false;
@@ -1669,6 +2008,13 @@ function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
     
     if (idxCurTime !== -1) newRow[idxCurTime] = currentTime;
     if (idxMaxTime !== -1) newRow[idxMaxTime] = maxTime;
+
+    // If StartDate column exists and not set for this enrollment, set it to today
+    const idxStartDate = getColumnIndex(sheet, COL_NAME_START_DATE);
+    if (idxStartDate !== -1) {
+      const todayStr = Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "dd/MM/yyyy");
+      newRow[idxStartDate] = todayStr;
+    }
     
     // For new row, other scores are 0, so Total = Video Score
     // Status is likely "In Progress" (max 2 pts < 5)
@@ -1815,8 +2161,73 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
   let hoTro2 = disciplineSupport2 ? 1 : 0; // Tích hỗ trợ tuyến 2 (+1)
   
   // 5. Diem_Dung_Han (+1 or -1)
-  let diemDungHan = 1; // Mặc định +1 (Nộp đúng hạn)
-  // Logic: Nếu có deadline, kiểm tra tại đây. Hiện tại luôn +1.
+  // Determine deadline based on enrollment StartDate and lesson order
+  let diemDungHan = 1; // default +1 (on-time)
+  let isLate = false;
+  try {
+    const idxStartDate = getColumnIndex(sheet, COL_NAME_START_DATE);
+    const getEnrollmentStart = () => {
+      if (idxStartDate === -1) return null;
+      // Find any row for this student+course with StartDate
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][idxEmail]) === email && String(data[i][idxCourse]) === courseId) {
+          const sd = data[i][idxStartDate];
+          if (sd) return sd;
+        }
+      }
+      return null;
+    };
+
+    const parseDDMMYYYY = (s) => {
+      if (!s) return null;
+      const parts = String(s).split('/');
+      if (parts.length !== 3) return null;
+      return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+    };
+
+    const enrollmentStartStr = getEnrollmentStart();
+    let assignedDate = null;
+    if (lessonId === "DAILY_CHALLENGE") {
+      assignedDate = new Date(); // daily challenge uses current date as assigned date
+    } else if (enrollmentStartStr) {
+      const startDateObj = parseDDMMYYYY(enrollmentStartStr);
+      if (startDateObj) {
+        // Determine lesson index among course lessons
+        const cSheet = ss.getSheetByName("KH_NoiDung");
+        if (cSheet) {
+          const cData = cSheet.getDataRange().getValues();
+          const lessons = [];
+          for (let i = 1; i < cData.length; i++) {
+            if (cData[i][0] == courseId) {
+              lessons.push({ id: String(cData[i][1]), order: Number(cData[i][6] || i) });
+            }
+          }
+          lessons.sort((a, b) => a.order - b.order);
+          const idx = lessons.findIndex(x => x.id === lessonId);
+          if (idx !== -1) {
+            assignedDate = new Date(startDateObj.getTime());
+            assignedDate.setDate(assignedDate.getDate() + idx);
+          }
+        }
+      }
+    }
+
+    const todayNoTime = new Date();
+    todayNoTime.setHours(0,0,0,0);
+    if (assignedDate) {
+      const assignedNoTime = new Date(assignedDate.getFullYear(), assignedDate.getMonth(), assignedDate.getDate());
+      // If submitted after assigned date -> late
+      if (todayNoTime > assignedNoTime) {
+        diemDungHan = -1; // late penalty
+        // mark late in ghi nhan (add note)
+        const prevGhiNhan = (getColumnIndex(sheet, COL_NAME_GHI_NHAN) !== -1) ? data[rowIndex][getColumnIndex(sheet, COL_NAME_GHI_NHAN)] : "";
+        const note = String(prevGhiNhan || "") + " (Nộp trễ)";
+        if (getColumnIndex(sheet, COL_NAME_GHI_NHAN) !== -1) sheet.getRange(rowNum, getColumnIndex(sheet, COL_NAME_GHI_NHAN) + 1).setValue(note);
+      }
+    }
+  } catch (e) {
+    // ignore and keep default diemDungHan
+  }
   
   // 6. Calculate Tong_Diem
   // Formula: Tong_Diem = Diem_Video + Diem_BHTDN + Diem_Link + Ho_Tro1 + Ho_Tro2 + DIem_DungHan
@@ -1861,6 +2272,8 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
   setValue(COL_NAME_DIEM_BHTDN, diemBHTDN);
   setValue(COL_NAME_DIEM_LINK, diemLink);
   setValue(COL_NAME_DIEM_DUNG_HAN, diemDungHan);
+  // Save late flag
+  setValue(COL_NAME_NOP_TRE, isLate ? true : false);
   
   setValue(COL_NAME_TONG_DIEM, tongDiem);
   setValue(COL_NAME_XEP_LOAI, xepLoai);
@@ -1895,7 +2308,7 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
 // 2. Mở Apps Script Project Settings
 // 3. Thêm Script Property: GEMINI_API_KEY = "your-api-key-here"
 
-function chatWithAI(message, conversationHistory = [], userEmail = "") {
+function chatWithAI(message, conversationHistory = [], userEmail = "", courseId = null, courseTitle = "") {
   try {
     const GEMINI_API_KEY = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
     
@@ -1908,6 +2321,7 @@ function chatWithAI(message, conversationHistory = [], userEmail = "") {
     }
     
     Logger.log("✅ GEMINI_API_KEY exists: " + GEMINI_API_KEY.substring(0, 10) + "...");
+    Logger.log("📚 Course Info - ID: " + (courseId || "none") + ", Title: " + (courseTitle || "none"));
 
 
     if (!message || message.trim() === "") {
@@ -1921,7 +2335,16 @@ function chatWithAI(message, conversationHistory = [], userEmail = "") {
     let courseContexts = "";
     
     try {
-      const relevantChunks = findRelevantChunks(message, userEmail, 5); // Back to 5 chunks for quality
+      // If courseId is provided, only search in that course; otherwise search in all activated courses
+      let relevantChunks;
+      if (courseId) {
+        Logger.log("🎯 Searching in specific course: " + courseId);
+        relevantChunks = findRelevantChunksInCourse(message, courseId, 5);
+      } else {
+        Logger.log("📚 Searching in all activated courses");
+        relevantChunks = findRelevantChunks(message, userEmail, 5);
+      }
+      // Back to 5 chunks for quality
       
       if (relevantChunks && relevantChunks.length > 0) {
         courseContexts = "📚 NỘI DUNG LIÊN QUAN:\n\n";
@@ -1933,11 +2356,21 @@ function chatWithAI(message, conversationHistory = [], userEmail = "") {
         Logger.log(`✅ RAG provided ${relevantChunks.length} chunks`);
       } else {
         Logger.log("⚠️ RAG returned 0 chunks, using fallback");
-        courseContexts = getAllActivatedCoursesContent(userEmail);
+        // Use course-specific content if courseId provided, otherwise use all courses
+        if (courseId) {
+          courseContexts = getSpecificCourseContent(courseId, courseTitle);
+        } else {
+          courseContexts = getAllActivatedCoursesContent(userEmail);
+        }
       }
     } catch (ragError) {
       Logger.log("⚠️ RAG error, falling back to old method:", ragError);
-      courseContexts = getAllActivatedCoursesContent(userEmail);
+      // Use course-specific content if courseId provided, otherwise use all courses
+      if (courseId) {
+        courseContexts = getSpecificCourseContent(courseId, courseTitle);
+      } else {
+        courseContexts = getAllActivatedCoursesContent(userEmail);
+      }
     }
     
     // Prepare conversation history for Gemini (tối đa 10 tin nhắn gần nhất)
@@ -2166,6 +2599,76 @@ function getAllActivatedCoursesContent(userEmail) {
     
   } catch (error) {
     Logger.log("Error in getAllActivatedCoursesContent:", error);
+    return "⚠️ Lỗi khi tải nội dung khóa học.";
+  }
+}
+
+// Lấy nội dung của một khóa học cụ thể (cho course-specific AI)
+function getSpecificCourseContent(courseId, courseTitle = "") {
+  try {
+    if (!courseId) return "❌ Không có khóa học được chỉ định!";
+    
+    const ss = getDB();
+    const contentSheet = ss.getSheetByName("AI_Content"); // Changed from KH_NoiDung
+    const youtubeSheet = ss.getSheetByName("YT_Videos");
+    
+    if (!contentSheet) return "⚠️ Không tìm thấy sheet nội dung khóa học";
+    
+    const contentData = contentSheet.getDataRange().getValues();
+    const youtubeData = youtubeSheet ? youtubeSheet.getDataRange().getValues() : [];
+    
+    let lessonsContent = [];
+    let videoContent = [];
+    let courseTitleInSheet = courseTitle || getCourseTitle(courseId) || `Khóa học ${courseId}`;
+    
+    // Lấy nội dung bài học từ AI_Content sheet
+    // AI_Content columns: ID(0), Type(1), Course ID(2), Lesson ID(3), Title(4), Content(5), Source(6), Added Date(7), Added By(8), Last Updated(9)
+    for (let i = 1; i < contentData.length; i++) {
+      if (String(contentData[i][2]) === String(courseId)) { // Column C = Course ID (index 2)
+        const lessonTitle = String(contentData[i][4] || ""); // Column E = Title (index 4)
+        const lessonContent = String(contentData[i][5] || ""); // Column F = Content (index 5)
+        
+        if (lessonContent) {
+          // Use content with title if available
+          // Increased limit to 8000 chars to capture full ebook content
+          const contentPreview = lessonContent.substring(0, 8000);
+          lessonsContent.push(`- Bài: ${lessonTitle || 'Nội dung khóa học'}\n  📝 ${contentPreview}${lessonContent.length > 8000 ? '...' : ''}`);
+        }
+      }
+    }
+    
+    // Lấy nội dung video YouTube từ YT_Videos sheet
+    if (youtubeData.length > 1) {
+      for (let i = 1; i < youtubeData.length; i++) {
+        if (String(youtubeData[i][2]) === String(courseId)) { // Column C = Course ID
+          const lessonId = youtubeData[i][3];
+          const transcript = youtubeData[i][5] || youtubeData[i][6] || ""; // Transcript or Description
+          const youtubeUrl = youtubeData[i][1];
+          
+          if (transcript) {
+            videoContent.push(`- Video (${lessonId}): ${youtubeUrl}\n  📹 ${transcript.substring(0, 300)}${transcript.length > 300 ? '...' : ''}`);
+          }
+        }
+      }
+    }
+    
+    // Kết hợp nội dung
+    let courseSectionContent = `📖 Khóa học: ${courseTitleInSheet}`;
+    
+    if (lessonsContent.length > 0) {
+      courseSectionContent += `\n📚 Bài học:\n${lessonsContent.join("\n")}`;
+    }
+    
+    if (videoContent.length > 0) {
+      courseSectionContent += `\n🎥 Video YouTube:\n${videoContent.join("\n")}`;
+    }
+    
+    return (lessonsContent.length > 0 || videoContent.length > 0)
+      ? courseSectionContent
+      : "📚 Không tìm thấy nội dung khóa học.";
+    
+  } catch (error) {
+    Logger.log("Error in getSpecificCourseContent:", error);
     return "⚠️ Lỗi khi tải nội dung khóa học.";
   }
 }
@@ -3084,6 +3587,92 @@ function processContentToChunks(courseId, lessonId, content, title = "") {
       success: false,
       message: "Error: " + error.toString()
     };
+  }
+}
+
+
+// Find relevant chunks within a specific course (for course-specific AI)
+function findRelevantChunksInCourse(query, courseId, topK = 5) {
+  try {
+    Logger.log(`🔍 Searching in course ${courseId} for: "${query}"`);
+    
+    // 1. Extract keywords from query
+    const queryKeywords = extractKeywords(query);
+    Logger.log(`📝 Query keywords: ${queryKeywords.join(', ')}`);
+    
+    if (queryKeywords.length === 0) {
+      Logger.log("⚠️ No keywords extracted from query");
+      return [];
+    }
+    
+    if (!courseId) {
+      Logger.log("⚠️ No courseId provided");
+      return [];
+    }
+    
+    // 2. Load chunks from AI_Content_Chunks
+    const ss = getDB();
+    const chunkSheet = ss.getSheetByName("AI_Content_Chunks");
+    
+    if (!chunkSheet) {
+      Logger.log("⚠️ AI_Content_Chunks sheet not found");
+      return [];
+    }
+    
+    const data = chunkSheet.getDataRange().getValues();
+    Logger.log(`📊 Total chunks in sheet: ${data.length - 1}`);
+    
+    // 3. Calculate scores for chunks in this course only
+    const scores = [];
+    
+    for (let i = 1; i < data.length; i++) {
+      const rowCourseId = String(data[i][1] || "").trim();
+      
+      // Filter by this specific course only
+      if (rowCourseId !== String(courseId).trim()) {
+        continue;
+      }
+      
+      const chunkId = data[i][0];
+      const chunkText = data[i][3];
+      const keywordsJson = data[i][5];
+      
+      let chunkKeywords = [];
+      try {
+        chunkKeywords = JSON.parse(keywordsJson);
+      } catch (e) {
+        // Fallback: extract keywords from chunk text
+        chunkKeywords = extractKeywords(chunkText);
+      }
+      
+      // Calculate similarity score
+      const score = calculateKeywordScore(queryKeywords, chunkKeywords);
+      
+      if (score > 0) {
+        scores.push({
+          chunkId: chunkId,
+          courseId: rowCourseId,
+          text: chunkText,
+          keywords: chunkKeywords,
+          score: score
+        });
+      }
+    }
+    
+    // 4. Sort by score and return top K
+    scores.sort((a, b) => b.score - a.score);
+    const topChunks = scores.slice(0, topK);
+    
+    Logger.log(`\n✅ Found ${topChunks.length} relevant chunks in course ${courseId}:`);
+    topChunks.forEach((chunk, idx) => {
+      Logger.log(`  ${idx + 1}. Score: ${chunk.score.toFixed(2)}`);
+    });
+    
+    return topChunks;
+    
+  } catch (error) {
+    Logger.log("❌ Error in findRelevantChunksInCourse:", error);
+    return [];
   }
 }
 
