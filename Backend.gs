@@ -354,13 +354,10 @@ function verifyEmailChange(token) {
   return HtmlService.createHtmlOutput("<h2>Link xác nhận không hợp lệ hoặc đã hết hạn.</h2>");
 }
 
-// Hàm trả về JSON chuẩn có CORS (quan trọng để web ngoài gọi được)
+// Hàm trả về JSON chuẩn (CORS được xử lý bởi proxy tại localhost:3000)
 function returnJSON(data) {
   var output = ContentService.createTextOutput(JSON.stringify(data));
   output.setMimeType(ContentService.MimeType.JSON);
-  output.setHeader('Access-Control-Allow-Origin', '*');
-  output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  output.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   return output;
 }
 
