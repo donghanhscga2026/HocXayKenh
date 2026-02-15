@@ -1,4 +1,13 @@
 function doGet(e) {
+  // Handle preflight CORS requests
+  if (e && e.parameter && e.parameter.origin) {
+    return ContentService.createTextOutput('')
+      .setMimeType(ContentService.MimeType.TEXT)
+      .setHeader('Access-Control-Allow-Origin', '*')
+      .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+      .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  }
+  
   // Guard: khi chạy trực tiếp từ editor, `e` có thể undefined
   if (!e || typeof e !== 'object') {
     Logger.log('doGet called without event object');
@@ -100,10 +109,10 @@ function doPost(e) {
       return returnJSON(requestEmailChange(content.email, content.newEmail));
     }
     else if (action === "getProfile") {
-      return returnJSON(getProfile(content.email));
+      return returnJSON(getProfile(content.studentCode));
     }
     else if (action === "getCourses") {
-      return returnJSON(getCourses(content.email));
+      return returnJSON(getCourses(content.studentCode));
     }
     // === NEW ROADMAP APIs ===
     else if (action === "getRoadmap") {
@@ -126,13 +135,13 @@ function doPost(e) {
       return returnJSON(getCourseDepositInfo(content.courseId));
     }
     else if (action === "getCourseContent") {
-      return returnJSON(getCourseContent(content.email, content.courseId));
+      return returnJSON(getCourseContent(content.studentCode, content.courseId));
     }
     else if (action === "updateVideoProgress") {
-      return returnJSON(updateVideoProgress(content.email, content.courseId, content.lessonId, content.currentTime, content.duration));
+      return returnJSON(updateVideoProgress(content.studentCode, content.courseId, content.lessonId, content.currentTime, content.duration));
     }
     else if (action === "chatWithAI") {
-      return returnJSON(chatWithAI(content.message, content.conversationHistory, content.email));
+      return returnJSON(chatWithAI(content.message, content.conversationHistory, content.studentCode));
     }
     else if (action === "addVideoToCourse") {
       return returnJSON(addVideoToCourse(content));
@@ -172,7 +181,7 @@ function doPost(e) {
     }
     else if (action === "submitAssignment") {
       return returnJSON(submitAssignment(
-        content.email, 
+        content.studentCode, 
         content.courseId, 
         content.lessonId, 
         content.reflection, 
@@ -223,22 +232,24 @@ function getDB() {
 
 // === TÍNH NĂNG MỚI: CẬP NHẬT THÔNG TIN ===
 
-function getProfile(email) {
+function getProfile(studentCode) {
   const sheet = getDB().getSheetByName("Dky"); // Map sheet Dky
   if (!sheet) return { success: false, msg: "Lỗi: Không tìm thấy sheet Dky" };
   const data = sheet.getDataRange().getValues();
   
   // Use config constants defined below or hardcode for this scope if circular
   // Re-declare for safety in case of scope issues in specific copy-paste
-  const C_EMAIL = 6; 
+  const C_CODE = 1;  // MÃ CODE
   const C_NAME = 2;
   const C_PHONE = 5;
+  const C_EMAIL = 6;
 
   for (let i = 1; i < data.length; i++) {
-    if (data[i][C_EMAIL] == email) {
+    if (String(data[i][C_CODE]) == String(studentCode)) {
       return { 
         success: true, 
         data: {
+          code: data[i][C_CODE],
           name: data[i][C_NAME],
           phone: data[i][C_PHONE],
           email: data[i][C_EMAIL]
@@ -335,7 +346,10 @@ function verifyEmailChange(token) {
 // Hàm trả về JSON chuẩn có CORS (quan trọng để web ngoài gọi được)
 function returnJSON(data) {
   return ContentService.createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+    .setMimeType(ContentService.MimeType.JSON)
+    .setHeader('Access-Control-Allow-Origin', '*')
+    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
 // ------------------------------------------------------------------
@@ -571,11 +585,10 @@ function verifyAccount(token) {
 }
 
 // --- COURSES FEATURE ---
-function getCourses(email) {
-  // 1. Lấy mã học viên từ email
-  const studentCode = getStudentCodeByEmail(email);
+function getCourses(studentCode) {
+  // 1. Kiểm tra thông tin học viên
   if (!studentCode) {
-    return { success: false, msg: "Không tìm thấy thông tin học viên!" };
+    return { success: false, msg: "Không tìm thấy mã học viên!" };
   }
   
   // 2. Lấy danh sách khóa đã kích hoạt từ LS_DangKy
@@ -648,7 +661,7 @@ function getCourses(email) {
       
       let percentComplete = 0;
       if (isActivated) {
-        percentComplete = calculateCourseProgress(email, courseId, ss);
+        percentComplete = calculateCourseProgress(studentCode, courseId, ss);
       }
       
       // Image Logic
@@ -695,7 +708,7 @@ const COL_NAME_TONG_DIEM = "Tong_Diem";
 const COL_NAME_XEP_LOAI = "Xep_Loai"; // Wait, user sheet doesn't seem to show Xep_Loai in the partial view, but usually it's there.
 const COL_NAME_TRANG_THAI = "Trang_Thai"; // Need to check if this exists or if it's derived.
 
-function calculateCourseProgress(email, courseId, ss) {
+function calculateCourseProgress(studentCode, courseId, ss) {
   const contentSheet = ss.getSheetByName("KH_NoiDung");
   const progressSheet = ss.getSheetByName("KH_TienDo");
   if (!contentSheet || !progressSheet) return 0;
@@ -708,21 +721,21 @@ function calculateCourseProgress(email, courseId, ss) {
   if (totalLessons === 0) return 0;
 
   // Use Dynamic Column Index
-  const idxEmail = getColumnIndex(progressSheet, COL_NAME_EMAIL);
+  const idxStudentCode = getColumnIndex(progressSheet, COL_NAME_MA_CODE);
   const idxCourse = getColumnIndex(progressSheet, COL_NAME_MA_KH);
   // Default to Status column if found, else fallback to hardcoded (dangerous if user changed it)
   // But wait, getColumnIndex returns -1 if not found.
   let idxStatus = getColumnIndex(progressSheet, COL_NAME_TRANG_THAI);
   
-  if (idxEmail === -1 || idxCourse === -1 || idxStatus === -1) return 0; // Cannot calculate
+  if (idxStudentCode === -1 || idxCourse === -1 || idxStatus === -1) return 0; // Cannot calculate
 
   const progress = progressSheet.getDataRange().getValues();
   let completedCount = 0;
   for (let i = 1; i < progress.length; i++) {
-    const rowEmail = String(progress[i][idxEmail]);
+    const rowStudentCode = String(progress[i][idxStudentCode]);
     const rowCourse = String(progress[i][idxCourse]);
     
-    if (rowEmail === email && rowCourse == courseId) {
+    if (rowStudentCode === String(studentCode) && rowCourse == courseId) {
       const currentStatus = progress[i][idxStatus];
       if (currentStatus == "Completed" || currentStatus == "Approved") {
         completedCount++;
@@ -753,7 +766,7 @@ function getCourseContent(email, courseId) {
       let userProgress = { currentTime: 0, maxTime: 0, status: "Locked" };
       
       // Get Dynamic Column Indexes
-      const idxEmail = getColumnIndex(progressSheet, COL_NAME_EMAIL);
+      const idxStudentCode = getColumnIndex(progressSheet, COL_NAME_MA_CODE);
       const idxCourse = getColumnIndex(progressSheet, COL_NAME_MA_KH);
       const idxLesson = getColumnIndex(progressSheet, COL_NAME_MA_BAI);
       
@@ -771,13 +784,13 @@ function getCourseContent(email, courseId) {
       const idxSupp1 = getColumnIndex(progressSheet, COL_NAME_HO_TRO_1);
       const idxSupp2 = getColumnIndex(progressSheet, COL_NAME_HO_TRO_2);
       
-      if (idxEmail !== -1 && idxCourse !== -1 && idxLesson !== -1) {
+      if (idxStudentCode !== -1 && idxCourse !== -1 && idxLesson !== -1) {
           for (let j = 1; j < progressData.length; j++) {
-            const pEmail = String(progressData[j][idxEmail]);
+            const pStudentCode = String(progressData[j][idxStudentCode]);
             const pCourseId = String(progressData[j][idxCourse]);
             const pLessonId = String(progressData[j][idxLesson]);
             
-            if (pEmail === email && pCourseId === courseId && pLessonId === lessonId) {
+            if (pStudentCode === String(studentCode) && pCourseId === courseId && pLessonId === lessonId) {
               
               const getVal = (idx) => (idx !== -1 ? progressData[j][idx] : undefined);
               const getNum = (idx) => (idx !== -1 ? Number(progressData[j][idx] || 0) : 0);
@@ -1590,17 +1603,17 @@ function getStudentInfoFromEmail(email) {
 /**
  * Cập nhật tiến độ xem video
  */
-function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
+function updateVideoProgress(studentCode, courseId, lessonId, currentTime, duration) {
   const ss = getDB();
   const sheet = ss.getSheetByName("KH_TienDo");
   if (!sheet) return { success: false, msg: "Sheet KH_TienDo không tồn tại" };
   
   // Get Dynamic Column Indexes
-  const idxEmail = getColumnIndex(sheet, COL_NAME_EMAIL);
+  const idxStudentCode = getColumnIndex(sheet, COL_NAME_MA_CODE);
   const idxCourse = getColumnIndex(sheet, COL_NAME_MA_KH);
   const idxLesson = getColumnIndex(sheet, COL_NAME_MA_BAI);
   
-  if (idxEmail === -1 || idxCourse === -1 || idxLesson === -1) {
+  if (idxStudentCode === -1 || idxCourse === -1 || idxLesson === -1) {
     return { success: false, msg: "Cấu trúc Sheet không đúng (thiếu cột định danh)" };
   }
 
@@ -1611,7 +1624,7 @@ function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
   const idxTimestamp = getColumnIndex(sheet, COL_NAME_GHI_NHAN);
   
   // New Columns for Student Info
-  const idxStudentCode = getColumnIndex(sheet, COL_NAME_MA_CODE);
+  const idxEmail = getColumnIndex(sheet, COL_NAME_EMAIL);
   const idxStudentName = getColumnIndex(sheet, COL_NAME_TEN_HV);
   
   const data = sheet.getDataRange().getValues();
@@ -1619,9 +1632,9 @@ function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
   const now = new Date();
   const timestampStr = now.toLocaleString("vi-VN", {timeZone: "Asia/Ho_Chi_Minh"});
 
-  // Tìm dòng tương ứng: Email + CourseId + LessonId
+  // Tìm dòng tương ứng: StudentCode + CourseId + LessonId
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][idxEmail]) === email && 
+    if (String(data[i][idxStudentCode]) === String(studentCode) && 
         String(data[i][idxCourse]) === courseId && 
         String(data[i][idxLesson]) === lessonId) {
       rowIndex = i;
@@ -1650,8 +1663,7 @@ function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
   
   if (rowIndex === -1) {
     // Thêm mới row
-    // Get Student Info from Dky
-    const studentInfo = getStudentInfoFromEmail(email);
+    // We have studentCode, email can be optional
     
     // Create array with empty strings for all columns
     const lastCol = sheet.getLastColumn();
@@ -1659,13 +1671,9 @@ function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
     
     // Map values to correct indices using our handy indexes
     if (idxTimestamp !== -1) newRow[idxTimestamp] = timestampStr;
-    if (idxEmail !== -1) newRow[idxEmail] = email;
+    if (idxStudentCode !== -1) newRow[idxStudentCode] = studentCode;
     if (idxCourse !== -1) newRow[idxCourse] = courseId;
     if (idxLesson !== -1) newRow[idxLesson] = lessonId;
-    
-    // Fill Student Info
-    if (idxStudentCode !== -1) newRow[idxStudentCode] = studentInfo.code;
-    if (idxStudentName !== -1) newRow[idxStudentName] = studentInfo.name;
     
     if (idxCurTime !== -1) newRow[idxCurTime] = currentTime;
     if (idxMaxTime !== -1) newRow[idxMaxTime] = maxTime;
@@ -1744,18 +1752,18 @@ function updateVideoProgress(email, courseId, lessonId, currentTime, duration) {
  * Nộp bài tập
  */
 // Xử lý nộp bài tập (Assignment Submission) - Daily Discipline Grading
-function submitAssignment(email, courseId, lessonId, reflection, link1, link2, link3, disciplineSupport1, disciplineSupport2, videoMaxTime, duration) {
+function submitAssignment(studentCode, courseId, lessonId, reflection, link1, link2, link3, disciplineSupport1, disciplineSupport2, videoMaxTime, duration) {
   const ss = getDB();
   const sheet = ss.getSheetByName("KH_TienDo");
   
   if (!sheet) return { success: false, message: "Lỗi hệ thống: Không tìm thấy Sheet tiến độ." };
   
   // Get Dynamic Indexes
-  const idxEmail = getColumnIndex(sheet, COL_NAME_EMAIL);
+  const idxStudentCode = getColumnIndex(sheet, COL_NAME_MA_CODE);
   const idxCourse = getColumnIndex(sheet, COL_NAME_MA_KH);
   const idxLesson = getColumnIndex(sheet, COL_NAME_MA_BAI);
 
-  if (idxEmail === -1 || idxCourse === -1 || idxLesson === -1) {
+  if (idxStudentCode === -1 || idxCourse === -1 || idxLesson === -1) {
       return { success: false, message: "Cấu trúc Sheet không đúng (thiếu các cột định danh)." };
   }
   
@@ -1764,7 +1772,7 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
   
   // Find row
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][idxEmail]) === email && 
+    if (String(data[i][idxStudentCode]) === String(studentCode) && 
         String(data[i][idxCourse]) === courseId && 
         String(data[i][idxLesson]) === lessonId) {
       rowIndex = i;
@@ -1843,9 +1851,11 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
   };
   
   // Ensure Student Info is present
-  const studentInfo = getStudentInfoFromEmail(email);
-  if (studentInfo.code) setValue(COL_NAME_MA_CODE, studentInfo.code);
-  if (studentInfo.name) setValue(COL_NAME_TEN_HV, studentInfo.name);
+  // Since we have studentCode, we can set it directly. Name can come from data if needed
+  const idxEmail = getColumnIndex(sheet, COL_NAME_EMAIL);
+  if (idxStudentCode !== -1 && !data[rowIndex][idxStudentCode]) {
+    setValue(COL_NAME_MA_CODE, studentCode);
+  }
   
   setValue(COL_NAME_TRANG_THAI, status);
   setValue(COL_NAME_GHI_NHAN, timestamp);
@@ -1895,7 +1905,7 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
 // 2. Mở Apps Script Project Settings
 // 3. Thêm Script Property: GEMINI_API_KEY = "your-api-key-here"
 
-function chatWithAI(message, conversationHistory = [], userEmail = "") {
+function chatWithAI(message, conversationHistory = [], studentCode = "") {
   try {
     const GEMINI_API_KEY = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
     
@@ -1921,7 +1931,7 @@ function chatWithAI(message, conversationHistory = [], userEmail = "") {
     let courseContexts = "";
     
     try {
-      const relevantChunks = findRelevantChunks(message, userEmail, 5); // Back to 5 chunks for quality
+      const relevantChunks = findRelevantChunks(message, studentCode, 5); // Back to 5 chunks for quality
       
       if (relevantChunks && relevantChunks.length > 0) {
         courseContexts = "📚 NỘI DUNG LIÊN QUAN:\n\n";
@@ -1933,11 +1943,11 @@ function chatWithAI(message, conversationHistory = [], userEmail = "") {
         Logger.log(`✅ RAG provided ${relevantChunks.length} chunks`);
       } else {
         Logger.log("⚠️ RAG returned 0 chunks, using fallback");
-        courseContexts = getAllActivatedCoursesContent(userEmail);
+        courseContexts = getAllActivatedCoursesContent(studentCode);
       }
     } catch (ragError) {
       Logger.log("⚠️ RAG error, falling back to old method:", ragError);
-      courseContexts = getAllActivatedCoursesContent(userEmail);
+      courseContexts = getAllActivatedCoursesContent(studentCode);
     }
     
     // Prepare conversation history for Gemini (tối đa 10 tin nhắn gần nhất)
@@ -2081,9 +2091,9 @@ ${courseContexts}
 }
 
 // Lấy nội dung của tất cả khóa học đã kích hoạt của học viên
-function getAllActivatedCoursesContent(userEmail) {
+function getAllActivatedCoursesContent(studentCode) {
   try {
-    if (!userEmail) return "❌ Không có email. Vui lòng đăng nhập!";
+    if (!studentCode) return "❌ Không có mã học viên. Vui lòng đăng nhập!";
     
     const ss = getDB();
     const contentSheet = ss.getSheetByName("AI_Content"); // Changed from KH_NoiDung
@@ -2092,7 +2102,7 @@ function getAllActivatedCoursesContent(userEmail) {
     if (!contentSheet) return "⚠️ Không tìm thấy sheet nội dung khóa học";
     
     // Lấy danh sách khóa học đã kích hoạt của học viên
-    const activatedCourses = getStudentActivatedCourses(userEmail);
+    const activatedCourses = getActivatedCoursesFromLS(studentCode);
     
     if (!activatedCourses || activatedCourses.length === 0) {
       return "📚 Bạn chưa kích hoạt khóa học nào.";
@@ -2171,43 +2181,17 @@ function getAllActivatedCoursesContent(userEmail) {
 }
 
 // Lấy danh sách khóa học đã kích hoạt của học viên
-function getStudentActivatedCourses(userEmail) {
+function getStudentActivatedCourses(studentCode) {
   try {
+    // studentCode already provided - no need to look it up
+    if (!studentCode) {
+      Logger.log("❌ No studentCode provided");
+      return [];
+    }
+    
     const ss = getDB();
-    const userIdentifier = String(userEmail).trim();
     
-    // Step 1: Lookup MÃ CODE from DKy sheet
-    // User can login with: email / phone / code
-    // DKy columns: MÃ CODE (B/1), Số điện thoại (F/5), Địa chỉ email (G/6)
-    
-    const dkySheet = ss.getSheetByName("DKy");
-    if (!dkySheet) {
-      Logger.log("⚠️ Sheet DKy not found");
-      return [];
-    }
-    
-    const dkyData = dkySheet.getDataRange().getValues();
-    let maCode = null;
-    
-    // Search for user by email, phone, or code
-    for (let i = 1; i < dkyData.length; i++) {
-      const rowCode = String(dkyData[i][1] || "").trim();    // Column B: MÃ CODE
-      const rowPhone = String(dkyData[i][5] || "").trim();   // Column F: Số điện thoại
-      const rowEmail = String(dkyData[i][6] || "").trim();   // Column G: Địa chỉ email
-      
-      if (rowEmail === userIdentifier || rowPhone === userIdentifier || rowCode === userIdentifier) {
-        maCode = rowCode;
-        Logger.log(`✅ Found user in DKy: Email=${rowEmail}, Phone=${rowPhone}, MÃ CODE=${maCode}`);
-        break;
-      }
-    }
-    
-    if (!maCode) {
-      Logger.log(`❌ User ${userIdentifier} not found in DKy sheet`);
-      return [];
-    }
-    
-    // Step 2: Find activated courses in LS_DangKy using MÃ CODE
+    // Find activated courses in LS_DangKy using MÃ CODE
     // LS_DangKy columns: MÃ CODE (B/1), Ma_Lop (O/14)
     
     const lsDangKySheet = ss.getSheetByName("LS_DangKy");
@@ -2223,14 +2207,14 @@ function getStudentActivatedCourses(userEmail) {
       const rowMaCode = String(lsData[i][1] || "").trim();   // Column B: MÃ CODE
       const maLop = String(lsData[i][14] || "").trim();       // Column O: Ma_Lop
       
-      if (rowMaCode === maCode && maLop) {
+      if (rowMaCode === String(studentCode) && maLop) {
         if (!activatedCourses.includes(maLop)) {
           activatedCourses.push(maLop);
         }
       }
     }
     
-    Logger.log(`✅ Found ${activatedCourses.length} activated courses for MÃ CODE ${maCode}: ${activatedCourses.join(', ')}`);
+    Logger.log(`✅ Found ${activatedCourses.length} activated courses for MÃ CODE ${studentCode}: ${activatedCourses.join(', ')}`);
     return activatedCourses;
     
   } catch (error) {
@@ -3333,7 +3317,7 @@ function processContentToChunksV2(courseId, lessonId, content, title = "") {
  * @param {number} topK - Number of top chunks to return (default: 5)
  * @returns {Array} Array of relevant chunks with scores
  */
-function findRelevantChunks(query, userEmail, topK = 5) {
+function findRelevantChunks(query, studentCode, topK = 5) {
   try {
     Logger.log(`🔍 Searching for: "${query}"`);
     
@@ -3347,7 +3331,7 @@ function findRelevantChunks(query, userEmail, topK = 5) {
     }
     
     // 2. Get activated courses
-    const activatedCourses = getStudentActivatedCourses(userEmail);
+    const activatedCourses = getActivatedCoursesFromLS(studentCode);
     Logger.log(`📚 Activated courses: ${activatedCourses.join(', ')}`);
     
     if (activatedCourses.length === 0) {

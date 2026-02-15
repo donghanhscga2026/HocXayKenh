@@ -1192,7 +1192,7 @@
             const loadingEl = document.getElementById('loading-courses');
             const gridEl = document.getElementById('courses-grid');
 
-            const CACHE_KEY = isLoggedIn ? `courses_${userData.email}` : 'courses_public';
+            const CACHE_KEY = isLoggedIn ? `courses_${userData.code}` : 'courses_public';
             const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
             try {
@@ -1222,7 +1222,7 @@
                         method: 'POST',
                         body: JSON.stringify({
                             action: "getCourses",
-                            email: userData.email
+                            studentCode: userData.code
                         })
                     });
                     const result = await response.json();
@@ -1306,7 +1306,7 @@
                         method: 'POST',
                         body: JSON.stringify({
                             action: "getCourses",
-                            email: userData.email
+                            studentCode: userData.code
                         })
                     });
                     const result = await response.json();
@@ -1673,7 +1673,7 @@
                     method: 'POST',
                     body: JSON.stringify({
                         action: 'activateCourse',
-                        email: userData.email,
+                        studentCode: userData.code,
                         courseId: currentCourseId,
                         fileData: activateFileData ? activateFileData.base64 : null,
                         fileName: activateFileData ? activateFileData.name : null,
@@ -2012,7 +2012,7 @@
 
             try {
                 // Send to backend
-                console.log('🤖 Sending chat request:', { message, email: isLoggedIn ? userData.email : "" });
+                console.log('🤖 Sending chat request:', { message, code: isLoggedIn ? userData.code : "" });
 
                 const response = await fetch(API_URL, {
                     method: 'POST',
@@ -2020,7 +2020,7 @@
                         action: 'chatWithAI',
                         message: message,
                         conversationHistory: conversationHistory,
-                        email: isLoggedIn ? userData.email : ""
+                        studentCode: isLoggedIn ? userData.code : ""
                     })
                 });
 

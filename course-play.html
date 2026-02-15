@@ -1243,7 +1243,7 @@
         }
 
         async function loadCurriculum(autoPlay = true) {
-            const cacheKey = `curriculum_${courseId}_${user.email}`;
+            const cacheKey = `curriculum_${courseId}_${user.code}`;
             const cacheExpiry = 5 * 60 * 1000; // 5 minutes
 
             // Try to load from cache first
@@ -1279,7 +1279,7 @@
                     method: 'POST',
                     body: JSON.stringify({
                         action: "getCourseContent",
-                        email: user.email,
+                        studentCode: user.code,
                         courseId: courseId
                     })
                 });
@@ -1363,7 +1363,7 @@
                     method: 'POST',
                     body: JSON.stringify({
                         action: "getCourseContent",
-                        email: user.email,
+                        studentCode: user.code,
                         courseId: courseId
                     })
                 });
@@ -2059,7 +2059,7 @@
                     method: 'POST',
                     body: JSON.stringify({
                         action: "updateVideoProgress",
-                        email: user.email,
+                        studentCode: user.code,
                         courseId: courseId,
                         lessonId: lesson.id,
                         currentTime: lesson.progress.currentTime,
@@ -2122,7 +2122,7 @@
                     method: 'POST',
                     body: JSON.stringify({
                         action: "submitAssignment",
-                        email: user.email,
+                        studentCode: user.code,
                         courseId: courseId,
                         lessonId: lesson.id,
                         reflection: reflection,
