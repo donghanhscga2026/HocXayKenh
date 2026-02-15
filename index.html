@@ -1192,7 +1192,9 @@
             const loadingEl = document.getElementById('loading-courses');
             const gridEl = document.getElementById('courses-grid');
 
-            const CACHE_KEY = isLoggedIn ? `courses_${userData.code}` : 'courses_public';
+            console.log("🔍 loadCourses() called - isLoggedIn:", isLoggedIn, "userData:", userData);
+
+            const CACHE_KEY = isLoggedIn ? `courses_${userData?.code || 'unknown'}` : 'courses_public';
             const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
             try {
@@ -1200,6 +1202,7 @@
                 const cachedData = getCachedCourses(CACHE_KEY, CACHE_DURATION);
 
                 if (cachedData) {
+                    console.log("✅ Using cached courses:", cachedData.length, "courses");
                     // Show cached data immediately (optimistic rendering)
                     loadingEl.classList.add('hidden');
                     gridEl.classList.remove('hidden');
@@ -1211,12 +1214,14 @@
                 }
 
                 // No cache, show loading
+                console.log("📡 Fetching courses from API...");
                 loadingEl.classList.remove('hidden');
                 gridEl.classList.add('hidden');
 
                 courses = []; // Use global variable
 
-                if (isLoggedIn) {
+                if (isLoggedIn && userData && userData.code) {
+                    console.log("👤 Đã đăng nhập - gửi studentCode:", userData.code);
                     // Fetch courses with activation status
                     const response = await fetch(API_URL, {
                         method: 'POST',
@@ -1225,11 +1230,18 @@
                             studentCode: userData.code
                         })
                     });
+                    console.log("📥 Response status:", response.status);
                     const result = await response.json();
+                    console.log("✅ API Result:", result);
                     if (result.success) {
                         courses = result.data;
+                        console.log("🎓 Tìm thấy", courses.length, "khóa học");
+                    } else {
+                        console.error("❌ API Error:", result.msg);
+                        showToast("Lỗi từ API: " + result.msg, 'error');
                     }
-                } else {
+                } else if (!isLoggedIn) {
+                    console.log("👥 Khách - gửi getAllAvailableCourses");
                     // Fetch all available courses (public)
                     const response = await fetch(API_URL, {
                         method: 'POST',
@@ -1237,14 +1249,25 @@
                             action: "getAllAvailableCourses"
                         })
                     });
+                    console.log("📥 Response status:", response.status);
                     const result = await response.json();
+                    console.log("✅ API Result:", result);
                     if (result.success) {
                         courses = result.data;
+                        console.log("🎓 Tìm thấy", courses.length, "khóa học");
+                    } else {
+                        console.error("❌ API Error:", result.msg);
+                        showToast("Lỗi từ API: " + result.msg, 'error');
                     }
+                } else {
+                    console.error("❌ userData không có code:", userData);
+                    showToast("Lỗi: userData không có code", 'error');
                 }
 
                 // Cache the result
-                setCachedCourses(CACHE_KEY, courses);
+                if (courses.length > 0) {
+                    setCachedCourses(CACHE_KEY, courses);
+                }
 
                 // Hide loading, show grid
                 loadingEl.classList.add('hidden');
@@ -1252,10 +1275,11 @@
 
                 renderCourses(courses);
             } catch (error) {
-                console.error('Error loading courses:', error);
+                console.error('❌ Error in loadCourses:', error);
+                console.error('Error stack:', error.stack);
                 loadingEl.classList.add('hidden');
                 gridEl.classList.remove('hidden');
-                showToast('Lỗi tải danh sách khóa học!', 'error');
+                showToast('Lỗi tải danh sách khóa học: ' + error.message, 'error');
             }
         }
 
