@@ -1084,10 +1084,8 @@
     </div>
 
     <script>
-        // API URL - Use CORS Proxy on localhost:3000 to bypass CORS restrictions
-        const API_URL = "http://localhost:3000/";
-        // Original GAS URL (proxied through localhost:3000):
-        // "https://script.google.com/macros/s/AKfycbwd9qsO3FlcwNMOWBqPm5c7NWb0d5c8hMCd5o2YzeXlFOQMVayvHErqcUcWHrelojIbeA/exec"
+        // API URL - Direct connection to Google Apps Script Web App
+        const API_URL = "https://script.google.com/macros/s/AKfycbwd9qsO3FlcwNMOWBqPm5c7NWb0d5c8hMCd5o2YzeXlFOQMVayvHErqcUcWHrelojIbeA/exec";
 
         // Check login status
         const user = localStorage.getItem('user');
