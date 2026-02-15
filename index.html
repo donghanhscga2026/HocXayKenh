@@ -1084,7 +1084,10 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbwd9qsO3FlcwNMOWBqPm5c7NWb0d5c8hMCd5o2YzeXlFOQMVayvHErqcUcWHrelojIbeA/exec";
+        // API URL - Use CORS Proxy on localhost:3000 to bypass CORS restrictions
+        const API_URL = "http://localhost:3000/";
+        // Original GAS URL (proxied through localhost:3000):
+        // "https://script.google.com/macros/s/AKfycbwd9qsO3FlcwNMOWBqPm5c7NWb0d5c8hMCd5o2YzeXlFOQMVayvHErqcUcWHrelojIbeA/exec"
 
         // Check login status
         const user = localStorage.getItem('user');
@@ -1099,10 +1102,14 @@
         // Initialize page
         window.addEventListener('load', () => {
             renderHeader();
-            loadCourses();
-            if (isLoggedIn) {
-                loadRoadmap();
-            }
+            // Test CORS first
+            testCORSPreflight().then(() => {
+                // Then load courses
+                loadCourses();
+                if (isLoggedIn) {
+                    loadRoadmap();
+                }
+            });
         });
 
         // Render Header
@@ -1187,6 +1194,37 @@
             showToast('Tính năng đang phát triển!', 'info');
         }
 
+        // Test CORS preflight
+        async function testCORSPreflight() {
+            console.log("\n=== TESTING CORS PREFLIGHT ===");
+            console.log("🔗 API_URL:", API_URL);
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type',
+                        'Origin': 'http://localhost:8000'
+                    }
+                });
+                
+                console.log("✅ Preflight response status:", response.status);
+                console.log("🎯 CORS Headers:");
+                console.log("   - Access-Control-Allow-Origin:", response.headers.get('Access-Control-Allow-Origin'));
+                console.log("   - Access-Control-Allow-Methods:", response.headers.get('Access-Control-Allow-Methods'));
+                console.log("   - Access-Control-Allow-Headers:", response.headers.get('Access-Control-Allow-Headers'));
+                
+                if (response.headers.get('Access-Control-Allow-Origin')) {
+                    console.log("✅ CORS headers present!");
+                } else {
+                    console.error("❌ CORS headers MISSING!");
+                }
+            } catch (error) {
+                console.error("❌ Preflight test error:", error.message);
+            }
+        }
+
         // Load Courses with Caching
         async function loadCourses() {
             const loadingEl = document.getElementById('loading-courses');
@@ -1222,15 +1260,36 @@
 
                 if (isLoggedIn && userData && userData.code) {
                     console.log("👤 Đã đăng nhập - gửi studentCode:", userData.code);
+                    console.log("🔗 API_URL:", API_URL);
+                    
+                    const requestBody = {
+                        action: "getCourses",
+                        studentCode: userData.code
+                    };
+                    console.log("📤 Request body:", requestBody);
+                    
                     // Fetch courses with activation status
                     const response = await fetch(API_URL, {
                         method: 'POST',
-                        body: JSON.stringify({
-                            action: "getCourses",
-                            studentCode: userData.code
-                        })
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestBody)
                     });
+                    
                     console.log("📥 Response status:", response.status);
+                    console.log("🎯 Response headers (key ones):");
+                    console.log("   - Access-Control-Allow-Origin:", response.headers.get('Access-Control-Allow-Origin'));
+                    console.log("   - Content-Type:", response.headers.get('Content-Type'));
+                    
+                    if (!response.ok) {
+                        console.error("❌ Response NOT ok (status:", response.status + ")");
+                        const text = await response.text();
+                        console.error("Response body:", text);
+                        showToast(`Lỗi HTTP ${response.status}: ${response.statusText}`, 'error');
+                        return;
+                    }
+                    
                     const result = await response.json();
                     console.log("✅ API Result:", result);
                     if (result.success) {
@@ -1242,16 +1301,38 @@
                     }
                 } else if (!isLoggedIn) {
                     console.log("👥 Khách - gửi getAllAvailableCourses");
+                    console.log("🔗 API_URL:", API_URL);
+                    
+                    const requestBody = { action: "getAllAvailableCourses" };
+                    console.log("📤 Request body:", requestBody);
+                    
                     // Fetch all available courses (public)
                     const response = await fetch(API_URL, {
                         method: 'POST',
-                        body: JSON.stringify({
-                            action: "getAllAvailableCourses"
-                        })
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestBody)
                     });
+                    
                     console.log("📥 Response status:", response.status);
+                    console.log("🎯 Response headers (key ones):");
+                    console.log("   - Access-Control-Allow-Origin:", response.headers.get('Access-Control-Allow-Origin'));
+                    console.log("   - Content-Type:", response.headers.get('Content-Type'));
+                    console.log("   - All headers:", Array.from(response.headers.entries()));
+                    
+                    // Check if response is OK
+                    if (!response.ok) {
+                        console.error("❌ Response NOT ok (status:", response.status + ")");
+                        const text = await response.text();
+                        console.error("Response body:", text);
+                        showToast(`Lỗi HTTP ${response.status}: ${response.statusText}`, 'error');
+                        return;
+                    }
+                    
                     const result = await response.json();
                     console.log("✅ API Result:", result);
+                    
                     if (result.success) {
                         courses = result.data;
                         console.log("🎓 Tìm thấy", courses.length, "khóa học");
@@ -1276,7 +1357,19 @@
                 renderCourses(courses);
             } catch (error) {
                 console.error('❌ Error in loadCourses:', error);
+                console.error('Error message:', error.message);
+                console.error('Error name:', error.name);
                 console.error('Error stack:', error.stack);
+                
+                // Additional network debugging
+                if (error.message.includes('Failed to fetch')) {
+                    console.error('🔴 Network error - possible causes:');
+                    console.error('   1. CORS policy blocking (check response headers)');
+                    console.error('   2. Backend server not responding');
+                    console.error('   3. Network connectivity issue');
+                    console.error('   4. API_URL is incorrect');
+                }
+                
                 loadingEl.classList.add('hidden');
                 gridEl.classList.remove('hidden');
                 showToast('Lỗi tải danh sách khóa học: ' + error.message, 'error');

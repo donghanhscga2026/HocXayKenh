@@ -1,11 +1,12 @@
 function doGet(e) {
   // Handle preflight CORS requests
   if (e && e.parameter && e.parameter.origin) {
-    return ContentService.createTextOutput('')
-      .setMimeType(ContentService.MimeType.TEXT)
-      .setHeader('Access-Control-Allow-Origin', '*')
-      .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-      .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    var output = ContentService.createTextOutput('');
+    output.setMimeType(ContentService.MimeType.TEXT);
+    output.setHeader('Access-Control-Allow-Origin', '*');
+    output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    output.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    return output;
   }
   
   // Guard: khi chạy trực tiếp từ editor, `e` có thể undefined
@@ -91,11 +92,12 @@ function doPost(e) {
   try {
     // Handle CORS preflight OPTIONS request
     if (e.requestMethod === 'OPTIONS') {
-      return ContentService.createTextOutput('')
-        .setMimeType(ContentService.MimeType.TEXT)
-        .setHeader('Access-Control-Allow-Origin', '*')
-        .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      var output = ContentService.createTextOutput('');
+      output.setMimeType(ContentService.MimeType.TEXT);
+      output.setHeader('Access-Control-Allow-Origin', '*');
+      output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      output.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      return output;
     }
     
     if (!e || !e.postData || !e.postData.contents) {
@@ -354,11 +356,12 @@ function verifyEmailChange(token) {
 
 // Hàm trả về JSON chuẩn có CORS (quan trọng để web ngoài gọi được)
 function returnJSON(data) {
-  return ContentService.createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON)
-    .setHeader('Access-Control-Allow-Origin', '*')
-    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    .setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  var output = ContentService.createTextOutput(JSON.stringify(data));
+  output.setMimeType(ContentService.MimeType.JSON);
+  output.setHeader('Access-Control-Allow-Origin', '*');
+  output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  output.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  return output;
 }
 
 // ------------------------------------------------------------------
