@@ -1480,20 +1480,17 @@ function getCourseDepositInfo(courseId) {
 function activateCourse(data) {
   try {
     // 1. Validate input
-    if (!data.email || !data.courseId) {
-      return { success: false, message: "Thiếu thông tin email hoặc mã khóa học!" };
+    if (!data.studentCode || !data.courseId) {
+      return { success: false, message: "Thiếu thông tin mã học viên hoặc mã khóa học!" };
     }
     
-    // 2. Lấy thông tin học viên
-    const studentCode = getStudentCodeByEmail(data.email);
-    if (!studentCode) {
+    // 2. Lấy thông tin học viên từ studentCode
+    const profileResult = getProfile(data.studentCode);
+    if (!profileResult.success) {
       return { success: false, message: "Không tìm thấy thông tin học viên!" };
     }
     
-    const studentInfo = getStudentInfoFromEmail(data.email);
-    if (!studentInfo) {
-      return { success: false, message: "Không tìm thấy thông tin học viên!" };
-    }
+    const studentInfo = profileResult.data;
     
     // 3. Lấy thông tin khóa học
     const courseInfo = getCourseDepositInfo(data.courseId);
@@ -1502,7 +1499,7 @@ function activateCourse(data) {
     }
     
     // 4. Kiểm tra đã kích hoạt chưa
-    const activatedCourses = getActivatedCoursesFromLS(studentCode);
+    const activatedCourses = getActivatedCoursesFromLS(data.studentCode);
     const compositeKey = courseInfo.title + "|" + data.courseId;
     
     if (activatedCourses.includes(compositeKey)) {
@@ -1510,7 +1507,7 @@ function activateCourse(data) {
     }
     
     // 5. Kiểm tra miễn cọc (học viên 86 ngày)
-    const is86DaysStudent = checkIfStudent86Days(studentCode);
+    const is86DaysStudent = checkIfStudent86Days(data.studentCode);
     const isWaived = is86DaysStudent || courseInfo.depositFee === 0;
     
     // 6. Validate file upload (nếu không miễn cọc)
@@ -1526,7 +1523,7 @@ function activateCourse(data) {
           data.fileData,
           data.fileName,
           data.fileType || "image/jpeg",
-          studentCode,
+          data.studentCode,
           studentInfo.name
         );
       } catch (uploadError) {
@@ -1547,8 +1544,8 @@ function activateCourse(data) {
       "", // STT - để trống, sẽ tự động
       new Date(), // Ngày đăng ký
       studentInfo.name, // Tên
-      studentCode, // Mã học viên
-      data.email, // Email
+      data.studentCode, // Mã học viên
+      studentInfo.email, // Email
       studentInfo.phone || "", // SĐT
       courseInfo.title, // Tên khóa học
       data.courseId, // Mã khóa
@@ -1563,10 +1560,7 @@ function activateCourse(data) {
     
     lsSheet.appendRow(newRow);
     
-    // 9. Gửi email xác nhận (optional - có thể bật sau)
-    // sendActivationConfirmationEmail(studentInfo, courseInfo);
-    
-    // 10. Trả về kết quả
+    // 9. Trả về kết quả
     return {
       success: true,
       message: isWaived 
