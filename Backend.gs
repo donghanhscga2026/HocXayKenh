@@ -914,83 +914,119 @@ function getCourseContent(email, courseId) {
     }
   }
   
-  // Thêm bài "Thử thách mỗi ngày" sau tất cả bài học bình thường
-  // Ensure progress row exists for daily challenge
-  ensureDailyChallengeProgressRow(email, courseId, progressSheet);
-  
-  // Get daily challenge progress data
-  let dailyChallengeProgress = { 
-    currentTime: 0, 
-    maxTime: 0, 
-    status: curriculum.length > 0 && (curriculum[curriculum.length - 1].progress.status === "Completed" || curriculum[curriculum.length - 1].progress.status === "Approved") ? "Available" : "Locked",
-    link1: "",
-    videoScore: 0,
-    reflection: "",
-    link2: "",
-    link3: "",
-    totalScore: 0,
-    grade: "",
-    disciplineSupport1: false,
-    disciplineSupport2: false
-  };
-  
-  // Load daily challenge progress from KH_TienDo
-  if (progressData && progressData.length > 1) {
-    const getNum = (idx, j) => (idx !== -1 ? Number(progressData[j][idx] || 0) : 0);
-    const getVal = (idx, j) => (idx !== -1 ? progressData[j][idx] : undefined);
-    const getBool = (idx, j) => {
-      if (idx === -1) return false;
-      const v = progressData[j][idx];
-      return v === true || v === "true" || v === 1;
-    };
-    // use cached IDX_* values
-    for (let j = 1; j < progressData.length; j++) {
-      const pEmail = String(progressData[j][IDX_EMAIL] || "");
-      const pCourseId = String(progressData[j][IDX_MA_KH] || "");
-      const pLessonId = String(progressData[j][IDX_MA_BAI] || "");
+  // --- Daily Challenge Logic ---
+  // Only add if all regular lessons are completed/approved
+  let allRegularCompleted = true;
+  let lastLessonDate = null;
 
-      if (pEmail === email && pCourseId === courseId && pLessonId === "DAILY_CHALLENGE") {
-        dailyChallengeProgress = {
-          currentTime: getNum(IDX_HIEN_TAI, j),
-          maxTime: getNum(IDX_XA_NHAT, j),
-          status: getVal(IDX_TRANG_THAI, j) || dailyChallengeProgress.status,
-          link1: getVal(IDX_LINK_1, j) || "",
-          videoScore: getNum(IDX_DIEM_VIDEO, j),
-          reflection: getVal(IDX_BHTDN, j) || "",
-          link2: getVal(IDX_LINK_2, j) || "",
-          link3: getVal(IDX_LINK_3, j) || "",
-          totalScore: getNum(IDX_TONG_DIEM, j),
-          grade: getVal(IDX_XEP_LOAI, j) || "",
-          disciplineSupport1: getBool(IDX_HO_TRO_1, j),
-          disciplineSupport2: getBool(IDX_HO_TRO_2, j),
-          nopTre: getBool(IDX_NOP_TRE, j)
-        };
-        break;
+  if (curriculum.length > 0) {
+      const lastLesson = curriculum[curriculum.length - 1];
+      const status = lastLesson.progress.status;
+      if (status !== "Completed" && status !== "Approved") {
+          allRegularCompleted = false;
       }
-    }
+
+      // Get last lesson date
+      if (lastLesson.progress.assignedDate) {
+          const parts = lastLesson.progress.assignedDate.split('/');
+          if (parts.length === 3) {
+              lastLessonDate = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+          }
+      }
   }
-  
-  curriculum.push({
-    id: "DAILY_CHALLENGE",
-    title: "🌟 Thử thách mỗi ngày",
-    youtubeId: "",
-    summary: "Ghi nhận hành động mỗi ngày để duy trì động lực học tập",
-    assignmentType: "daily_challenge",
-    isDailyChallenge: true,
-    order: curriculum.length + 1,
-    progress: dailyChallengeProgress
-  });
+
+  // Calculate Daily Challenge Date (Last Lesson + 1 Day)
+  let dailyChallengeDate = "";
+  if (lastLessonDate) {
+      const nextDay = new Date(lastLessonDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      dailyChallengeDate = Utilities.formatDate(nextDay, "Asia/Ho_Chi_Minh", "dd/MM/yyyy");
+  } else {
+      // Fallback if no date found (shouldn't happen if course started)
+       const today = new Date();
+       dailyChallengeDate = Utilities.formatDate(today, "Asia/Ho_Chi_Minh", "dd/MM/yyyy");
+  }
+
+  if (allRegularCompleted && curriculum.length > 0) {
+      // Ensure progress row exists for daily challenge
+      ensureDailyChallengeProgressRow(email, courseId, progressSheet);
+      
+      // Get daily challenge progress data
+      let dailyChallengeProgress = { 
+        currentTime: 0, 
+        maxTime: 0, 
+        status: "Available", // Always available if shown
+        link1: "",
+        videoScore: 0,
+        reflection: "",
+        link2: "",
+        link3: "",
+        totalScore: 0,
+        grade: "",
+        disciplineSupport1: false,
+        disciplineSupport2: false,
+        assignedDate: dailyChallengeDate // Set the calculated date
+      };
+      
+      // Load daily challenge progress from KH_TienDo
+      if (progressData && progressData.length > 1) {
+        const getNum = (idx, j) => (idx !== -1 ? Number((progressData[j][idx] || 0)) : 0);
+        const getVal = (idx, j) => (idx !== -1 ? progressData[j][idx] : undefined);
+        const getBool = (idx, j) => {
+          if (idx === -1) return false;
+          const v = progressData[j][idx];
+          return v === true || v === "true" || v === 1;
+        };
+        // use cached IDX_* values
+        for (let j = 1; j < progressData.length; j++) {
+          const pEmail = String(progressData[j][IDX_EMAIL] || "");
+          const pCourseId = String(progressData[j][IDX_MA_KH] || "");
+          const pLessonId = String(progressData[j][IDX_MA_BAI] || "");
+    
+          if (pEmail === email && pCourseId === courseId && pLessonId === "DAILY_CHALLENGE") {
+            dailyChallengeProgress = {
+              currentTime: getNum(IDX_HIEN_TAI, j),
+              maxTime: getNum(IDX_XA_NHAT, j),
+              status: getVal(IDX_TRANG_THAI, j) || "Available",
+              link1: getVal(IDX_LINK_1, j) || "",
+              videoScore: getNum(IDX_DIEM_VIDEO, j),
+              reflection: getVal(IDX_BHTDN, j) || "",
+              link2: getVal(IDX_LINK_2, j) || "",
+              link3: getVal(IDX_LINK_3, j) || "",
+              totalScore: getNum(IDX_TONG_DIEM, j),
+              grade: getVal(IDX_XEP_LOAI, j) || "",
+              disciplineSupport1: getBool(IDX_HO_TRO_1, j),
+              disciplineSupport2: getBool(IDX_HO_TRO_2, j),
+              nopTre: getBool(IDX_NOP_TRE, j),
+              assignedDate: dailyChallengeDate // Override with calculated date
+            };
+            break;
+          }
+        }
+      }
+      
+      curriculum.push({
+        id: "DAILY_CHALLENGE",
+        title: "🌟 Thử thách mỗi ngày",
+        youtubeId: "",
+        summary: "Ghi nhận hành động mỗi ngày để duy trì động lực học tập",
+        assignmentType: "daily_challenge",
+        isDailyChallenge: true,
+        order: curriculum.length + 1,
+        progress: dailyChallengeProgress
+      });
+  }
   
   return { success: true, data: curriculum, startDate: courseStartDate };
 }
 
-// Ensure KH_TienDo has StartDate and Nop_Tre columns (create header cells if missing)
+// Ensure KH_TienDo has Nop_Tre column (create header cell if missing)
 function ensureProgressColumns(progressSheet) {
   try {
     if (!progressSheet) return;
     const headersRange = progressSheet.getRange(1, 1, 1, progressSheet.getLastColumn());
     const headers = headersRange.getValues()[0].map(h => String(h || "").trim());
-    const need = [COL_NAME_START_DATE, COL_NAME_NOP_TRE];
+    const need = [COL_NAME_NOP_TRE]; // Removed COL_NAME_START_DATE
     let lastCol = headers.length;
     need.forEach(name => {
       if (headers.indexOf(name) === -1) {
@@ -1022,7 +1058,7 @@ function setupKH_TienDo(fillMissingStartDate) {
     const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h || "").trim());
 
     // Ensure headers
-    const needed = [COL_NAME_START_DATE, COL_NAME_NOP_TRE];
+    const needed = [COL_NAME_NOP_TRE];
     let curLast = headers.length;
     needed.forEach(name => {
       if (headers.indexOf(name) === -1) {
@@ -1033,16 +1069,8 @@ function setupKH_TienDo(fillMissingStartDate) {
     });
 
     // Apply formats and validations
-    const idxStart = getColumnIndex(sheet, COL_NAME_START_DATE);
     const idxNop = getColumnIndex(sheet, COL_NAME_NOP_TRE);
-    if (idxStart !== -1) {
-      // Set column width and date format for data rows
-      sheet.setColumnWidth(idxStart + 1, 120);
-      try {
-        sheet.getRange(2, idxStart + 1, sheet.getMaxRows() - 1).setNumberFormat("dd/MM/yyyy");
-      } catch (e) { /* ignore if fails */ }
-    }
-
+    
     if (idxNop !== -1) {
       const rule = SpreadsheetApp.newDataValidation().requireCheckbox().setAllowInvalid(false).build();
       try { sheet.getRange(2, idxNop + 1, sheet.getMaxRows() - 1).setDataValidation(rule); } catch (e) { /* ignore */ }
@@ -1050,22 +1078,7 @@ function setupKH_TienDo(fillMissingStartDate) {
     }
 
     // Optionally fill missing StartDate with today
-    if (fillMissingStartDate) {
-      const data = sheet.getDataRange().getValues();
-      const idxEmail = getColumnIndex(sheet, COL_NAME_EMAIL);
-      const idxCourse = getColumnIndex(sheet, COL_NAME_MA_KH);
-      if (idxStart !== -1 && idxEmail !== -1 && idxCourse !== -1) {
-        const todayStr = Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "dd/MM/yyyy");
-        for (let i = 1; i < data.length; i++) {
-          const e = String(data[i][idxEmail] || "").trim();
-          const c = String(data[i][idxCourse] || "").trim();
-          const s = String(data[i][idxStart] || "").trim();
-          if (e && c && (!s || s === "")) {
-            sheet.getRange(i + 1, idxStart + 1).setValue(todayStr);
-          }
-        }
-      }
-    }
+
 
     return { success: true, msg: 'KH_TienDo setup completed' };
   } catch (err) {
@@ -1074,49 +1087,58 @@ function setupKH_TienDo(fillMissingStartDate) {
   }
 }
 
-// Ensure daily challenge progress row exists in KH_TienDo
+// Ensure daily challenge progress row exists in KH_TienDo (mapped by specific columns)
 function ensureDailyChallengeProgressRow(email, courseId, progressSheet) {
   try {
     if (!progressSheet) return;
     
+    // 1. Check if row exists
     const data = progressSheet.getDataRange().getValues();
-    
-    // Check if row already exists
+    const idxEmail = getColumnIndex(progressSheet, COL_NAME_EMAIL);
+    const idxMaKH = getColumnIndex(progressSheet, COL_NAME_MA_KH);
+    const idxMaBai = getColumnIndex(progressSheet, COL_NAME_MA_BAI); // Assuming Lesson ID column
+
+    if (idxEmail === -1 || idxMaKH === -1 || idxMaBai === -1) {
+        Logger.log("Critical columns missing in KH_TienDo");
+        return; 
+    }
+
     for (let i = 1; i < data.length; i++) {
-      if (data[i][0] === email && data[i][1] === courseId && data[i][2] === "DAILY_CHALLENGE") {
+      if (String(data[i][idxEmail]) === email && 
+          String(data[i][idxMaKH]) === courseId && 
+          String(data[i][idxMaBai]) === "DAILY_CHALLENGE") {
         return; // Already exists
       }
     }
     
-    // Create new row for daily challenge
-    progressSheet.appendRow([
-      email,
-      courseId,
-      "DAILY_CHALLENGE",
-      "", // lesson title placeholder
-      "", // summary placeholder
-      "Locked", // initial status
-      0, // current time
-      0, // max time
-      "", // link1
-      0, // video score
-      "", // reflection
-      "", // link2
-      "", // link3
-      0, // total score
-      "", // grade
-      false, // discipline support 1
-      false  // discipline support 2
-    ]);
-    // After append, set Nop_Tre if that column exists
-    const lastRow = progressSheet.getLastRow();
-    const idxNopTre = getColumnIndex(progressSheet, COL_NAME_NOP_TRE);
+    // 2. Prepare new row data mapped to headers
+    const headers = progressSheet.getRange(1, 1, 1, progressSheet.getLastColumn()).getValues()[0];
+    const newRow = new Array(headers.length).fill(""); // Initialize empty
 
-    if (idxNopTre !== -1) {
-      progressSheet.getRange(lastRow, idxNopTre + 1).setValue(false);
-    }
+    // Helper to set value by column name
+    const setCol = (colName, value) => {
+        const idx = headers.indexOf(colName);
+        if (idx !== -1) newRow[idx] = value;
+    };
+
+    setCol(COL_NAME_EMAIL, email);
+    setCol(COL_NAME_MA_KH, courseId);
+    setCol(COL_NAME_MA_BAI, "DAILY_CHALLENGE");
+    setCol(COL_NAME_TRANG_THAI, "Locked");
     
-    Logger.log(`Created daily challenge progress row for ${email} in course ${courseId}`);
+    // Default numeric values
+    setCol(COL_NAME_HIEN_TAI, 0);
+    setCol(COL_NAME_XA_NHAT, 0);
+    setCol(COL_NAME_DIEM_VIDEO, 0);
+    setCol(COL_NAME_TONG_DIEM, 0);
+    setCol(COL_NAME_HO_TRO_1, false);
+    setCol(COL_NAME_HO_TRO_2, false);
+    setCol(COL_NAME_NOP_TRE, false);
+
+    // Append safely
+    progressSheet.appendRow(newRow);
+    Logger.log(`Created daily challenge progress row for ${email} in ${courseId}`);
+
   } catch (error) {
     Logger.log("Error in ensureDailyChallengeProgressRow:", error);
   }

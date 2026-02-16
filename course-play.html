@@ -3200,6 +3200,14 @@
             }
         }
 
+        function onDateInputChange(input) {
+            const display = document.getElementById('start-date-display');
+            if (input.value && display) {
+                const date = new Date(input.value);
+                display.textContent = date.toLocaleDateString('vi-VN');
+            }
+        }
+
         function initDateUI() {
             const startDate = getCourseStartDate();
             const dateControl = document.getElementById('sidebar-date-control');
@@ -3213,7 +3221,7 @@
             if (startDate) {
                 if (input) input.style.display = 'none';
                 if (display) {
-                    display.style.display = 'inline-block'; // Changed to inline-block for proper spacing
+                    display.style.display = 'inline-block';
                     display.textContent = startDate.toLocaleDateString('vi-VN');
                 }
                 if (btnConfirm) btnConfirm.style.display = 'none';
@@ -3227,17 +3235,20 @@
                 if (deadlineRow) deadlineRow.style.display = 'block';
             } else {
                 const today = new Date();
+                const todayStr = today.toISOString().split('T')[0];
+
                 if (input) {
-                    input.style.display = 'block'; // Make it cover the area
+                    input.style.display = 'block';
                     input.valueAsDate = today;
+                    input.min = todayStr; // Prevent past dates
                 }
                 if (display) {
                     display.style.display = 'block';
-                    display.textContent = "--/--/----";
+                    display.textContent = today.toLocaleDateString('vi-VN'); // Show default today
                 }
                 if (btnConfirm) btnConfirm.style.display = 'inline-block';
                 if (btnReset) {
-                    btnReset.style.display = 'none'; // Hide completely when not set
+                    btnReset.style.display = 'none';
                 }
                 const deadlineRow = document.getElementById('deadline-row');
                 if (deadlineRow) deadlineRow.style.display = 'none';
