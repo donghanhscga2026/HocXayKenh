@@ -1951,7 +1951,7 @@ function updateStartDate(email, courseId, startDate) {
       "",                   // Mã lớp mới
       "",                   // Phí cọc mới
       "",                   // Link ảnh cọc mới
-      "Tự động - Đang học", // Trạng thái duyệt
+      "Tự động - In Progress", // Trạng thái duyệt
       "",                   // Lý do bảo lưu
       "",                   // Trạng thái hoàn cọc
       "",                   // Số tiền Tất toán
@@ -4354,7 +4354,7 @@ function findRelevantChunks(query, userEmail, topK = 5) {
     return [];
   }
 }
-// --- NEW: Update Start Date in LS_DangKy ---
+
 // --- NEW: Update Start Date in LS_DangKy AND Initialize KH_TienDo ---
 function updateStartDate(email, courseId, startDate) {
   const studentCode = getStudentCodeByEmail(email);
@@ -4486,13 +4486,19 @@ function updateStartDate(email, courseId, startDate) {
                       progressSheet.appendRow([""]);
                       rowNum = progressSheet.getLastRow();
                       
+                      // CRITICAL SAFETY CHECK: Never write to row 1 (header)
+                      if (rowNum <= 1) {
+                          Logger.log("ERROR: Attempted to write to header row! rowNum=" + rowNum);
+                          continue; // Skip this lesson
+                      }
+                      
                       // Set basic info
                       progressSheet.getRange(rowNum, idxEmail + 1).setValue(email);
                       progressSheet.getRange(rowNum, idxCourse + 1).setValue(courseId);
                       progressSheet.getRange(rowNum, idxLesson + 1).setValue(lessonId);
                       
-                      // Set status: "Đang học" for first lesson, "Khóa" for others
-                      const status = (lessonCount === 1) ? "Đang học" : "Khóa";
+                      // Set status: "In Progress" for first lesson, "Locked" for others
+                      const status = (lessonCount === 1) ? "In Progress" : "Locked";
                       if (idxStatus !== -1) progressSheet.getRange(rowNum, idxStatus + 1).setValue(status);
                       
                       // Initialize all scores to 0
@@ -4503,6 +4509,12 @@ function updateStartDate(email, courseId, startDate) {
                       if (idxTongDiem !== -1) progressSheet.getRange(rowNum, idxTongDiem + 1).setValue(0);
                   } else {
                       rowNum = rowIndex + 1;
+                      
+                      // CRITICAL SAFETY CHECK: Never write to row 1 (header)
+                      if (rowNum <= 1) {
+                          Logger.log("ERROR: rowIndex pointed to header! rowIndex=" + rowIndex + ", rowNum=" + rowNum);
+                          continue; // Skip this lesson
+                      }
                   }
                   
                   // Set Assigned Date - CRITICAL SAFETY CHECK
