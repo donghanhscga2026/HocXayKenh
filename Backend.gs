@@ -818,6 +818,7 @@ function getCourseContent(email, courseId) {
       const idxSupp1 = IDX_HO_TRO_1;
       const idxSupp2 = IDX_HO_TRO_2;
       const idxCompDate = IDX_NGAY_HOAN_THANH;
+      const idxAssigned = getColumnIndex(progressSheet, COL_NAME_NGAY_DUOC_GIAO);
 
       if (progressSheet && idxEmail !== -1 && idxCourse !== -1 && idxLesson !== -1) {
           for (let j = 1; j < progressData.length; j++) {
@@ -849,7 +850,9 @@ function getCourseContent(email, courseId) {
                 disciplineSupport1: getBool(idxSupp1),
                 disciplineSupport2: getBool(idxSupp2),
                 nopTre: getBool(idxNopTre),
-                submissionDate: (idxCompDate !== -1 && progressData[j][idxCompDate]) ? Utilities.formatDate(new Date(progressData[j][idxCompDate]), "Asia/Ho_Chi_Minh", "dd/MM/yyyy") : ""
+                nopTre: getBool(idxNopTre),
+                submissionDate: (idxCompDate !== -1 && progressData[j][idxCompDate]) ? Utilities.formatDate(new Date(progressData[j][idxCompDate]), "Asia/Ho_Chi_Minh", "dd/MM/yyyy") : "",
+                assignedDate: (idxAssigned !== -1 && progressData[j][idxAssigned]) ? Utilities.formatDate(new Date(progressData[j][idxAssigned]), "Asia/Ho_Chi_Minh", "dd/MM/yyyy") : null
               };
               break;
             }
@@ -903,9 +906,12 @@ function getCourseContent(email, courseId) {
       // Daily challenge uses dynamic date (submission date = today)
       curriculum[i].progress.assignedDate = null;
     } else {
-      const assigned = new Date(enrollmentStart.getTime());
-      assigned.setDate(assigned.getDate() + i); // day offset
-      curriculum[i].progress.assignedDate = Utilities.formatDate(assigned, "Asia/Ho_Chi_Minh", "dd/MM/yyyy");
+      // Prioritize existing assignedDate from KH_TienDo
+      if (!curriculum[i].progress.assignedDate) {
+          const assigned = new Date(enrollmentStart.getTime());
+          assigned.setDate(assigned.getDate() + i); // day offset
+          curriculum[i].progress.assignedDate = Utilities.formatDate(assigned, "Asia/Ho_Chi_Minh", "dd/MM/yyyy");
+      }
     }
   }
   

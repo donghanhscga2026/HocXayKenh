@@ -2381,7 +2381,7 @@
                 videoProgressInterval = setInterval(() => {
                     updateVideoProgress();
                     calculateLiveScore(); // Update UI
-                }, 1000);
+                }, 250); // Update more frequently for smooth progress
 
                 // When starting to play, get maxTime from lesson data
                 if (curriculum[currentLessonIdx]) {
@@ -2438,8 +2438,8 @@
         function updateVideoProgress() {
             if (!player || currentLessonIdx === -1) return;
 
-            const currentTime = Math.floor(player.getCurrentTime());
-            const duration = Math.floor(player.getDuration());
+            const currentTime = player.getCurrentTime(); // Remove Math.floor for smooth progress
+            const duration = player.getDuration();
             const lesson = curriculum[currentLessonIdx];
 
             // Update local variables for anti-cheat and live score
@@ -2450,18 +2450,20 @@
             lesson.progress.duration = duration;
 
             // Update UI for both mobile and desktop
-            const percentage = duration > 0 ? Math.floor((currentTime / duration) * 100) : 0;
+            // Use 1 decimal place for smoother visual
+            const percentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+            const pctDisplay = Math.round(percentage);
 
             // Mobile UI
             const videoStatusText = document.getElementById('video-status-text');
             const videoProgressBar = document.getElementById('video-progress-bar');
-            if (videoStatusText) videoStatusText.textContent = `Đang xem: ${percentage}%`;
+            if (videoStatusText) videoStatusText.textContent = `Đang xem: ${pctDisplay}%`;
             if (videoProgressBar) videoProgressBar.style.width = `${percentage}%`;
 
             // Desktop UI
             const videoStatusTextDesktop = document.getElementById('video-status-text-desktop');
             const videoProgressBarDesktop = document.getElementById('video-progress-bar-desktop');
-            if (videoStatusTextDesktop) videoStatusTextDesktop.textContent = `Đang xem: ${percentage}%`;
+            if (videoStatusTextDesktop) videoStatusTextDesktop.textContent = `Đang xem: ${pctDisplay}%`;
             if (videoProgressBarDesktop) videoProgressBarDesktop.style.width = `${percentage}%`;
         }
 
@@ -2662,11 +2664,31 @@
 
             // Show loading state
             const btn = document.querySelector('.btn-submit');
+            if (btn.disabled) return; // Prevent double clicks
+
             const originalText = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tổng hợp ...';
 
+            // Simulate "Calculating" effect
+            const liveScoreEl = document.getElementById(isDesktop ? 'live-total-score-desktop' : 'live-total-score');
+            if (liveScoreEl) {
+                liveScoreEl.style.color = '#ca8a04'; // Change color to indicate processing
+                let count = 0;
+                const interval = setInterval(() => {
+                    count = (count + 1) % 11;
+                    liveScoreEl.textContent = `${count}/10`;
+                }, 100);
+
+                // Stop animation after 1.5s usually, but we wait for Fetch
+                // We will clear this interval when fetch returns
+                btn.dataset.animInterval = interval;
+            }
+
             try {
+                // Ensure latest progress is captured (non-blocking attempt)
+                updateVideoProgress();
+
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     body: JSON.stringify({
@@ -2686,14 +2708,25 @@
                 });
                 const result = await response.json();
 
+                // Stop Animation
+                if (btn.dataset.animInterval) {
+                    clearInterval(Number(btn.dataset.animInterval));
+                    if (liveScoreEl) liveScoreEl.style.color = '#ea580c';
+                }
+
                 if (result.success) {
                     showToast("Đã Ghi nhận thành công!", "success");
+                    btn.innerHTML = '<i class="fas fa-check"></i> Đã Ghi Nhận';
+                    // Don't re-enable button immediately to prevent spam, or do we?
+                    // User might want to resubmit? Let's keep it disabled for 2s or until refresh?
+                    // Actually, re-enabling allows correction.
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }, 2000);
 
                     // Display Grade Result in appropriate location
-                    const resultBoxId = isDesktop ? 'grading-result-desktop' : 'grading-result';
-                    const resultBox = document.getElementById(resultBoxId);
-                    const details = result.details || { video: 0, reflection: 0, practice: 0, discipline: 0, total: 0 };
-                    const score = result.score || 0;
+
                     const grade = result.grade || "Chưa xác định";
 
                     let gradeColor = '#0369a1'; // Blue
