@@ -1106,10 +1106,18 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Curriculum Loading Indicator (below date picker) -->
+                <div id="curriculum-loading" style="display: none; margin-top: 15px; padding: 15px;">
+                    <div style="text-align: center;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #64748b;"></i>
+                        <p style="margin: 10px 0 0 0; color: #94a3b8; font-size: 13px;">Đang tải khóa học...</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Loading skeleton -->
-            <div id="lesson-list-loading" class="lesson-list-desktop">
+            <div id="lesson-list-loading" class="lesson-list-desktop" style="display: none;">
                 <div style="padding: 15px; text-align: center; color: #64748b;">
                     <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 10px;"></i>
                     <p style="margin: 0; font-size: 14px; font-weight: 500;">Đang tải khóa học...</p>
@@ -1705,8 +1713,9 @@
                 checkGraduation();
                 if (autoPlay) playLesson(lastIdx !== -1 ? lastIdx : 0);
 
-                // Init chatbot after curriculum loaded
-                setTimeout(() => initChatbot(), 500);
+                // Hide curriculum loading indicator
+                const curriculumLoading = document.getElementById('curriculum-loading');
+                if (curriculumLoading) curriculumLoading.style.display = 'none';
 
                 // Fetch in background to update cache
                 fetchCurriculumInBackground(cacheKey, autoPlay);
@@ -1790,8 +1799,9 @@
                     checkGraduation();
                     if (autoPlay) playLesson(lastIdx !== -1 ? lastIdx : 0);
 
-                    // Init chatbot after curriculum loaded
-                    setTimeout(() => initChatbot(), 500);
+                    // Hide curriculum loading indicator
+                    const curriculumLoading = document.getElementById('curriculum-loading');
+                    if (curriculumLoading) curriculumLoading.style.display = 'none';
                 } else {
                     console.error("API Error:", result.msg);
                     showToast("Lỗi API: " + (result.msg || "Không xác định"), "error");
@@ -2318,9 +2328,27 @@
                 showToast("ID Video không hợp lệ! Vui lòng kiểm tra dữ liệu.", "error");
                 return;
             }
-
+            // Load video
             if (player) {
                 player.loadVideoById(videoId, startSeconds);
+
+                // Init BRK AI when video starts playing (only once)
+                if (!window.chatbotInitialized) {
+                    const onVideoPlay = () => {
+                        if (!window.chatbotInitialized) {
+                            window.chatbotInitialized = true;
+                            console.log('🤖 Initializing BRK AI on video play...');
+                            setTimeout(() => initChatbot(), 500);
+                        }
+                    };
+
+                    // Use YouTube API's onStateChange event
+                    player.addEventListener('onStateChange', (event) => {
+                        if (event.data === YT.PlayerState.PLAYING) {
+                            onVideoPlay();
+                        }
+                    });
+                }
             } else {
                 player = new YT.Player('player', {
                     height: '100%',
@@ -3219,14 +3247,28 @@
                 });
                 const result = await response.json();
 
+                // Hide loading skeleton
+                const startDateLoading = document.getElementById('start-date-loading');
+                if (startDateLoading) startDateLoading.style.display = 'none';
+
                 if (result.success) {
                     if (result.hasStartDate) {
-                        // Đã có ngày → Load curriculum ngay
-                        courseStartDate = result.startDate ? new Date(result.startDate) : null;
-                        await loadCurriculum(true);
+                        // Flow B: Returning user - Show date picker with existing date
+                        const existingDate = result.startDate;
+                        courseStartDate = existingDate ? new Date(existingDate) : null;
+
+                        // Show date picker UI (disabled Confirm, enabled Reset)
+                        showStartDatePicker(existingDate, true);
+
+                        // Auto-load curriculum after showing UI
+                        setTimeout(() => {
+                            const curriculumLoading = document.getElementById('curriculum-loading');
+                            if (curriculumLoading) curriculumLoading.style.display = 'block';
+                            loadCurriculum(false); // false = don't autoplay yet, wait for "BẮT ĐẦU HỌC NGAY"
+                        }, 100);
                     } else {
-                        // Chưa có ngày → Hiện date picker
-                        showStartDatePicker();
+                        // Flow A: New user - Show date picker for selection
+                        showStartDatePicker(null, false);
                     }
                 } else {
                     showToast(result.msg || "Lỗi kiểm tra ngày bắt đầu", "error");
@@ -3237,32 +3279,67 @@
         }
 
         // NEW: Show start date picker UI
-        function showStartDatePicker() {
+        function showStartDatePicker(existingDate, hasExistingDate) {
             // Hide loading indicators
             const loadingSkeleton = document.getElementById('lesson-list-loading');
             const mobileLoading = document.getElementById('mobile-dropdown-loading');
+            const startDateLoading = document.getElementById('start-date-loading');
             if (loadingSkeleton) loadingSkeleton.style.display = 'none';
             if (mobileLoading) mobileLoading.style.display = 'none';
+            if (startDateLoading) startDateLoading.style.display = 'none';
 
             const dateControl = document.getElementById('sidebar-date-control');
             const confirmBtn = document.getElementById('btn-confirm-date');
+            const resetBtn = document.getElementById('btn-reset-date');
+            const dateInput = document.getElementById('course-start-date');
 
             if (dateControl) {
                 dateControl.style.display = 'block';
-                if (confirmBtn) confirmBtn.style.display = 'block';
             }
 
-            const today = new Date().toISOString().split('T')[0];
-            const dateInput = document.getElementById('course-start-date');
-            if (dateInput) {
-                dateInput.value = today;
-                dateInput.min = today;
-                onDateInputChange(dateInput);
-            }
+            if (hasExistingDate) {
+                // Flow B: Returning user with existing date
+                if (dateInput) {
+                    dateInput.value = existingDate;
+                    onDateInputChange(dateInput);
+                }
 
-            showToast("Vui lòng chọn ngày bắt đầu học!", "info");
-            document.getElementById('current-lesson-title').textContent = "Chào mừng đến với khóa học!";
-            document.getElementById('lesson-summary').textContent = "Vui lòng chọn ngày bắt đầu học ở sidebar bên trái và nhấn 'Xác nhận' để bắt đầu.";
+                // Disable Confirm, Enable Reset
+                if (confirmBtn) {
+                    confirmBtn.disabled = true;
+                    confirmBtn.style.opacity = '0.5';
+                    confirmBtn.style.cursor = 'not-allowed';
+                }
+                if (resetBtn) {
+                    resetBtn.style.display = 'block';
+                    resetBtn.disabled = false;
+                }
+
+                showToast("Ngày bắt đầu: " + formatDate(new Date(existingDate)), "info");
+            } else {
+                // Flow A: New user, no existing date
+                const today = new Date().toISOString().split('T')[0];
+                if (dateInput) {
+                    dateInput.value = today;
+                    dateInput.min = today;
+                    onDateInputChange(dateInput);
+                }
+
+                // Enable Confirm, Hide Reset
+                if (confirmBtn) {
+                    confirmBtn.disabled = false;
+                    confirmBtn.style.opacity = '1';
+                    confirmBtn.style.cursor = 'pointer';
+                    confirmBtn.style.display = 'block';
+                }
+                if (resetBtn) {
+                    resetBtn.style.display = 'none';
+                }
+
+                showToast("Vui lòng chọn ngày bắt đầu học!", "info");
+                document.getElementById('current-lesson-title').textContent = "Chào mừng đến với khóa học!";
+                document.getElementById('lesson-summary').textContent = "Vui lòng chọn ngày bắt đầu học ở sidebar bên trái và nhấn 'Xác nhận' để bắt đầu.";
+            }
         }
 
         async function confirmStartDate() {
@@ -3348,8 +3425,6 @@
                 checkGraduation();
                 playLesson(lastIdx !== -1 ? lastIdx : 0);
 
-                // Init chatbot sau khi có curriculum
-                setTimeout(() => initChatbot(), 500);
             } else {
                 // Fallback: Nếu không có cache, mới load lại
                 await loadCurriculum(true);
