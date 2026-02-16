@@ -1053,7 +1053,19 @@
                     <p id="progress-summary">0/0 bài hoàn thành</p>
                 </div>
 
+
                 <!-- Start Date Card (Big Design) -->
+                <!-- Loading Skeleton -->
+                <div id="start-date-loading"
+                    style="margin-top: 15px; padding: 15px; border-top: 1px solid #334155; display: block;">
+                    <div
+                        style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 15px; text-align: center;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #64748b;"></i>
+                        <p style="margin: 10px 0 0 0; color: #94a3b8; font-size: 13px;">Đang kiểm tra thông tin...
+                        </p>
+                    </div>
+                </div>
+
                 <div class="date-control" id="sidebar-date-control"
                     style="margin-top: 15px; padding: 15px; border-top: 1px solid #334155; display: none;">
                     <div
@@ -1693,6 +1705,9 @@
                 checkGraduation();
                 if (autoPlay) playLesson(lastIdx !== -1 ? lastIdx : 0);
 
+                // Init chatbot after curriculum loaded
+                setTimeout(() => initChatbot(), 500);
+
                 // Fetch in background to update cache
                 fetchCurriculumInBackground(cacheKey, autoPlay);
                 return;
@@ -1774,6 +1789,9 @@
                     const lastIdx = curriculum.findIndex(l => l.progress.status === "In Progress");
                     checkGraduation();
                     if (autoPlay) playLesson(lastIdx !== -1 ? lastIdx : 0);
+
+                    // Init chatbot after curriculum loaded
+                    setTimeout(() => initChatbot(), 500);
                 } else {
                     console.error("API Error:", result.msg);
                     showToast("Lỗi API: " + (result.msg || "Không xác định"), "error");
@@ -3014,9 +3032,6 @@
 
             // CHỈ kiểm tra start date, KHÔNG load curriculum
             await checkAndShowStartDateUI();
-
-            // Chatbot khởi tạo sau (không blocking)
-            setTimeout(() => initChatbot(), 500);
         });
 
         // ===== CHATBOT FUNCTIONS =====
@@ -3223,6 +3238,12 @@
 
         // NEW: Show start date picker UI
         function showStartDatePicker() {
+            // Hide loading indicators
+            const loadingSkeleton = document.getElementById('lesson-list-loading');
+            const mobileLoading = document.getElementById('mobile-dropdown-loading');
+            if (loadingSkeleton) loadingSkeleton.style.display = 'none';
+            if (mobileLoading) mobileLoading.style.display = 'none';
+
             const dateControl = document.getElementById('sidebar-date-control');
             const confirmBtn = document.getElementById('btn-confirm-date');
 
@@ -3326,6 +3347,9 @@
                 const lastIdx = curriculum.findIndex(l => l.progress && l.progress.status === "In Progress");
                 checkGraduation();
                 playLesson(lastIdx !== -1 ? lastIdx : 0);
+
+                // Init chatbot sau khi có curriculum
+                setTimeout(() => initChatbot(), 500);
             } else {
                 // Fallback: Nếu không có cache, mới load lại
                 await loadCurriculum(true);

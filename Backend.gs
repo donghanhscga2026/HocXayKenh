@@ -5020,17 +5020,3 @@ function autoSaveProgress(data) {
     return { success: false, msg: e.toString() };
   }
 }
-// ===== TEST FUNCTION =====
-function TEST_checkStartDate() {
-  const testEmail = "quelion0708@gmail.com"; // ← SỬA EMAIL
-  const testCourseId = "AF"; // ← SỬA MÃ KHÓA HỌC
-  
-  Logger.log("Email: " + testEmail);
-  Logger.log("CourseId: " + testCourseId);
-  
-  const result = checkStartDate(testEmail, testCourseId);
-  
-  Logger.log("\nKết quả: " + JSON.stringify(result, null, 2));
-  
-  return result;
-}
