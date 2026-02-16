@@ -675,6 +675,11 @@ function getCourses(email) {
   return { success: true, data: courseList };
 }
 
+// --- CONFIG: LS_DangKy COLUMN NAMES (User provided) ---
+const COL_LSDK_MA_CODE = "MÃ CODE"; // Col B (index 1)
+const COL_LSDK_MA_LOP = "Ma_Lop"; // Col O (index 14)
+const COL_LSDK_NGAY_BAT_DAU = "Ngay_Bat_Dau"; // Col P (index 15)
+
 // --- CONFIG: KH_TienDo COLUMN NAMES ---
 const COL_NAME_GHI_NHAN = "Thoi_Gian_Ghi_Nhan";
 const COL_NAME_MA_CODE = "Ma_Code";
@@ -695,9 +700,9 @@ const COL_NAME_HO_TRO_1 = "Ho_Tro1";
 const COL_NAME_HO_TRO_2 = "Ho_Tro2";
 const COL_NAME_DIEM_DUNG_HAN = "Diem_Dung_Han";
 const COL_NAME_TONG_DIEM = "Tong_Diem";
-const COL_NAME_XEP_LOAI = "Xep_Loai"; // Wait, user sheet doesn't seem to show Xep_Loai in the partial view, but usually it's there.
-const COL_NAME_TRANG_THAI = "Trang_Thai"; // Need to check if this exists or if it's derived.
-const COL_NAME_START_DATE = "StartDate"; // New: enrollment start date (DD/MM/YYYY)
+const COL_NAME_XEP_LOAI = "Xep_Loai"; 
+const COL_NAME_TRANG_THAI = "Trang_Thai"; 
+const COL_NAME_NGAY_HOAN_THANH = "Ngay_Hoan_Thanh"; // New: Submission Date
 const COL_NAME_NOP_TRE = "Nop_Tre"; // New: flag for late submission
 
 function calculateCourseProgress(email, courseId, ss) {

@@ -68,90 +68,171 @@
         }
 
         .sidebar-header {
-            padding: 8px 12px;
+            padding: 15px;
             border-bottom: 1px solid #334155;
             background: #0f172a;
+            flex-shrink: 0;
+            z-index: 10;
         }
 
-        #sidebar-title {
+        .course-info-header h3 {
             color: #fbbf24;
             /* Amber 400 - Gold */
             margin: 0;
-            font-size: 14px;
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.4;
         }
 
-        #progress-summary {
-            color: #94a3b8 !important;
-            /* Slate 400 */
-            margin: 2px 0 0 0 !important;
+        .course-info-header p {
+            color: #94a3b8;
+            margin: 4px 0 0 0;
+            font-size: 12px;
+        }
+
+        /* Date Control Section */
+        .date-control {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #334155;
+            font-size: 13px;
+        }
+
+        .date-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .date-label {
+            color: #cbd5e1;
+        }
+
+        .date-value {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .btn-date {
+            padding: 4px 10px;
+            border-radius: 4px;
             font-size: 11px;
+            cursor: pointer;
+            border: none;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-confirm {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            background: #059669;
+        }
+
+        .btn-reset {
+            background: #334155;
+            color: #cbd5e1;
+            border: 1px solid #475569;
+        }
+
+        .btn-reset:hover {
+            background: #475569;
+            color: white;
         }
 
         .lesson-list {
+            /* Legacy select style rewrite if exists, otherwise redundant */
             width: 100%;
-            padding: 8px 8px;
             background: #1e293b;
             color: #f8fafc;
             border: 1px solid #334155;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23f8fafc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
-            background-repeat: no-repeat;
-            background-position: right 6px center;
-            background-size: 18px;
-            padding-right: 30px;
-            margin: 6px 8px;
         }
 
-        .lesson-list option {
-            background: #1e293b;
-            color: #f8fafc;
-            padding: 8px;
-        }
-
-        .lesson-list option:checked {
-            background: #334155;
-            color: #fbbf24;
+        /* Timeline Styles for Desktop List */
+        .lesson-list-desktop {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 10px 20px 10px;
         }
 
         .lesson-item {
-            padding: 15px 20px;
-            border-bottom: 1px solid #1e293b;
-            /* Slate 800 */
+            position: relative;
+            padding: 12px 10px 12px 35px;
+            /* Left padding for timeline */
+            border-bottom: none;
             cursor: pointer;
-            transition: background 0.2s;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
+            transition: all 0.2s;
             color: #cbd5e1;
-            /* Slate 300 */
+            margin-bottom: 0;
+            min-height: 60px;
         }
 
+        /* Vertical Line */
+        .lesson-item::before {
+            content: '';
+            position: absolute;
+            left: 18px;
+            /* Center of icon */
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #334155;
+            z-index: 1;
+        }
+
+        .lesson-item:first-child::before {
+            top: 15px;
+        }
+
+        .lesson-item:last-child::before {
+            bottom: auto;
+            height: 25px;
+        }
+
+        /* Fix for single item or first item connecting to nothing if needed */
+
         .lesson-item:hover {
-            background: #1e293b;
-            /* Slate 800 */
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
         }
 
         .lesson-item.active {
-            background: #334155;
-            /* Slate 700 */
-            border-left: 4px solid #fbbf24;
-            /* Gold Border */
+            background: #1e293b;
+            border-radius: 8px;
+            /* No left border in new design, just background */
         }
 
-        .lesson-item.locked {
-            opacity: 0.6;
-            cursor: not-allowed;
+        .lesson-status-icon {
+            position: absolute;
+            left: 10px;
+            top: 12px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #0f172a;
+            /* Hide line behind icon by matching bg */
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
         }
 
-        .lesson-status {
-            font-size: 18px;
-            margin-top: 2px;
+        .lesson-item:hover .lesson-status-icon,
+        .lesson-item.active .lesson-status-icon {
+            background: transparent;
+            /* Keep transparency if needed or match parent */
+            background: #0f172a;
+            /* Keep it matching sidebar bg to hide line */
+        }
+
+        .lesson-item.active .lesson-status-icon {
+            background: #1e293b;
+            /* Match active bg */
         }
 
         .status-done {
@@ -159,12 +240,29 @@
         }
 
         .status-lock {
-            color: #94a3b8;
+            color: #475569;
         }
 
         .status-play {
             color: var(--primary);
         }
+
+        .lesson-info {
+            /* margin-left: 5px; handled by padding-left of item */
+        }
+
+        .lesson-title {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 2px;
+            color: #f1f5f9;
+        }
+
+        .lesson-meta {
+            font-size: 12px;
+            color: #64748b;
+        }
+
 
         /* Desktop List Style */
         .lesson-list-desktop {
@@ -625,257 +723,257 @@
             }
         }
 
-    /* Chatbot Styles */
-    .chatbot-fab {
-        position: fixed;
-        bottom: 30px;
-        right: 30px;
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        cursor: pointer;
-        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 28px;
-        transition: all 0.3s ease;
-        z-index: 999;
-    }
-
-    .chatbot-fab:hover {
-        transform: scale(1.1);
-        box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5);
-    }
-
-    .chatbot-fab.active {
-        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-    }
-
-    .chatbot-container {
-        position: fixed;
-        bottom: 100px;
-        right: 30px;
-        width: 380px;
-        height: 500px;
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 5px 40px rgba(0, 0, 0, 0.16);
-        display: none;
-        flex-direction: column;
-        z-index: 998;
-        animation: slideUp 0.3s ease;
-    }
-
-    .chatbot-container.active {
-        display: flex;
-    }
-
-    @keyframes slideUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .chatbot-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 20px;
-        border-radius: 15px 15px 0 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .chatbot-header h3 {
-        margin: 0;
-        font-size: 18px;
-        font-weight: 600;
-    }
-
-    .chatbot-close {
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        color: white;
-        font-size: 24px;
-        cursor: pointer;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s;
-    }
-
-    .chatbot-close:hover {
-        background: rgba(255, 255, 255, 0.3);
-    }
-
-    .chatbot-messages {
-        flex: 1;
-        overflow-y: auto;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-        background: #f9fafb;
-    }
-
-    .message {
-        display: flex;
-        animation: fadeIn 0.3s ease;
-    }
-
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .message.user {
-        justify-content: flex-end;
-    }
-
-    .message.ai {
-        justify-content: flex-start;
-    }
-
-    .message-bubble {
-        max-width: 75%;
-        padding: 12px 16px;
-        border-radius: 12px;
-        word-wrap: break-word;
-        line-height: 1.4;
-        font-size: 14px;
-    }
-
-    .message.user .message-bubble {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-bottom-right-radius: 4px;
-    }
-
-    .message.ai .message-bubble {
-        background: white;
-        color: #333;
-        border: 1px solid #e5e7eb;
-        border-bottom-left-radius: 4px;
-    }
-
-    .typing-indicator {
-        display: flex;
-        gap: 4px;
-        align-items: center;
-        padding: 12px 16px;
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-    }
-
-    .typing-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #ccc;
-        animation: typing 1.4s infinite;
-    }
-
-    .typing-dot:nth-child(2) {
-        animation-delay: 0.2s;
-    }
-
-    .typing-dot:nth-child(3) {
-        animation-delay: 0.4s;
-    }
-
-    @keyframes typing {
-
-        0%,
-        60%,
-        100% {
-            opacity: 0.3;
-        }
-
-        30% {
-            opacity: 1;
-        }
-    }
-
-    .chatbot-input-area {
-        padding: 15px;
-        border-top: 1px solid #e5e7eb;
-        display: flex;
-        gap: 10px;
-    }
-
-    .chatbot-input {
-        flex: 1;
-        padding: 10px 15px;
-        border: 1px solid #e5e7eb;
-        border-radius: 25px;
-        font-size: 14px;
-        outline: none;
-        transition: border-color 0.3s;
-    }
-
-    .chatbot-input:focus {
-        border-color: #667eea;
-    }
-
-    .chatbot-send {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        transition: all 0.3s;
-    }
-
-    .chatbot-send:hover {
-        transform: scale(1.05);
-    }
-
-    .chatbot-send:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    @media (max-width: 600px) {
-        .chatbot-container {
-            width: calc(100% - 40px);
-            height: 400px;
-            bottom: 90px;
-            right: 20px;
-        }
-
+        /* Chatbot Styles */
         .chatbot-fab {
-            width: 50px;
-            height: 50px;
-            font-size: 24px;
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            transition: all 0.3s ease;
+            z-index: 999;
         }
-    }
+
+        .chatbot-fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5);
+        }
+
+        .chatbot-fab.active {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        }
+
+        .chatbot-container {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 380px;
+            height: 500px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 40px rgba(0, 0, 0, 0.16);
+            display: none;
+            flex-direction: column;
+            z-index: 998;
+            animation: slideUp 0.3s ease;
+        }
+
+        .chatbot-container.active {
+            display: flex;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chatbot-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chatbot-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .chatbot-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .chatbot-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .chatbot-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: #f9fafb;
+        }
+
+        .message {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.ai {
+            justify-content: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 75%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            word-wrap: break-word;
+            line-height: 1.4;
+            font-size: 14px;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.ai .message-bubble {
+            background: white;
+            color: #333;
+            border: 1px solid #e5e7eb;
+            border-bottom-left-radius: 4px;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            padding: 12px 16px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ccc;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+
+            0%,
+            60%,
+            100% {
+                opacity: 0.3;
+            }
+
+            30% {
+                opacity: 1;
+            }
+        }
+
+        .chatbot-input-area {
+            padding: 15px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chatbot-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #e5e7eb;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .chatbot-input:focus {
+            border-color: #667eea;
+        }
+
+        .chatbot-send {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        .chatbot-send:hover {
+            transform: scale(1.05);
+        }
+
+        .chatbot-send:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 600px) {
+            .chatbot-container {
+                width: calc(100% - 40px);
+                height: 400px;
+                bottom: 90px;
+                right: 20px;
+            }
+
+            .chatbot-fab {
+                width: 50px;
+                height: 50px;
+                font-size: 24px;
+            }
+        }
     </style>
 </head>
 
@@ -949,14 +1047,34 @@
     <div class="main-container">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div>
-                        <h3 id="sidebar-title" style="margin: 0; font-size: 16px;"></h3>
-                        <p id="progress-summary" style="font-size: 13px; color: #64748b; margin-top: 5px;">0/0 bài hoàn
-                            thành</p>
+                <div class="course-info-header">
+                    <h3 id="sidebar-title">Đang tải...</h3>
+                    <p id="progress-summary">0/0 bài hoàn thành</p>
+                </div>
+
+                <!-- Date Control Section -->
+                <div class="date-control" id="sidebar-date-control" style="display:none;">
+                    <div class="date-row">
+                        <span class="date-label">Ngày bắt đầu:</span>
+                        <input type="date" id="course-start-date"
+                            style="background:#1e293b; color:white; border:1px solid #475569; border-radius:4px; font-size:11px; padding:2px 4px; display:none; width: 110px;">
+                        <span id="start-date-display" class="date-value"
+                            style="font-family: monospace; font-size: 13px;">--/--/----</span>
+                    </div>
+                    <!-- Deadline display for current lesson - Dynamic -->
+                    <div class="date-row" id="deadline-row" style="display:none;">
+                        <span class="date-label">Deadline bài này:</span>
+                        <span class="date-value" style="color:#fbbf24; font-family: monospace; font-size: 13px;"
+                            id="current-lesson-deadline">--/--/----</span>
+                    </div>
+
+                    <div style="margin-top: 10px; display: flex; gap: 8px;">
+                        <button id="btn-confirm-date" class="btn-date btn-confirm" style="display:none;"
+                            onclick="confirmStartDate()">Xác nhận</button>
+                        <button id="btn-reset-date" class="btn-date btn-reset" onclick="requestResetDate()">Đặt
+                            lại</button>
                     </div>
                 </div>
-                <!-- Rules button moved to Assignment Section -->
             </div>
 
             <!-- Loading skeleton -->
@@ -1525,7 +1643,7 @@
                     return;
                 }
 
-                renderLessonList();
+                renderLessonListNew();
 
                 const lastIdx = curriculum.findIndex(l => l.progress && l.progress.status === "In Progress");
                 checkGraduation();
@@ -1571,7 +1689,7 @@
                         return;
                     }
 
-                    renderLessonList();
+                    renderLessonListNew();
                     const lastIdx = curriculum.findIndex(l => l.progress.status === "In Progress");
                     checkGraduation();
                     if (autoPlay) playLesson(lastIdx !== -1 ? lastIdx : 0);
@@ -1641,7 +1759,7 @@
                     if (JSON.stringify(freshData) !== JSON.stringify(curriculum)) {
                         console.log('✅ Fresh data received, updating UI...');
                         curriculum = freshData;
-                        renderLessonList();
+                        renderLessonListNew();
                         checkGraduation();
                     } else {
                         console.log('✅ Data is up-to-date');
@@ -1706,12 +1824,12 @@
                         ? '🌟 Ghi nhận hàng ngày' + assignedDateText + lateIndicator
                         : ((lesson.duration ? Math.floor(lesson.duration / 60) + ' phút' : 'Video bài học') + assignedDateText + lateIndicator);
 
-                    const lessonItemClass = lesson.isDailyChallenge 
+                    const lessonItemClass = lesson.isDailyChallenge
                         ? `lesson-item ${idx === currentLessonIdx ? 'active' : ''} ${isLocked ? 'locked' : ''} daily-challenge-item`
                         : `lesson-item ${idx === currentLessonIdx ? 'active' : ''} ${isLocked ? 'locked' : ''}`;
 
                     item.className = lessonItemClass;
-                    
+
                     if (lesson.isDailyChallenge) {
                         item.style.cssText = `
                             background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
@@ -1746,7 +1864,7 @@
                     } else {
                         status = isLocked ? '🔒' : (isDone ? '✓' : '▶');
                     }
-                    
+
                     const optionStyle = lesson.isDailyChallenge ? 'style="background: rgba(102, 126, 234, 0.1); border-left: 3px solid #667eea;"' : '';
                     option.innerHTML = `<span style="margin-right:8px">${status}</span> ${lesson.title}`;
                     if (optionStyle) option.setAttribute('style', optionStyle);
@@ -1780,6 +1898,28 @@
             console.log(`playLesson called with idx: ${idx}`);
 
             // Validate idx and curriculum
+            // Update Deadline display in Sidebar (New Logic)
+            const deadlineRow = document.getElementById('deadline-row');
+            const currentDeadlineDisplay = document.getElementById('current-lesson-deadline');
+            const lessonForDeadline = curriculum ? curriculum[idx] : null;
+
+            if (lessonForDeadline) {
+                const regularCount = curriculum.filter(l => !l.isDailyChallenge).length;
+                const effectiveIdx = (lessonForDeadline.isDailyChallenge) ? regularCount : idx;
+
+                // Need to ensure getLessonDeadline is available (it is appended at end)
+                // Use try-catch or ensure it is defined. It is function declaration so hoisted.
+                try {
+                    const deadline = getLessonDeadline(effectiveIdx);
+                    if (deadline && deadlineRow && currentDeadlineDisplay) {
+                        deadlineRow.style.display = 'flex';
+                        currentDeadlineDisplay.textContent = deadline.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    } else if (deadlineRow) {
+                        deadlineRow.style.display = 'none';
+                    }
+                } catch (e) { console.warn("Deadline calc error", e); }
+            }
+
             if (!curriculum || curriculum.length === 0) {
                 console.error('Curriculum is empty!');
                 showToast('Khóa học chưa có bài học nào!', 'error');
@@ -1884,7 +2024,7 @@
                 if (assignDateElDesktop) assignDateElDesktop.textContent = assignedDateStr;
             } catch (e) { /* ignore */ }
 
-            renderLessonList(); // Update active state
+            renderLessonListNew(); // Update active state
 
             const videoId = getYouTubeId(lesson.youtubeId);
             const defaultStartTime = getStartTimeFromUrl(lesson.youtubeId);
@@ -2042,7 +2182,7 @@
                 // Hide video player
                 const videoWrapper = document.querySelector('.video-wrapper');
                 if (videoWrapper) videoWrapper.style.display = 'none';
-                
+
                 // Update summary with daily challenge message
                 const summaryEl = document.getElementById('lesson-summary');
                 if (summaryEl) {
@@ -2056,14 +2196,14 @@
                         </div>
                     `;
                 }
-                
+
                 // Set video score to 2 by default for daily challenge
                 lesson.progress.videoScore = 2;
-                
+
                 // Show assignment form
                 const assignBox = document.getElementById('assignment-section');
                 if (assignBox) assignBox.classList.remove('hidden');
-                
+
                 calculateLiveScore();
                 return; // Don't load video player for daily challenge
             }
@@ -2791,7 +2931,7 @@
             try {
                 // Get user data
                 const userData = JSON.parse(localStorage.getItem('user')) || {};
-                
+
                 // Send to backend with courseId and courseTitle
                 console.log('🤖 Sending chat request:', { message, courseId, courseTitle });
 
@@ -2884,6 +3024,242 @@
             const indicator = document.getElementById('typing-indicator');
             if (indicator) indicator.remove();
         }
+        // --- NEW LOGIC: Start Date & Enhanced Render ---
+        function getCourseStartDate() {
+            const key = `startDate_${courseId}_${user.email}`;
+            const saved = localStorage.getItem(key);
+            return saved ? new Date(saved) : null;
+        }
+
+        function setCourseStartDate(date) {
+            const key = `startDate_${courseId}_${user.email}`;
+            if (date) {
+                localStorage.setItem(key, date.toISOString());
+            } else {
+                localStorage.removeItem(key);
+            }
+        }
+
+        function initDateUI() {
+            const startDate = getCourseStartDate();
+            const dateControl = document.getElementById('sidebar-date-control');
+            const input = document.getElementById('course-start-date');
+            const display = document.getElementById('start-date-display');
+            const btnConfirm = document.getElementById('btn-confirm-date');
+            const btnReset = document.getElementById('btn-reset-date');
+
+            if (dateControl) dateControl.style.display = 'block';
+
+            if (startDate) {
+                if (input) input.style.display = 'none';
+                if (display) {
+                    display.style.display = 'inline';
+                    display.textContent = startDate.toLocaleDateString('vi-VN');
+                }
+                if (btnConfirm) btnConfirm.style.display = 'none';
+                if (btnReset) {
+                    btnReset.style.display = 'inline-block';
+                    btnReset.disabled = false;
+                    btnReset.style.opacity = '1';
+                    btnReset.style.cursor = 'pointer';
+                }
+            } else {
+                const today = new Date();
+                if (input) {
+                    input.style.display = 'inline-block';
+                    input.valueAsDate = today;
+                }
+                if (display) display.style.display = 'none';
+                if (btnConfirm) btnConfirm.style.display = 'inline-block';
+                if (btnReset) {
+                    btnReset.disabled = true;
+                    btnReset.style.opacity = '0.5';
+                    btnReset.style.cursor = 'not-allowed';
+                }
+                const deadlineRow = document.getElementById('deadline-row');
+                if (deadlineRow) deadlineRow.style.display = 'none';
+            }
+        }
+
+        function confirmStartDate() {
+            const input = document.getElementById('course-start-date');
+            if (input && input.value) {
+                const date = new Date(input.value);
+                setCourseStartDate(date);
+                initDateUI();
+                renderLessonListNew();
+                if (currentLessonIdx !== -1) playLesson(currentLessonIdx);
+                showToast("Đã thiết lập ngày bắt đầu!", "success");
+            }
+        }
+
+        function requestResetDate() {
+            if (confirm("Bạn có chắc muốn đặt lại? Toàn bộ bài làm (điểm số, link...) sẽ bị xóa để bạn học lại từ đầu.\n(Tiến độ xem Video vẫn được giữ nguyên).")) {
+                setCourseStartDate(null);
+
+                // Wipe data
+                if (curriculum) {
+                    curriculum.forEach(lesson => {
+                        if (lesson.progress) {
+                            // Keep video data
+                            const savedVideoScore = lesson.progress.videoScore || 0;
+                            // Reset inputs
+                            lesson.progress.reflection = "";
+                            lesson.progress.link1 = "";
+                            lesson.progress.link2 = "";
+                            lesson.progress.link3 = "";
+                            lesson.progress.disciplineSupport1 = false;
+                            lesson.progress.disciplineSupport2 = false;
+                            lesson.progress.nopTre = false;
+
+                            // Recalculate score (only video score remains)
+                            lesson.progress.totalScore = savedVideoScore;
+
+                            // Revert status to In Progress to allow re-submission
+                            if (lesson.progress.status === "Completed") {
+                                lesson.progress.status = "In Progress";
+                            }
+                        }
+                    });
+                }
+
+                initDateUI();
+                renderLessonListNew();
+                if (currentLessonIdx !== -1) playLesson(currentLessonIdx);
+                showToast("Đã đặt lại. Vui lòng chọn Ngày bắt đầu mới!", "info");
+            }
+        }
+
+        function getLessonDeadline(idx) {
+            const startDate = getCourseStartDate();
+            if (!startDate) return null;
+            const deadline = new Date(startDate);
+            deadline.setDate(startDate.getDate() + idx);
+            deadline.setHours(23, 59, 59, 999);
+            return deadline;
+        }
+
+        function renderLessonListNew() {
+            // Hide loading skeleton, show actual list
+            const loadingSkeleton = document.getElementById('lesson-list-loading');
+            if (loadingSkeleton) loadingSkeleton.style.display = 'none';
+
+            const listDesktop = document.getElementById('lesson-list-desktop');
+            const listMobileOpts = document.getElementById('custom-dropdown-options');
+
+            // Show desktop list
+            if (listDesktop) listDesktop.style.display = 'block';
+
+            // Hide mobile loading
+            const mobileLoading = document.getElementById('mobile-dropdown-loading');
+            if (mobileLoading) mobileLoading.style.display = 'none';
+
+            // Reset
+            if (listDesktop) listDesktop.innerHTML = '';
+            if (listMobileOpts) listMobileOpts.innerHTML = '';
+
+            // Init Date UI
+            initDateUI();
+
+            let completed = 0;
+            const regularLessons = curriculum.filter(l => !l.isDailyChallenge);
+            const isAllRegularFinished = regularLessons.every(l => l.progress.status === "Completed" || l.progress.status === "Approved");
+
+            curriculum.forEach((lesson, idx) => {
+                const isLocked = lesson.progress.status === "Locked";
+                const isDone = lesson.progress.status === "Completed" || lesson.progress.status === "Approved";
+
+                // Show Daily Challenge ONLY if all regular lessons are finished
+                if (lesson.isDailyChallenge && !isAllRegularFinished) return;
+
+                if (isDone && !lesson.isDailyChallenge) completed++;
+
+                // Calculate Deadline
+                const deadline = getLessonDeadline(lesson.isDailyChallenge ? regularLessons.length : idx);
+
+                let isLate = false;
+                if (deadline && !lesson.isDailyChallenge) {
+                    if (!isDone && Date.now() > deadline.getTime()) {
+                        isLate = true;
+                    }
+                    if (lesson.progress.nopTre) isLate = true;
+                }
+
+                // --- 1. Desktop Item (Div) ---
+                if (listDesktop) {
+                    const item = document.createElement('div');
+                    item.className = `lesson-item ${idx === currentLessonIdx ? 'active' : ''} ${isLocked ? 'locked' : ''}`;
+                    if (lesson.isDailyChallenge) item.classList.add('daily-challenge-item');
+
+                    // Status Icon
+                    let statusIcon = '<i class="far fa-circle status-lock"></i>';
+                    if (isDone) statusIcon = '<i class="fas fa-check-circle status-done"></i>';
+                    else if (!isLocked) statusIcon = lesson.isDailyChallenge ? '<i class="fas fa-star" style="color: #fbbf24;"></i>' : '<i class="fas fa-play-circle status-play"></i>';
+
+                    // Assigned date display
+                    let assignedDateText = '';
+                    if (lesson.progress && lesson.progress.assignedDate) {
+                        assignedDateText = ' • ' + lesson.progress.assignedDate;
+                    }
+
+                    // Meta Text construction
+                    let metaText = "";
+                    if (lesson.isDailyChallenge) {
+                        metaText = `🌟 Ghi nhận hàng ngày`;
+                    } else {
+                        metaText = lesson.duration ? Math.floor(lesson.duration / 60) + ' phút' : 'Video bài học';
+                        if (deadline) {
+                            metaText += ` • DL: ${deadline.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}`;
+                        }
+                        if (isLate) {
+                            metaText += ` <span style="color:#ef4444; font-weight:700;">(Trễ)</span>`;
+                        }
+                    }
+
+                    item.innerHTML = `
+                        <div class="lesson-status-icon">${statusIcon}</div>
+                        <div class="lesson-info">
+                            <div class="lesson-title">${lesson.title}</div>
+                            <div class="lesson-meta">${metaText}</div>
+                        </div>
+                        ${isLocked ? '<i class="fas fa-lock" style="color: #475569; position:absolute; right:10px; top:20px; font-size:12px;"></i>' : ''}
+                    `;
+
+                    if (!isLocked) {
+                        item.onclick = () => playLesson(idx);
+                    }
+                    listDesktop.appendChild(item);
+                }
+
+                // --- 2. Mobile Custom Dropdown Item ---
+                if (listMobileOpts) {
+                    const option = document.createElement('div');
+                    option.className = `custom-option ${isLocked ? 'locked' : ''} ${idx === currentLessonIdx ? 'selected' : ''}`;
+
+                    let status;
+                    if (lesson.isDailyChallenge) {
+                        status = isLocked ? '🔒' : (isDone ? '✨' : '⭐');
+                    } else {
+                        status = isLocked ? '🔒' : (isDone ? '✓' : '▶');
+                    }
+
+                    const optionStyle = lesson.isDailyChallenge ? 'style="background: rgba(102, 126, 234, 0.1); border-left: 3px solid #667eea;"' : '';
+                    option.innerHTML = `<span style="margin-right:8px">${status}</span> ${lesson.title}`;
+                    if (optionStyle) option.setAttribute('style', optionStyle);
+
+                    if (!isLocked) {
+                        option.onclick = () => selectMobileLesson(idx);
+                    }
+                    listMobileOpts.appendChild(option);
+                }
+            });
+
+            const summaryEl = document.getElementById('progress-summary');
+            if (summaryEl) {
+                const regularLessonCount = regularLessons.length;
+                summaryEl.textContent = `${completed}/${regularLessonCount} bài đã hoàn thành`;
+            }
+        }
     </script>
 
     <!-- Chatbot UI -->
@@ -2903,7 +3279,8 @@
                 <div class="message-bubble">
                     👋 Xin chào! Tôi là trợ lý AI của Học viện BRK.
                     <br><br>
-                    🎓 Tôi sẽ hỗ trợ bạn với các câu hỏi về <strong><span id="chatbot-course-name">khóa học này</span></strong>.
+                    🎓 Tôi sẽ hỗ trợ bạn với các câu hỏi về <strong><span id="chatbot-course-name">khóa học
+                            này</span></strong>.
                     <br><br>
                     📚 Hãy hỏi tôi bất cứ điều gì về nội dung bài học. Có gì tôi giúp bạn?
                 </div>
