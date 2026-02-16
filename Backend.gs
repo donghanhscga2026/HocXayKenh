@@ -4374,12 +4374,22 @@ function checkStartDate(email, courseId) {
   const enrollData = enrollSheet.getDataRange().getValues();
   const headers = enrollData[0];
   
-  const idxCode = headers.indexOf("Ma_Code");
-  const idxCourse = headers.indexOf("Ma_KH");
+  const idxCode = headers.indexOf("MÃ_CODE");
+  const idxCourse = headers.indexOf("Ma_Lop");
   const idxStartDate = headers.indexOf("Ngay_Bat_Dau");
   
+  // Debug logging
+  Logger.log("LS_DangKy Headers: " + JSON.stringify(headers));
+  Logger.log("idxCode (MÃ_CODE): " + idxCode);
+  Logger.log("idxCourse (Ma_Lop): " + idxCourse);
+  Logger.log("idxStartDate (Ngay_Bat_Dau): " + idxStartDate);
+  
   if (idxCode === -1 || idxCourse === -1 || idxStartDate === -1) {
-    return { success: false, msg: "Thiếu cột dữ liệu trong LS_DangKy" };
+    let missingCols = [];
+    if (idxCode === -1) missingCols.push("MÃ_CODE");
+    if (idxCourse === -1) missingCols.push("Ma_Lop");
+    if (idxStartDate === -1) missingCols.push("Ngay_Bat_Dau");
+    return { success: false, msg: "Thiếu cột: " + missingCols.join(", ") + " trong LS_DangKy" };
   }
   
   for (let i = 1; i < enrollData.length; i++) {
