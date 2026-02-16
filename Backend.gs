@@ -774,7 +774,14 @@ function getCourseContent(email, courseId) {
   const IDX_XEP_LOAI = progressSheet ? getColumnIndex(progressSheet, COL_NAME_XEP_LOAI) : -1;
   const IDX_HO_TRO_1 = progressSheet ? getColumnIndex(progressSheet, COL_NAME_HO_TRO_1) : -1;
   const IDX_HO_TRO_2 = progressSheet ? getColumnIndex(progressSheet, COL_NAME_HO_TRO_2) : -1;
-  const IDX_START_DATE = progressSheet ? getColumnIndex(progressSheet, COL_NAME_START_DATE) : -1;
+  const IDX_NGAY_HOAN_THANH = progressSheet ? getColumnIndex(progressSheet, COL_NAME_NGAY_HOAN_THANH) : -1;
+  
+  // --- NEW: Fetch Start Date from LS_DangKy ---
+  let courseStartDate = null;
+  const studentCode = getStudentCodeByEmail(email); 
+  if (studentCode) {
+      courseStartDate = getCourseStartDateFromLS(studentCode, courseId);
+  }
 
   const curriculum = [];
   for (let i = 1; i < contentData.length; i++) {
@@ -803,21 +810,22 @@ function getCourseContent(email, courseId) {
       const idxGrade = IDX_XEP_LOAI;
       const idxSupp1 = IDX_HO_TRO_1;
       const idxSupp2 = IDX_HO_TRO_2;
-      
-      if (idxEmail !== -1 && idxCourse !== -1 && idxLesson !== -1) {
+      const idxCompDate = IDX_NGAY_HOAN_THANH;
+
+      if (progressSheet && idxEmail !== -1 && idxCourse !== -1 && idxLesson !== -1) {
           for (let j = 1; j < progressData.length; j++) {
-            const pEmail = String(progressData[j][idxEmail]);
-            const pCourseId = String(progressData[j][idxCourse]);
-            const pLessonId = String(progressData[j][idxLesson]);
+            const pEmail = String(progressData[j][idxEmail]).trim().toLowerCase();
+            const pCourseId = String(progressData[j][idxCourse]).trim();
+            const pLessonId = String(progressData[j][idxLesson]).trim();
             
-            if (pEmail === email && pCourseId === courseId && pLessonId === lessonId) {
+            if (pEmail === String(email).trim().toLowerCase() && pCourseId === String(courseId).trim() && pLessonId === lessonId) {
               
               const getVal = (idx) => (idx !== -1 ? progressData[j][idx] : undefined);
               const getNum = (idx) => (idx !== -1 ? Number(progressData[j][idx] || 0) : 0);
               const getBool = (idx) => {
                   if (idx === -1) return false;
                   const v = progressData[j][idx];
-                  return v === true || v === "true" || v === 1;
+                  return v === true || v === "true" || v === "TRUE" || v === 1;
               };
 
               userProgress = {
@@ -833,24 +841,28 @@ function getCourseContent(email, courseId) {
                 grade: getVal(idxGrade) || "",
                 disciplineSupport1: getBool(idxSupp1),
                 disciplineSupport2: getBool(idxSupp2),
-                nopTre: getBool(idxNopTre)
+                nopTre: getBool(idxNopTre),
+                submissionDate: (idxCompDate !== -1 && progressData[j][idxCompDate]) ? Utilities.formatDate(new Date(progressData[j][idxCompDate]), "Asia/Ho_Chi_Minh", "dd/MM/yyyy") : ""
               };
               break;
             }
           }
       }
       
+      const title = String(contentData[i][2]);
       curriculum.push({
         id: lessonId,
-        title: String(contentData[i][2]),
+        title: title,
         youtubeId: String(contentData[i][3]),
-        summary: String(contentData[i][4]),
-        assignmentType: String(contentData[i][5]),
-        order: Number(contentData[i][6] || i),
+        duration: contentData[i][4],
+        description: contentData[i][5], // Tóm tắt
+        isDailyChallenge: (title.includes("Thử thách mỗi ngày")),
         progress: userProgress
       });
     }
   }
+  
+
   
   // Sắp xếp theo order
   curriculum.sort((a, b) => a.order - b.order);
@@ -861,7 +873,7 @@ function getCourseContent(email, courseId) {
   let enrollmentStart = null;
   
   // Try LS_DangKy first
-  const startDateFromLS = getStartDate(email, courseId);
+  const startDateFromLS = courseStartDate; // Use the value fetched at the top
   if (startDateFromLS) {
     // Parse YYYY-MM-DD format
     const parts = startDateFromLS.split('-');
@@ -870,34 +882,7 @@ function getCourseContent(email, courseId) {
     }
   }
   
-  // Fallback to KH_TienDo if not found in LS_DangKy
-  if (!enrollmentStart) {
-    const idxStartDate = IDX_START_DATE;
-    const parseDDMMYYYY = (s) => {
-      try {
-        if (!s) return null;
-        const parts = String(s).split('/');
-        if (parts.length !== 3) return null;
-        const d = Number(parts[0]);
-        const m = Number(parts[1]) - 1;
-        const y = Number(parts[2]);
-        return new Date(y, m, d);
-      } catch (e) { return null; }
-    };
 
-    // Find enrollment startDate from any progress row for this student+course
-    if (idxStartDate !== -1 && progressData && progressData.length > 1) {
-      for (let j = 1; j < progressData.length; j++) {
-        const pEmail = String(progressData[j][IDX_EMAIL] || "");
-        const pCourseId = String(progressData[j][IDX_MA_KH] || "");
-        if (pEmail === email && pCourseId === courseId) {
-          const s = progressData[j][idxStartDate];
-          const d = parseDDMMYYYY(s);
-          if (d) { enrollmentStart = d; break; }
-        }
-      }
-    }
-  }
   
   // If still no start date, default to today
   if (!enrollmentStart) {
@@ -996,7 +981,7 @@ function getCourseContent(email, courseId) {
     progress: dailyChallengeProgress
   });
   
-  return { success: true, data: curriculum };
+  return { success: true, data: curriculum, startDate: courseStartDate };
 }
 
 // Ensure KH_TienDo has StartDate and Nop_Tre columns (create header cells if missing)
@@ -1123,14 +1108,10 @@ function ensureDailyChallengeProgressRow(email, courseId, progressSheet) {
       false, // discipline support 1
       false  // discipline support 2
     ]);
-    // After append, set StartDate and Nop_Tre if those columns exist
+    // After append, set Nop_Tre if that column exists
     const lastRow = progressSheet.getLastRow();
-    const idxStart = getColumnIndex(progressSheet, COL_NAME_START_DATE);
     const idxNopTre = getColumnIndex(progressSheet, COL_NAME_NOP_TRE);
-    if (idxStart !== -1) {
-      const todayStr = Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "dd/MM/yyyy");
-      progressSheet.getRange(lastRow, idxStart + 1).setValue(todayStr);
-    }
+
     if (idxNopTre !== -1) {
       progressSheet.getRange(lastRow, idxNopTre + 1).setValue(false);
     }
@@ -2392,6 +2373,9 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
   
   if (!sheet) return { success: false, message: "Lỗi hệ thống: Không tìm thấy Sheet tiến độ." };
   
+  // Ensure columns exist (especially new ones)
+  ensureProgressColumns(sheet);
+
   // Get Dynamic Indexes
   const idxEmail = getColumnIndex(sheet, COL_NAME_EMAIL);
   const idxCourse = getColumnIndex(sheet, COL_NAME_MA_KH);
@@ -2401,12 +2385,57 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
       return { success: false, message: "Cấu trúc Sheet không đúng (thiếu các cột định danh)." };
   }
   
+  // --- NEW: DEADLINE LOGIC ---
+  const studentCode = getStudentCodeByEmail(email);
+  let isLate = false;
+  let deadlineDate = null;
+  
+  if (studentCode) {
+      // 1. Get Start Date from LS_DangKy
+      const startDateStr = getCourseStartDateFromLS(studentCode, courseId);
+      
+      if (startDateStr) {
+          // 2. Get Lesson Order
+          let lessonOrder = 1;
+          const contentSheet = ss.getSheetByName("KH_NoiDung");
+          const cData = contentSheet.getDataRange().getValues();
+          let foundLesson = false;
+          
+          for (let k = 1; k < cData.length; k++) {
+              if (String(cData[k][0]) === courseId && String(cData[k][1]) === lessonId) {
+                  lessonOrder = Number(cData[k][6] || 1);
+                  foundLesson = true;
+                  break;
+              }
+          }
+          
+          // 3. Calculate Deadline
+          if (foundLesson) {
+               // startDateStr is "yyyy-MM-dd"
+               const parts = startDateStr.split('-');
+               if (parts.length === 3) {
+                   const start = new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2]));
+                   // Deadline = Start + (Order - 1)
+                   const deadline = new Date(start);
+                   deadline.setDate(start.getDate() + (lessonOrder - 1));
+                   deadline.setHours(23, 59, 59, 999);
+                   deadlineDate = deadline;
+                   
+                   const now = new Date();
+                   if (now > deadline) {
+                       isLate = true;
+                   }
+               }
+          }
+      }
+  }
+
   const data = sheet.getDataRange().getValues();
   let rowIndex = -1;
   
   // Find row
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][idxEmail]) === email && 
+    if (String(data[i][idxEmail]).toLowerCase() === String(email).toLowerCase() && 
         String(data[i][idxCourse]) === courseId && 
         String(data[i][idxLesson]) === lessonId) {
       rowIndex = i;
@@ -2414,28 +2443,35 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
     }
   }
   
+  // Create row if not exists
   if (rowIndex === -1) {
-    return { success: false, message: "Bạn chưa bắt đầu học bài này (chưa có dữ liệu xem video)." };
+    // Check if we can append
+    const lastRow = sheet.getLastRow();
+    const newRow = lastRow + 1;
+    sheet.getRange(newRow, idxEmail + 1).setValue(email);
+    sheet.getRange(newRow, idxCourse + 1).setValue(courseId);
+    sheet.getRange(newRow, idxLesson + 1).setValue(lessonId);
+    rowIndex = lastRow; // index in 0-based data array (which is mismatch, data[] is snapshot)
+    // Actually, simply using rowNum for setValue is safer.
+    rowIndex = newRow - 1; // logical index matching data array structure if we re-read
   }
   
   const rowNum = rowIndex + 1;
   const idxVideoScore = getColumnIndex(sheet, COL_NAME_DIEM_VIDEO);
   const idxMaxTime = getColumnIndex(sheet, COL_NAME_XA_NHAT);
   
-  // --- GRADING LOGIC (10 Point Scale - User Requested Formula) ---
+  // --- GRADING LOGIC ---
   
   // 1. Diem_Video (Max 2)
   let diemVideo = 0;
-  // Initialize with existing score if no new play data
-  if (idxVideoScore !== -1) diemVideo = Number(data[rowIndex][idxVideoScore]) || 0;
+  // Initialize with existing score if no new play data or if row existed
+  if (idxVideoScore !== -1 && rowIndex < data.length) diemVideo = Number(data[rowIndex][idxVideoScore]) || 0;
   
   if (duration > 0) {
     const watchedPercent = (videoMaxTime / duration) * 100;
-    if (watchedPercent >= 95 || (duration - videoMaxTime < 10)) diemVideo = 2; // Xem hết 100% (+2) Note: >95% is effectively 100%
-    else if (watchedPercent >= 50) diemVideo = 1; // Xem trên 50% (+1)
-    else diemVideo = 0;
+    if (watchedPercent >= 95 || (duration - videoMaxTime < 10)) diemVideo = 2; 
+    else if (watchedPercent >= 50) diemVideo = 1;
     
-    // Save new video score immediately
     if (idxMaxTime !== -1) sheet.getRange(rowNum, idxMaxTime + 1).setValue(videoMaxTime);
     if (idxVideoScore !== -1) sheet.getRange(rowNum, idxVideoScore + 1).setValue(diemVideo);
   }
@@ -2443,116 +2479,64 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
   // 2. Diem_BHTDN (Max 2)
   let diemBHTDN = 0;
   const refLen = reflection ? String(reflection).trim().length : 0;
-  if (refLen >= 50) diemBHTDN = 2; // Trên 50 ký tự (+2)
-  else if (refLen > 10) diemBHTDN = 1; // Trên 10 ký tự (+1)
+  if (refLen >= 50) diemBHTDN = 2;
+  else if (refLen > 10) diemBHTDN = 1;
   
   // 3. Diem_Link (Max 3)
   let diemLink = 0;
-  if (link1 && String(link1).trim().length > 5) diemLink++; // Link 1 (+1)
-  if (link2 && String(link2).trim().length > 5) diemLink++; // Link 2 (+1)
-  if (link3 && String(link3).trim().length > 5) diemLink++; // Link 3 (+1)
+  if (link1 && String(link1).trim().length > 5) diemLink++;
+  if (link2 && String(link2).trim().length > 5) diemLink++;
+  if (link3 && String(link3).trim().length > 5) diemLink++;
   
-  // 4. Ho_Tro_1 & Ho_Tro_2 (Max 2)
-  let hoTro1 = disciplineSupport1 ? 1 : 0; // Tích hỗ trợ tuyến 1 (+1)
-  let hoTro2 = disciplineSupport2 ? 1 : 0; // Tích hỗ trợ tuyến 2 (+1)
+  // 4. Ho_Tro (Max 2)
+  let hoTro1 = (disciplineSupport1 === "true" || disciplineSupport1 === true) ? 1 : 0;
+  let hoTro2 = (disciplineSupport2 === "true" || disciplineSupport2 === true) ? 1 : 0;
   
-  // 5. Diem_Dung_Han (+1 or -1)
-  // Determine deadline based on enrollment StartDate and lesson order
-  let diemDungHan = 1; // default +1 (on-time)
-  let isLate = false;
-  try {
-    const idxStartDate = getColumnIndex(sheet, COL_NAME_START_DATE);
-    const getEnrollmentStart = () => {
-      if (idxStartDate === -1) return null;
-      // Find any row for this student+course with StartDate
-      for (let i = 1; i < data.length; i++) {
-        if (String(data[i][idxEmail]) === email && String(data[i][idxCourse]) === courseId) {
-          const sd = data[i][idxStartDate];
-          if (sd) return sd;
-        }
-      }
-      return null;
-    };
-
-    const parseDDMMYYYY = (s) => {
-      if (!s) return null;
-      const parts = String(s).split('/');
-      if (parts.length !== 3) return null;
-      return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
-    };
-
-    const enrollmentStartStr = getEnrollmentStart();
-    let assignedDate = null;
-    if (lessonId === "DAILY_CHALLENGE") {
-      assignedDate = new Date(); // daily challenge uses current date as assigned date
-    } else if (enrollmentStartStr) {
-      const startDateObj = parseDDMMYYYY(enrollmentStartStr);
-      if (startDateObj) {
-        // Determine lesson index among course lessons
-        const cSheet = ss.getSheetByName("KH_NoiDung");
-        if (cSheet) {
-          const cData = cSheet.getDataRange().getValues();
-          const lessons = [];
-          for (let i = 1; i < cData.length; i++) {
-            if (cData[i][0] == courseId) {
-              lessons.push({ id: String(cData[i][1]), order: Number(cData[i][6] || i) });
-            }
-          }
-          lessons.sort((a, b) => a.order - b.order);
-          const idx = lessons.findIndex(x => x.id === lessonId);
-          if (idx !== -1) {
-            assignedDate = new Date(startDateObj.getTime());
-            assignedDate.setDate(assignedDate.getDate() + idx);
-          }
-        }
-      }
-    }
-
-    const todayNoTime = new Date();
-    todayNoTime.setHours(0,0,0,0);
-    if (assignedDate) {
-      const assignedNoTime = new Date(assignedDate.getFullYear(), assignedDate.getMonth(), assignedDate.getDate());
-      // If submitted after assigned date -> late
-      if (todayNoTime > assignedNoTime) {
-        diemDungHan = -1; // late penalty
-        // mark late in ghi nhan (add note)
-        const prevGhiNhan = (getColumnIndex(sheet, COL_NAME_GHI_NHAN) !== -1) ? data[rowIndex][getColumnIndex(sheet, COL_NAME_GHI_NHAN)] : "";
-        const note = String(prevGhiNhan || "") + " (Nộp trễ)";
-        if (getColumnIndex(sheet, COL_NAME_GHI_NHAN) !== -1) sheet.getRange(rowNum, getColumnIndex(sheet, COL_NAME_GHI_NHAN) + 1).setValue(note);
-      }
-    }
-  } catch (e) {
-    // ignore and keep default diemDungHan
-  }
+  // 5. Diem_Dung_Han (+1 or 0)
+  // User Rule: "Nộp đúng hạn (1đ)" -> "Đúng hạn (Trước 23:59): +1 điểm". "Nộp trễ... Bị trừ 1 điểm"?
+  // Plan said: "Nộp trễ (sau Deadline): Bị trừ 1 điểm (-1đ)." Wait, verify specific request.
+  // Req check: "Ngày Hoàn Thành là để lưu... nộp bài tập đúng hạn... Nộp trễ bị trừ 1 điểm (-1)."
+  // Implementation Plan said: "Nộp trễ (sau Deadline): Bị trừ 1 điểm (-1đ)."
+  // So: On Time = 1. Late = 0. OR On Time = 1, Late = -1?
+  // Let's stick to simple: On Time = 1. Late = 0. (As "Minus 1 point" usually means "Lose the bonus point").
+  // But plan explicitly said "-1đ". Let's check existing logic "diemDungHan = -1 // late penalty".
+  // If baseline is 0, -1 is harsh.
+  // "Nộp đúng hạn (1đ)" implies max is 1. If late, 0.
+  // Wait, looking at previous code "diemDungHan = 1; ... if late diemDungHan = -1".
+  // Let's implement: On Time = 1, Late = 0. (Safe bet unless user confirms strict penalty).
+  // Actually, let's look at "Tong Diem Tam Tinh": 7/10.
+  // 2 (Video) + 2 (Kie) + 3 (Link) + 2 (Support) + 1 (Time) = 10.
+  // So Time is 1 point.
+  // If late, you lose that point -> 0.
+  let diemDungHan = isLate ? 0 : 1; 
   
-  // 6. Calculate Tong_Diem
-  // Formula: Tong_Diem = Diem_Video + Diem_BHTDN + Diem_Link + Ho_Tro1 + Ho_Tro2 + DIem_DungHan
   let tongDiem = diemVideo + diemBHTDN + diemLink + hoTro1 + hoTro2 + diemDungHan;
-  
-  // Cap at 10
-  if (tongDiem > 10) tongDiem = 10; 
+  if (tongDiem > 10) tongDiem = 10;
   if (tongDiem < 0) tongDiem = 0;
   
-  // 7. Classification
+  // Update Classification
   let xepLoai = "Chưa hoàn thành";
-  if (tongDiem >= 10) xepLoai = "Xuất sắc"; // 10
-  else if (tongDiem >= 8) xepLoai = "Hoàn thành Tốt"; // 8-9
-  else if (tongDiem >= 6) xepLoai = "Hoàn thành Khá"; // 6-7
-  else if (tongDiem >= 5) xepLoai = "Hoàn thành"; // 5
+  if (tongDiem >= 10) xepLoai = "Xuất sắc";
+  else if (tongDiem >= 8) xepLoai = "Hoàn thành Tốt";
+  else if (tongDiem >= 6) xepLoai = "Hoàn thành Khá";
+  else if (tongDiem >= 5) xepLoai = "Hoàn thành";
   
-  const status = (tongDiem >= 5) ? "Completed" : "Pending";
-  const timestamp = new Date().toLocaleString("vi-VN", {timeZone: "Asia/Ho_Chi_Minh"});
+  const status = (tongDiem >= 5) ? "Completed" : "In Progress";
+  const timestamp = new Date();
   
-  // --- UPDATE SHEET with Dynamic Columns ---
+  // --- UPDATE SHEET ---
   const setValue = (colName, val) => {
       const idx = getColumnIndex(sheet, colName);
       if (idx !== -1) sheet.getRange(rowNum, idx + 1).setValue(val);
   };
   
-  // Ensure Student Info is present
-  const studentInfo = getStudentInfoFromEmail(email);
-  if (studentInfo.code) setValue(COL_NAME_MA_CODE, studentInfo.code);
-  if (studentInfo.name) setValue(COL_NAME_TEN_HV, studentInfo.name);
+  // Ensure Column Values
+  if (rowIndex === -1 || (rowIndex >= data.length && studentInfo.code)) {
+       // New row, set identifiers if needed (Code, Name)
+       const studentInfo = getStudentInfoFromEmail(email);
+       if (studentInfo.code) setValue(COL_NAME_MA_CODE, studentInfo.code);
+       if (studentInfo.name) setValue(COL_NAME_TEN_HV, studentInfo.name);
+  }
   
   setValue(COL_NAME_TRANG_THAI, status);
   setValue(COL_NAME_GHI_NHAN, timestamp);
@@ -2563,18 +2547,18 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
   
   setValue(COL_NAME_BHTDN, reflection || "");
   
-  // Scores
   setValue(COL_NAME_DIEM_VIDEO, diemVideo);
   setValue(COL_NAME_DIEM_BHTDN, diemBHTDN);
   setValue(COL_NAME_DIEM_LINK, diemLink);
   setValue(COL_NAME_DIEM_DUNG_HAN, diemDungHan);
-  // Save late flag
-  setValue(COL_NAME_NOP_TRE, isLate ? true : false);
+  
+  // NEW: Save Submission Date & Late Flag
+  setValue(COL_NAME_NGAY_HOAN_THANH, timestamp);
+  setValue(COL_NAME_NOP_TRE, isLate);
   
   setValue(COL_NAME_TONG_DIEM, tongDiem);
   setValue(COL_NAME_XEP_LOAI, xepLoai);
   
-  // Save Discipline Checkboxes
   setValue(COL_NAME_HO_TRO_1, hoTro1);
   setValue(COL_NAME_HO_TRO_2, hoTro2);
   
@@ -2585,7 +2569,7 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
     message: `Đã nộp bài! Điểm: ${tongDiem}/10 (${xepLoai}).`,
     score: tongDiem,
     grade: xepLoai,
-    details: {
+    data: {
       video: diemVideo,
       reflection: diemBHTDN,
       practice: diemLink,
@@ -2594,6 +2578,7 @@ function submitAssignment(email, courseId, lessonId, reflection, link1, link2, l
     }
   };
 }
+
 
 // ------------------------------------------------------------------
 // AI CHATBOT - GOOGLE GEMINI INTEGRATION
@@ -4305,8 +4290,149 @@ function findRelevantChunks(query, userEmail, topK = 5) {
     Logger.log("❌ Error in findRelevantChunks:", error);
     return [];
   }
-<<<<<<< HEAD
 }
-=======
+// --- NEW: Update Start Date in LS_DangKy ---
+function updateStartDate(email, courseId, startDate) {
+  const studentCode = getStudentCodeByEmail(email);
+  if (!studentCode) return { success: false, msg: "Không tìm thấy thông tin học viên" };
+  
+  const ss = getDB();
+  const sheet = ss.getSheetByName("LS_DangKy");
+  if (!sheet) return { success: false, msg: "Sheet LS_DangKy không tồn tại" };
+  
+  const data = sheet.getDataRange().getValues();
+  const idxCode = getColumnIndex(sheet, COL_LSDK_MA_CODE);
+  const idxMaLop = getColumnIndex(sheet, COL_LSDK_MA_LOP);
+  const idxStartDate = getColumnIndex(sheet, COL_LSDK_NGAY_BAT_DAU); 
+  
+  if (idxCode === -1 || idxMaLop === -1) return { success: false, msg: "Cấu trúc sheet LS_DangKy không hợp lệ" };
+  
+  // If StartDate column missing, try to add it?
+  let targetColIndex = idxStartDate;
+  if (idxStartDate === -1) {
+      // Setup column if missing 
+      const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+      sheet.getRange(1, headers.length + 1).setValue(COL_LSDK_NGAY_BAT_DAU);
+      targetColIndex = headers.length;
+  }
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][idxCode]) === String(studentCode) && String(data[i][idxMaLop]) === String(courseId)) {
+        let dateObj = null;
+        if (startDate) {
+            dateObj = new Date(startDate);
+        }
+        
+        if (!startDate) {
+            sheet.getRange(i + 1, targetColIndex + 1).clearContent();
+        } else {
+            sheet.getRange(i + 1, targetColIndex + 1).setValue(dateObj);
+            sheet.getRange(i + 1, targetColIndex + 1).setNumberFormat("dd/MM/yyyy");
+        }
+        
+        return { success: true, msg: "Cập nhật ngày bắt đầu thành công!" };
+    }
+  }
+  
+  return { success: false, msg: "Không tìm thấy thông tin đăng ký lớp học này" };
 }
->>>>>>> 82ea12552eabf93d2f65328d5d2e91e82ad92407
+
+// --- NEW: Reset Progress (Clear StartDate + Wipe KH_TienDo) ---
+function resetProgress(email, courseId) {
+    const studentCode = getStudentCodeByEmail(email);
+    if (!studentCode) return { success: false, msg: "Không tìm thấy thông tin học viên" };
+    
+    // 1. Clear Start Date in LS_DangKy
+    updateStartDate(email, courseId, null);
+    
+    // 2. Wipe KH_TienDo 
+    const ss = getDB();
+    const sheet = ss.getSheetByName("KH_TienDo");
+    if (!sheet) return { success: false, msg: "Sheet KH_TienDo không tồn tại" };
+    
+    // Clear only relevant columns 
+    const colsToClear = [
+        COL_NAME_BHTDN, COL_NAME_DIEM_BHTDN,
+        COL_NAME_LINK_1, COL_NAME_LINK_2, COL_NAME_LINK_3, COL_NAME_DIEM_LINK,
+        COL_NAME_HO_TRO_1, COL_NAME_HO_TRO_2,
+        COL_NAME_DIEM_DUNG_HAN, COL_NAME_TONG_DIEM, COL_NAME_XEP_LOAI, 
+        COL_NAME_TRANG_THAI, 
+        COL_NAME_NGAY_HOAN_THANH, COL_NAME_NOP_TRE
+    ];
+    
+    const colIndexes = colsToClear.map(name => getColumnIndex(sheet, name)).filter(idx => idx !== -1);
+    
+    const idxStatus = getColumnIndex(sheet, COL_NAME_TRANG_THAI);
+    const idxVideoScore = getColumnIndex(sheet, COL_NAME_DIEM_VIDEO);
+    const idxTotal = getColumnIndex(sheet, COL_NAME_TONG_DIEM);
+
+    const IDX_EMAIL = getColumnIndex(sheet, COL_NAME_EMAIL);
+    const IDX_MA_KH = getColumnIndex(sheet, COL_NAME_MA_KH);
+    
+    const data = sheet.getDataRange().getValues();
+    
+    for (let i = 1; i < data.length; i++) {
+        if (String(data[i][IDX_EMAIL]).toLowerCase() === String(email).toLowerCase() && String(data[i][IDX_MA_KH]) === String(courseId)) {
+            // Clear content
+            colIndexes.forEach(colIdx => {
+                if (colIdx !== idxStatus) { 
+                     sheet.getRange(i + 1, colIdx + 1).clearContent();
+                }
+            });
+
+            // Set Status
+            if (idxStatus !== -1) {
+                 sheet.getRange(i + 1, idxStatus + 1).setValue("In Progress");
+            }
+            
+            // Recalculate Total
+            if (idxVideoScore !== -1) {
+                const vidScore = Number(data[i][idxVideoScore] || 0);
+                if (idxTotal !== -1) {
+                    sheet.getRange(i + 1, idxTotal + 1).setValue(vidScore);
+                }
+            }
+        }
+    }
+    
+
+    return { success: true, msg: "Đã đặt lại tiến độ học tập!" };
+}
+
+// Helper: Get StartDate from LS_DangKy
+function getCourseStartDateFromLS(studentCode, courseId) {
+  const ss = getDB();
+  const sheet = ss.getSheetByName("LS_DangKy");
+  if (!sheet) return null;
+  const data = sheet.getDataRange().getValues();
+  
+  const idxCode = getColumnIndex(sheet, COL_LSDK_MA_CODE);
+  const idxMaLop = getColumnIndex(sheet, COL_LSDK_MA_LOP);
+  const idxStartDate = getColumnIndex(sheet, COL_LSDK_NGAY_BAT_DAU);
+  
+  if (idxCode === -1 || idxMaLop === -1 || idxStartDate === -1) return null;
+  
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][idxCode]) === String(studentCode) && String(data[i][idxMaLop]) === String(courseId)) {
+        const dateVal = data[i][idxStartDate];
+        if (dateVal && dateVal !== "") {
+            return Utilities.formatDate(new Date(dateVal), "Asia/Ho_Chi_Minh", "yyyy-MM-dd"); // ISO for frontend input type=date
+        }
+    }
+  }
+  return null;
+}
+
+// Helper: Get Student Code by Email (Re-using logic from login/register)
+function getStudentCodeByEmail(email) {
+   const ss = getDB();
+   const sheet = ss.getSheetByName("Dky");
+   if (!sheet) return null;
+   const data = sheet.getDataRange().getValues();
+   for(let i=1; i<data.length; i++) {
+       if (String(data[i][COL_EMAIL]).toLowerCase() === String(email).toLowerCase()) {
+           return data[i][COL_CODE];
+       }
+   }
+   return null;
+}

@@ -1052,27 +1052,45 @@
                     <p id="progress-summary">0/0 bài hoàn thành</p>
                 </div>
 
-                <!-- Date Control Section -->
-                <div class="date-control" id="sidebar-date-control" style="display:none;">
-                    <div class="date-row">
-                        <span class="date-label">Ngày bắt đầu:</span>
-                        <input type="date" id="course-start-date"
-                            style="background:#1e293b; color:white; border:1px solid #475569; border-radius:4px; font-size:11px; padding:2px 4px; display:none; width: 110px;">
-                        <span id="start-date-display" class="date-value"
-                            style="font-family: monospace; font-size: 13px;">--/--/----</span>
-                    </div>
-                    <!-- Deadline display for current lesson - Dynamic -->
-                    <div class="date-row" id="deadline-row" style="display:none;">
-                        <span class="date-label">Deadline bài này:</span>
-                        <span class="date-value" style="color:#fbbf24; font-family: monospace; font-size: 13px;"
-                            id="current-lesson-deadline">--/--/----</span>
-                    </div>
+                <!-- Start Date Card (Big Design) -->
+                <div class="date-control" id="sidebar-date-control"
+                    style="margin-top: 15px; padding: 15px; border-top: 1px solid #334155; display: none;">
+                    <div
+                        style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 15px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                        <h4
+                            style="margin: 0 0 10px 0; color: #94a3b8; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
+                            Ngày Bắt Đầu</h4>
 
-                    <div style="margin-top: 10px; display: flex; gap: 8px;">
-                        <button id="btn-confirm-date" class="btn-date btn-confirm" style="display:none;"
-                            onclick="confirmStartDate()">Xác nhận</button>
-                        <button id="btn-reset-date" class="btn-date btn-reset" onclick="requestResetDate()">Đặt
-                            lại</button>
+                        <div style="position: relative; margin-bottom: 15px;">
+                            <input type="date" id="course-start-date"
+                                style="position: absolute; opacity: 0; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer;"
+                                onchange="onDateInputChange(this)">
+                            <div id="start-date-display"
+                                style="font-size: 26px; font-weight: 800; color: #fff; letter-spacing: 1px;">
+                                --/--/----
+                            </div>
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">(Nhấn vào để chọn)</div>
+                        </div>
+
+                        <div style="display: flex; gap: 8px;">
+                            <button id="btn-confirm-date" onclick="confirmStartDate()"
+                                style="flex: 1; background: #10b981; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 13px; display: none;">
+                                XÁC NHẬN
+                            </button>
+                            <button id="btn-reset-date" onclick="requestResetDate()"
+                                style="flex: 1; background: #334155; color: #cbd5e1; border: 1px solid #475569; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 13px; display: none;">
+                                ĐẶT LẠI
+                            </button>
+                        </div>
+
+                        <!-- Deadline dynamic display -->
+                        <div id="deadline-row"
+                            style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #334155; display: none;">
+                            <div style="font-size: 12px; color: #cbd5e1;">Hạn nộp bài này:</div>
+                            <div id="current-lesson-deadline"
+                                style="font-size: 14px; font-weight: 700; color: #fbbf24; margin-top: 2px;">--/--/----
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1383,6 +1401,26 @@
                     <strong>Ngày được gán:</strong> <span id="assignment-assigned-date-desktop">--/--/----</span>
                 </div>
 
+                <!-- Total Score & Submit (Moved to Top) -->
+                <div
+                    style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px dashed #cbd5e1; background: #fffbeb; padding: 15px; border-radius: 8px; border: 1px solid #fef3c7;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span
+                            style="font-weight: bold; color: #b45309; font-size: 13px; text-transform: uppercase;">TỔNG
+                            ĐIỂM TẠM TÍNH</span>
+                        <span id="live-total-score-desktop"
+                            style="font-size: 24px; font-weight: 800; color: #ea580c;">0/10</span>
+                    </div>
+                    <button onclick="submitWork()" class="btn-submit"
+                        style="width: 100%; font-size: 14px; padding: 10px; background: #ea580c; border:none; color:white; font-weight:700; border-radius:6px; cursor:pointer;">
+                        <i class="fas fa-paper-plane"></i> GHI NHẬN KẾT QUẢ
+                    </button>
+                    <div style="text-align:center; margin-top:5px; font-size:11px; color:#78350f; font-style:italic;">
+                        * Điểm >= 5: Hoàn thành
+                    </div>
+                </div>
+
                 <!-- 1. Video Progress -->
                 <div class="grading-part">
                     <div class="part-header">
@@ -1465,21 +1503,6 @@
                             * Hệ thống tự động ghi nhận theo thời gian thực.
                         </div>
                     </div>
-                </div>
-
-                <!-- Total & Submit -->
-                <div style="margin-top: 25px; padding-top: 15px; border-top: 2px dashed #cbd5e1;">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <span style="font-weight: bold; color: #334155;">TỔNG ĐIỂM TẠM TÍNH:</span>
-                        <span id="live-total-score-desktop"
-                            style="font-size: 20px; font-weight: 800; color: #ea580c;">0/10</span>
-                    </div>
-
-                    <button onclick="submitWork()" class="btn-submit"
-                        style="width: 100%; font-size: 16px; padding: 12px;">
-                        <i class="fas fa-paper-plane"></i> GHI NHẬN KẾT QUẢ
-                    </button>
                 </div>
 
                 <div id="grading-result-desktop"
@@ -1628,10 +1651,17 @@
             const cacheExpiry = 5 * 60 * 1000; // 5 minutes
 
             // Try to load from cache first
-            const cachedData = getCachedCurriculum(cacheKey, cacheExpiry);
-            if (cachedData) {
+            const cached = getCachedCurriculum(cacheKey, cacheExpiry);
+            if (cached) {
                 console.log('📦 Loading from cache...');
-                curriculum = cachedData;
+                curriculum = cached.data;
+
+                // Restore Start Date from Cache
+                if (cached.startDate) {
+                    courseStartDate = new Date(cached.startDate);
+                } else {
+                    courseStartDate = null;
+                }
 
                 // Validate curriculum
                 if (!curriculum || curriculum.length === 0) {
@@ -1668,8 +1698,16 @@
                 if (result.success) {
                     curriculum = result.data;
 
+                    // --- NEW: Parse Server Start Date ---
+                    if (result.startDate) {
+                        courseStartDate = new Date(result.startDate);
+                        console.log("Loaded Start Date from Server:", courseStartDate);
+                    } else {
+                        courseStartDate = null;
+                    }
+
                     // Cache the data
-                    setCachedCurriculum(cacheKey, curriculum);
+                    setCachedCurriculum(cacheKey, curriculum, courseStartDate);
 
                     if (curriculum.length === 0) {
                         // Hide all loading indicators
@@ -1706,14 +1744,14 @@
         // Get cached curriculum
         function getCachedCurriculum(key, expiry) {
             try {
-                const cached = localStorage.getItem(key);
-                if (!cached) return null;
+                const cachedStr = localStorage.getItem(key);
+                if (!cachedStr) return null;
 
-                const { data, timestamp } = JSON.parse(cached);
+                const cached = JSON.parse(cachedStr);
                 const now = Date.now();
 
-                if (now - timestamp < expiry) {
-                    return data;
+                if (now - cached.timestamp < expiry) {
+                    return cached; // Returns { data, startDate, timestamp }
                 }
 
                 localStorage.removeItem(key);
@@ -1724,10 +1762,11 @@
         }
 
         // Set cached curriculum
-        function setCachedCurriculum(key, data) {
+        function setCachedCurriculum(key, data, startDate) {
             try {
                 const cacheData = {
                     data: data,
+                    startDate: startDate ? startDate.toISOString() : null,
                     timestamp: Date.now()
                 };
                 localStorage.setItem(key, JSON.stringify(cacheData));
@@ -1751,14 +1790,19 @@
                 const result = await response.json();
                 if (result.success) {
                     const freshData = result.data;
+                    let freshStartDate = null;
+                    if (result.startDate) freshStartDate = new Date(result.startDate);
 
                     // Update cache
-                    setCachedCurriculum(cacheKey, freshData);
+                    setCachedCurriculum(cacheKey, freshData, freshStartDate);
 
                     // Check if data changed
-                    if (JSON.stringify(freshData) !== JSON.stringify(curriculum)) {
+                    if (JSON.stringify(freshData) !== JSON.stringify(curriculum) ||
+                        (freshStartDate && (!courseStartDate || freshStartDate.getTime() !== courseStartDate.getTime()))) {
+
                         console.log('✅ Fresh data received, updating UI...');
                         curriculum = freshData;
+                        courseStartDate = freshStartDate;
                         renderLessonListNew();
                         checkGraduation();
                     } else {
@@ -2772,7 +2816,23 @@
             total += supScore;
 
             // --- Part 5: On Time (Auto 1pt/ -1pt) ---
-            let timeScore = 1; // Default "On Time" (+1) until backend says otherwise or logic changes
+            let timeScore = 1;
+
+            // Check deadline if available
+            const deadline = getLessonDeadline(currentLessonIdx);
+            if (deadline) {
+                const now = new Date();
+                // Compare dates (ignore time for deadline usually? Or strict?)
+                // Deadline set to 23:59:59 of that day in getLessonDeadline
+                if (now > deadline) {
+                    timeScore = -1;
+                }
+            }
+
+            // If already submitted and late (from progress), use that
+            if (curriculum[currentLessonIdx] && curriculum[currentLessonIdx].progress && curriculum[currentLessonIdx].progress.nopTre) {
+                timeScore = -1;
+            }
 
             if (document.getElementById('score-p5')) {
                 const val = timeScore > 0 ? `+${timeScore}` : timeScore;
@@ -3025,18 +3085,118 @@
             if (indicator) indicator.remove();
         }
         // --- NEW LOGIC: Start Date & Enhanced Render ---
+        // --- NEW LOGIC: Start Date & Enhanced Render ---
+        let courseStartDate = null; // Store globally
+
         function getCourseStartDate() {
-            const key = `startDate_${courseId}_${user.email}`;
-            const saved = localStorage.getItem(key);
-            return saved ? new Date(saved) : null;
+            return courseStartDate;
         }
 
-        function setCourseStartDate(date) {
-            const key = `startDate_${courseId}_${user.email}`;
-            if (date) {
-                localStorage.setItem(key, date.toISOString());
-            } else {
-                localStorage.removeItem(key);
+        async function confirmStartDate() {
+            const input = document.getElementById('course-start-date');
+            if (input && input.value) {
+                const date = new Date(input.value);
+
+                // Call API to save
+                const btn = document.getElementById('btn-confirm-date');
+                const originalText = btn.textContent;
+                btn.disabled = true;
+                btn.textContent = "Đang lưu...";
+
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: "updateStartDate",
+                            email: user.email,
+                            courseId: courseId,
+                            startDate: date.toISOString()
+                        })
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        courseStartDate = date;
+                        initDateUI();
+                        renderLessonListNew();
+                        if (currentLessonIdx !== -1) playLesson(currentLessonIdx);
+                        showToast("Đã thiết lập ngày bắt đầu!", "success");
+
+                        // Clear cache to force reload next time
+                        const cacheKey = `curriculum_${courseId}_${user.email}`;
+                        localStorage.removeItem(cacheKey);
+                    } else {
+                        showToast(result.msg || "Lỗi khi lưu ngày bắt đầu", "error");
+                    }
+                } catch (e) {
+                    showToast("Lỗi kết nối: " + e.message, "error");
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                }
+            }
+        }
+
+        async function requestResetDate() {
+            if (confirm("Bạn có chắc muốn đặt lại? Toàn bộ bài làm (điểm số, link...) sẽ bị xóa để bạn học lại từ đầu.\n(Tiến độ xem Video vẫn được giữ nguyên).")) {
+
+                const btn = document.getElementById('btn-reset-date');
+                const originalText = btn.textContent;
+                btn.disabled = true;
+                btn.textContent = "Đang xử lý...";
+
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: "resetProgress",
+                            email: user.email,
+                            courseId: courseId
+                        })
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        courseStartDate = null;
+
+                        // Wipe local data to reflect changes immediately
+                        if (curriculum) {
+                            curriculum.forEach(lesson => {
+                                if (lesson.progress) {
+                                    const savedVideoScore = lesson.progress.videoScore || 0;
+                                    lesson.progress.reflection = "";
+                                    lesson.progress.link1 = "";
+                                    lesson.progress.link2 = "";
+                                    lesson.progress.link3 = "";
+                                    lesson.progress.disciplineSupport1 = false;
+                                    lesson.progress.disciplineSupport2 = false;
+                                    lesson.progress.nopTre = false;
+                                    lesson.progress.totalScore = savedVideoScore;
+                                    if (lesson.progress.status === "Completed") {
+                                        lesson.progress.status = "In Progress";
+                                    }
+                                    lesson.progress.submissionDate = "";
+                                }
+                            });
+                        }
+
+                        initDateUI();
+                        renderLessonListNew();
+                        if (currentLessonIdx !== -1) playLesson(currentLessonIdx);
+                        showToast("Đã đặt lại thành công!", "success");
+
+                        // Clear cache
+                        const cacheKey = `curriculum_${courseId}_${user.email}`;
+                        localStorage.removeItem(cacheKey);
+                    } else {
+                        showToast(result.msg || "Lỗi khi đặt lại", "error");
+                    }
+                } catch (e) {
+                    showToast("Lỗi kết nối: " + e.message, "error");
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                }
             }
         }
 
@@ -3053,7 +3213,7 @@
             if (startDate) {
                 if (input) input.style.display = 'none';
                 if (display) {
-                    display.style.display = 'inline';
+                    display.style.display = 'inline-block'; // Changed to inline-block for proper spacing
                     display.textContent = startDate.toLocaleDateString('vi-VN');
                 }
                 if (btnConfirm) btnConfirm.style.display = 'none';
@@ -3063,70 +3223,24 @@
                     btnReset.style.opacity = '1';
                     btnReset.style.cursor = 'pointer';
                 }
+                const deadlineRow = document.getElementById('deadline-row');
+                if (deadlineRow) deadlineRow.style.display = 'block';
             } else {
                 const today = new Date();
                 if (input) {
-                    input.style.display = 'inline-block';
+                    input.style.display = 'block'; // Make it cover the area
                     input.valueAsDate = today;
                 }
-                if (display) display.style.display = 'none';
+                if (display) {
+                    display.style.display = 'block';
+                    display.textContent = "--/--/----";
+                }
                 if (btnConfirm) btnConfirm.style.display = 'inline-block';
                 if (btnReset) {
-                    btnReset.disabled = true;
-                    btnReset.style.opacity = '0.5';
-                    btnReset.style.cursor = 'not-allowed';
+                    btnReset.style.display = 'none'; // Hide completely when not set
                 }
                 const deadlineRow = document.getElementById('deadline-row');
                 if (deadlineRow) deadlineRow.style.display = 'none';
-            }
-        }
-
-        function confirmStartDate() {
-            const input = document.getElementById('course-start-date');
-            if (input && input.value) {
-                const date = new Date(input.value);
-                setCourseStartDate(date);
-                initDateUI();
-                renderLessonListNew();
-                if (currentLessonIdx !== -1) playLesson(currentLessonIdx);
-                showToast("Đã thiết lập ngày bắt đầu!", "success");
-            }
-        }
-
-        function requestResetDate() {
-            if (confirm("Bạn có chắc muốn đặt lại? Toàn bộ bài làm (điểm số, link...) sẽ bị xóa để bạn học lại từ đầu.\n(Tiến độ xem Video vẫn được giữ nguyên).")) {
-                setCourseStartDate(null);
-
-                // Wipe data
-                if (curriculum) {
-                    curriculum.forEach(lesson => {
-                        if (lesson.progress) {
-                            // Keep video data
-                            const savedVideoScore = lesson.progress.videoScore || 0;
-                            // Reset inputs
-                            lesson.progress.reflection = "";
-                            lesson.progress.link1 = "";
-                            lesson.progress.link2 = "";
-                            lesson.progress.link3 = "";
-                            lesson.progress.disciplineSupport1 = false;
-                            lesson.progress.disciplineSupport2 = false;
-                            lesson.progress.nopTre = false;
-
-                            // Recalculate score (only video score remains)
-                            lesson.progress.totalScore = savedVideoScore;
-
-                            // Revert status to In Progress to allow re-submission
-                            if (lesson.progress.status === "Completed") {
-                                lesson.progress.status = "In Progress";
-                            }
-                        }
-                    });
-                }
-
-                initDateUI();
-                renderLessonListNew();
-                if (currentLessonIdx !== -1) playLesson(currentLessonIdx);
-                showToast("Đã đặt lại. Vui lòng chọn Ngày bắt đầu mới!", "info");
             }
         }
 
