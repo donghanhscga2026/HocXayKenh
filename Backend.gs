@@ -4358,6 +4358,29 @@ function findRelevantChunks(query, userEmail, topK = 5) {
   }
 }
 
+// Helper: Get student code (MÃ CODE) from email
+function getStudentCodeByEmail(email) {
+  const ss = getDB();
+  const sheet = ss.getSheetByName("Dky");
+  if (!sheet) return null;
+  
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  
+  const idxEmail = headers.findIndex(h => String(h).trim().toLowerCase() === "email");
+  const idxCode = headers.findIndex(h => String(h).trim() === "MÃ CODE");
+  
+  if (idxEmail === -1 || idxCode === -1) return null;
+  
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][idxEmail]).trim().toLowerCase() === email.toLowerCase()) {
+      return String(data[i][idxCode]).trim();
+    }
+  }
+  
+  return null;
+}
+
 // --- NEW: Check Start Date (Lightweight) ---
 function checkStartDate(email, courseId) {
   const studentCode = getStudentCodeByEmail(email);
@@ -4374,27 +4397,46 @@ function checkStartDate(email, courseId) {
   const enrollData = enrollSheet.getDataRange().getValues();
   const headers = enrollData[0];
   
-  const idxCode = headers.indexOf("MÃ_CODE");
+  const idxCode = headers.indexOf("MÃ CODE");
   const idxCourse = headers.indexOf("Ma_Lop");
   const idxStartDate = headers.indexOf("Ngay_Bat_Dau");
   
   // Debug logging
   Logger.log("LS_DangKy Headers: " + JSON.stringify(headers));
-  Logger.log("idxCode (MÃ_CODE): " + idxCode);
+  Logger.log("idxCode (MÃ CODE): " + idxCode);
   Logger.log("idxCourse (Ma_Lop): " + idxCourse);
   Logger.log("idxStartDate (Ngay_Bat_Dau): " + idxStartDate);
   
   if (idxCode === -1 || idxCourse === -1 || idxStartDate === -1) {
     let missingCols = [];
-    if (idxCode === -1) missingCols.push("MÃ_CODE");
+    if (idxCode === -1) missingCols.push("MÃ CODE");
     if (idxCourse === -1) missingCols.push("Ma_Lop");
     if (idxStartDate === -1) missingCols.push("Ngay_Bat_Dau");
     return { success: false, msg: "Thiếu cột: " + missingCols.join(", ") + " trong LS_DangKy" };
   }
   
+  const debugInfo = {
+    studentCode: studentCode,
+    courseId: courseId,
+    headers: headers,
+    rows: []
+  };
+  
+  // Convert to string for comparison
+  const studentCodeStr = String(studentCode).trim();
+  const courseIdStr = String(courseId).trim();
+  
   for (let i = 1; i < enrollData.length; i++) {
-    if (String(enrollData[i][idxCode]) === studentCode && 
-        String(enrollData[i][idxCourse]) === courseId) {
+    const rowCode = String(enrollData[i][idxCode]).trim();
+    const rowCourse = String(enrollData[i][idxCourse]).trim();
+    
+    debugInfo.rows.push({
+      index: i,
+      code: rowCode,
+      course: rowCourse
+    });
+    
+    if (rowCode === studentCodeStr && rowCourse === courseIdStr) {
       const startDate = enrollData[i][idxStartDate];
       return {
         success: true,
@@ -4404,8 +4446,14 @@ function checkStartDate(email, courseId) {
     }
   }
   
-  return { success: false, msg: "Không tìm thấy đăng ký khóa học" };
+  return { 
+    success: false, 
+    msg: "Không tìm thấy đăng ký khóa học",
+    debug: debugInfo // Trả debug info để xem
+  };
 }
+
+
 
 // --- NEW: Update Start Date in LS_DangKy AND Initialize KH_TienDo ---
 function updateStartDate(email, courseId, startDate) {
@@ -4971,4 +5019,18 @@ function autoSaveProgress(data) {
   } catch (e) {
     return { success: false, msg: e.toString() };
   }
+}
+// ===== TEST FUNCTION =====
+function TEST_checkStartDate() {
+  const testEmail = "quelion0708@gmail.com"; // ← SỬA EMAIL
+  const testCourseId = "AF"; // ← SỬA MÃ KHÓA HỌC
+  
+  Logger.log("Email: " + testEmail);
+  Logger.log("CourseId: " + testCourseId);
+  
+  const result = checkStartDate(testEmail, testCourseId);
+  
+  Logger.log("\nKết quả: " + JSON.stringify(result, null, 2));
+  
+  return result;
 }
