@@ -1713,11 +1713,17 @@ function getStudentCodeByEmail(email) {
   const sheet = getDB().getSheetByName("Dky");
   if (!sheet) return null;
   
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const idxEmail = headers.indexOf("Email");
+  const idxCode = headers.indexOf("Ma_Code") > -1 ? headers.indexOf("Ma_Code") : 1;
+  
+  if (idxEmail === -1) return null;
+  
   const data = sheet.getDataRange().getValues();
   
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][COL_EMAIL]).toLowerCase() === email.toLowerCase()) {
-      return String(data[i][COL_CODE]);
+    if (String(data[i][idxEmail]).toLowerCase() === email.toLowerCase()) {
+      return String(data[i][idxCode]);
     }
   }
   return null;
@@ -2243,19 +2249,24 @@ function getStudentInfoFromEmail(email) {
   const sheet = ss.getSheetByName("Dky");
   if (!sheet) return { code: "", name: "" };
   
-  // Use getColumnIndex or assume standard layout if Dky has headers
-  // Based on registerUser:
-  // Col B (Index 1) => Code
-  // Col C (Index 2) => Name
-  // Col G (Index 6) => Email
-  // Let's safe read headers just in case
-  
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  const idxEmail = headers.indexOf("Email"); // Or usage of constants if available globally
-  const idxCode = headers.indexOf("Ma_Code") > -1 ? headers.indexOf("Ma_Code") : 1; // Fallback to 1 (Col B)
-  const idxName = headers.indexOf("Ten_HV") > -1 ? headers.indexOf("Ten_HV") : 2;   // Fallback to 2 (Col C)
   
-  if (idxEmail === -1) return { code: "", name: "" };
+  // Find column indexes - try multiple possible header names
+  let idxEmail = headers.indexOf("Địa chỉ email");
+  if (idxEmail === -1) idxEmail = headers.indexOf("Email");
+  
+  let idxCode = headers.indexOf("MÃ CODE");
+  if (idxCode === -1) idxCode = headers.indexOf("Ma_Code");
+  if (idxCode === -1) idxCode = 1; // Fallback to column B
+  
+  let idxName = headers.indexOf("Họ và tên");
+  if (idxName === -1) idxName = headers.indexOf("Ten_HV");
+  if (idxName === -1) idxName = 2; // Fallback to column C
+  
+  if (idxEmail === -1) {
+    Logger.log("⚠️ Email column not found in Dky sheet");
+    return { code: "", name: "" };
+  }
   
   const data = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
@@ -2266,6 +2277,8 @@ function getStudentInfoFromEmail(email) {
       };
     }
   }
+  
+  Logger.log("⚠️ Email not found in Dky sheet: " + email);
   return { code: "", name: "" };
 }
 

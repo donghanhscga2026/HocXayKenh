@@ -2813,6 +2813,8 @@
                     // Display Grade Result in appropriate location
 
                     const grade = result.grade || "Chưa xác định";
+                    const score = result.score || 0;  // Extract score from result
+                    const details = result.data || {};  // Extract details from result
 
                     let gradeColor = '#0369a1'; // Blue
                     if (score >= 10) gradeColor = '#15803d'; // Green
