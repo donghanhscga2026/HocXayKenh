@@ -3011,8 +3011,12 @@
                 // Logic handled by checkLogin in main script, but just in case
             }
             bindLiveInputs();
-            loadCurriculum(); // Load content immediately
-            initChatbot(); // Initialize chatbot
+
+            // CHỈ kiểm tra start date, KHÔNG load curriculum
+            await checkAndShowStartDateUI();
+
+            // Chatbot khởi tạo sau (không blocking)
+            setTimeout(() => initChatbot(), 500);
         });
 
         // ===== CHATBOT FUNCTIONS =====
@@ -3187,6 +3191,59 @@
             return courseStartDate;
         }
 
+        // NEW: Check start date and show appropriate UI
+        async function checkAndShowStartDateUI() {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: "checkStartDate",
+                        email: user.email,
+                        courseId: courseId
+                    })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    if (result.hasStartDate) {
+                        // Đã có ngày → Load curriculum ngay
+                        courseStartDate = result.startDate ? new Date(result.startDate) : null;
+                        await loadCurriculum(true);
+                    } else {
+                        // Chưa có ngày → Hiện date picker
+                        showStartDatePicker();
+                    }
+                } else {
+                    showToast(result.msg || "Lỗi kiểm tra ngày bắt đầu", "error");
+                }
+            } catch (e) {
+                showToast("Lỗi kết nối: " + e.message, "error");
+            }
+        }
+
+        // NEW: Show start date picker UI
+        function showStartDatePicker() {
+            const dateControl = document.getElementById('sidebar-date-control');
+            const confirmBtn = document.getElementById('btn-confirm-date');
+
+            if (dateControl) {
+                dateControl.style.display = 'block';
+                if (confirmBtn) confirmBtn.style.display = 'block';
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('course-start-date');
+            if (dateInput) {
+                dateInput.value = today;
+                dateInput.min = today;
+                onDateInputChange(dateInput);
+            }
+
+            showToast("Vui lòng chọn ngày bắt đầu học!", "info");
+            document.getElementById('current-lesson-title').textContent = "Chào mừng đến với khóa học!";
+            document.getElementById('lesson-summary').textContent = "Vui lòng chọn ngày bắt đầu học ở sidebar bên trái và nhấn 'Xác nhận' để bắt đầu.";
+        }
+
         async function confirmStartDate() {
             const input = document.getElementById('course-start-date');
             if (input && input.value) {
@@ -3214,18 +3271,37 @@
                         courseStartDate = date;
                         showToast("Đã thiết lập ngày bắt đầu!", "success");
 
-                        // Clear cache to force reload next time
+                        // Clear cache
                         const cacheKey = `curriculum_${courseId}_${user.email}`;
                         localStorage.removeItem(cacheKey);
 
-                        // Hide date control
-                        const dateControl = document.getElementById('sidebar-date-control');
-                        if (dateControl) dateControl.style.display = 'none';
+                        // BƯỚC 2: Fetch curriculum ngay (Backend đã khởi tạo xong)
+                        btn.textContent = "Đang tải...";
 
-                        // Show ready-to-learn overlay
-                        const overlay = document.getElementById('ready-to-learn-overlay');
-                        if (overlay) {
-                            overlay.style.display = 'flex';
+                        const currResponse = await fetch(API_URL, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                action: "getCourseContent",
+                                email: user.email,
+                                courseId: courseId
+                            })
+                        });
+                        const currResult = await currResponse.json();
+
+                        if (currResult.success) {
+                            // Cache ngay
+                            curriculum = currResult.data;
+                            setCachedCurriculum(cacheKey, curriculum, courseStartDate);
+
+                            // Ẩn date control
+                            const dateControl = document.getElementById('sidebar-date-control');
+                            if (dateControl) dateControl.style.display = 'none';
+
+                            // Hiện overlay
+                            const overlay = document.getElementById('ready-to-learn-overlay');
+                            if (overlay) overlay.style.display = 'flex';
+                        } else {
+                            showToast("Lỗi tải danh sách bài học", "error");
                         }
                     } else {
                         showToast(result.msg || "Lỗi khi lưu ngày bắt đầu", "error");
@@ -3241,12 +3317,19 @@
 
         // Start learning after confirming start date
         async function startLearning() {
-            // Hide overlay
             const overlay = document.getElementById('ready-to-learn-overlay');
             if (overlay) overlay.style.display = 'none';
 
-            // Reload curriculum to get initialized data
-            await loadCurriculum(true);
+            // Render từ curriculum đã cache (KHÔNG gọi API nữa)
+            if (curriculum && curriculum.length > 0) {
+                renderLessonListNew();
+                const lastIdx = curriculum.findIndex(l => l.progress && l.progress.status === "In Progress");
+                checkGraduation();
+                playLesson(lastIdx !== -1 ? lastIdx : 0);
+            } else {
+                // Fallback: Nếu không có cache, mới load lại
+                await loadCurriculum(true);
+            }
         }
 
         async function requestResetDate() {

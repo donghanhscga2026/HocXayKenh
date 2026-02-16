@@ -191,6 +191,9 @@ function doPost(e) {
         content.duration
       ));
     }
+    else if (action === "checkStartDate") {
+      return returnJSON(checkStartDate(content.email, content.courseId));
+    }
     else if (action === "updateStartDate") {
       return returnJSON(updateStartDate(content.email, content.courseId, content.startDate));
     }
@@ -4353,6 +4356,45 @@ function findRelevantChunks(query, userEmail, topK = 5) {
     Logger.log("❌ Error in findRelevantChunks:", error);
     return [];
   }
+}
+
+// --- NEW: Check Start Date (Lightweight) ---
+function checkStartDate(email, courseId) {
+  const studentCode = getStudentCodeByEmail(email);
+  if (!studentCode) {
+    return { success: false, msg: "Không tìm thấy học viên" };
+  }
+  
+  const ss = getDB();
+  const enrollSheet = ss.getSheetByName("LS_DangKy");
+  if (!enrollSheet) {
+    return { success: false, msg: "Sheet LS_DangKy không tồn tại" };
+  }
+  
+  const enrollData = enrollSheet.getDataRange().getValues();
+  const headers = enrollData[0];
+  
+  const idxCode = headers.indexOf("Ma_Code");
+  const idxCourse = headers.indexOf("Ma_KH");
+  const idxStartDate = headers.indexOf("Ngay_Bat_Dau");
+  
+  if (idxCode === -1 || idxCourse === -1 || idxStartDate === -1) {
+    return { success: false, msg: "Thiếu cột dữ liệu trong LS_DangKy" };
+  }
+  
+  for (let i = 1; i < enrollData.length; i++) {
+    if (String(enrollData[i][idxCode]) === studentCode && 
+        String(enrollData[i][idxCourse]) === courseId) {
+      const startDate = enrollData[i][idxStartDate];
+      return {
+        success: true,
+        hasStartDate: !!startDate,
+        startDate: startDate || null
+      };
+    }
+  }
+  
+  return { success: false, msg: "Không tìm thấy đăng ký khóa học" };
 }
 
 // --- NEW: Update Start Date in LS_DangKy AND Initialize KH_TienDo ---
