@@ -815,7 +815,6 @@ function getCourseContent(email, courseId) {
       const idxGrade = IDX_XEP_LOAI;
       const idxSupp1 = IDX_HO_TRO_1;
       const idxSupp2 = IDX_HO_TRO_2;
-      const idxCompDate = IDX_NGAY_HOAN_THANH;
       const idxAssigned = getColumnIndex(progressSheet, COL_NAME_NGAY_DUOC_GIAO);
 
       if (progressSheet && idxEmail !== -1 && idxCourse !== -1 && idxLesson !== -1) {
@@ -848,9 +847,7 @@ function getCourseContent(email, courseId) {
                 disciplineSupport1: getBool(idxSupp1),
                 disciplineSupport2: getBool(idxSupp2),
                 nopTre: getBool(idxNopTre),
-                nopTre: getBool(idxNopTre),
-                submissionDate: (idxCompDate !== -1 && progressData[j][idxCompDate]) ? Utilities.formatDate(new Date(progressData[j][idxCompDate]), "Asia/Ho_Chi_Minh", "dd/MM/yyyy") : "",
-                assignedDate: (idxAssigned !== -1 && progressData[j][idxAssigned]) ? Utilities.formatDate(new Date(progressData[j][idxAssigned]), "Asia/Ho_Chi_Minh", "dd/MM/yyyy") : null
+                assignedDate: (idxAssigned !== -1 && progressData[j][idxAssigned]) ? String(progressData[j][idxAssigned]) : null
               };
               break;
             }
