@@ -1037,16 +1037,44 @@ function getCourseContent(email, courseId) {
 function ensureProgressColumns(progressSheet) {
   try {
     if (!progressSheet) return;
-    const headersRange = progressSheet.getRange(1, 1, 1, progressSheet.getLastColumn());
+    if (progressSheet.getLastRow() === 0) {
+        // Empty sheet, add headers
+        const headers = [COL_NAME_EMAIL, COL_NAME_MA_KH, COL_NAME_MA_BAI, COL_NAME_HIEN_TAI, COL_NAME_XA_NHAT, COL_NAME_TRANG_THAI, COL_NAME_NOP_TRE, COL_NAME_NGAY_DUOC_GIAO, COL_NAME_NGAY_HOAN_THANH];
+        progressSheet.appendRow(headers);
+        return;
+    }
+
+    const lastCol = progressSheet.getLastColumn();
+    if (lastCol === 0) {
+         // Empty columns but maybe rows exist? Unlikely.
+         const headers = [COL_NAME_EMAIL, COL_NAME_MA_KH, COL_NAME_MA_BAI, COL_NAME_HIEN_TAI, COL_NAME_XA_NHAT, COL_NAME_TRANG_THAI, COL_NAME_NOP_TRE, COL_NAME_NGAY_DUOC_GIAO, COL_NAME_NGAY_HOAN_THANH];
+         progressSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+         return;
+    }
+
+    const headersRange = progressSheet.getRange(1, 1, 1, lastCol);
     const headers = headersRange.getValues()[0].map(h => String(h || "").trim());
-    const need = [COL_NAME_NOP_TRE]; // Removed COL_NAME_START_DATE
-    let lastCol = headers.length;
-    need.forEach(name => {
+    
+    // Check for missing columns and add them
+    const needed = [COL_NAME_NOP_TRE, COL_NAME_NGAY_DUOC_GIAO, COL_NAME_NGAY_HOAN_THANH];
+    let curLast = headers.length;
+    needed.forEach(name => {
       if (headers.indexOf(name) === -1) {
-        lastCol += 1;
-        progressSheet.getRange(1, lastCol).setValue(name);
+        curLast += 1;
+        progressSheet.getRange(1, curLast).setValue(name);
+        headers.push(name);
       }
     });
+
+    // Validations (e.g. Checkbox for NopTre)
+    const idxNop = headers.indexOf(COL_NAME_NOP_TRE);
+    if (idxNop !== -1) {
+       const rule = SpreadsheetApp.newDataValidation().requireCheckbox().setAllowInvalid(false).build();
+       // Apply only if there are data rows (row > 1)
+       if (progressSheet.getMaxRows() > 1) {
+           try { progressSheet.getRange(2, idxNop + 1, progressSheet.getMaxRows() - 1).setDataValidation(rule); } catch (e) {}
+       }
+    }
   } catch (e) {
     Logger.log('ensureProgressColumns error: ' + e);
   }
@@ -4357,22 +4385,37 @@ function updateStartDate(email, courseId, startDate) {
     if (String(data[i][idxCode]) === String(studentCode) && String(data[i][idxMaLop]) === String(courseId)) {
         let dateObj = null;
         if (startDate) {
-            // Check format yyyy-MM-dd
-            const parts = startDate.split('-');
-            if (parts.length === 3) {
-                dateObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-            } else {
-                 dateObj = new Date(startDate);
+            try {
+                // Determine if ISO or YYYY-MM-DD
+                if (startDate.indexOf('T') !== -1) {
+                     dateObj = new Date(startDate);
+                } else {
+                     const parts = startDate.split('-');
+                     if (parts.length === 3) {
+                         dateObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                     } else {
+                         dateObj = new Date(startDate); // Fallback
+                     }
+                }
+            } catch (e) {
+                 Logger.log("Date parse error: " + e);
             }
         }
         
+        if (!dateObj || isNaN(dateObj.getTime())) {
+             if (startDate) Logger.log("Invalid Date object created from: " + startDate);
+             // If invalid, don't write garbage, maybe fail? 
+             // But we need to handle clearContent (null startDate)
+        }
+
         if (!startDate) {
             sheet.getRange(i + 1, targetColIndex + 1).clearContent();
-        } else {
+            updateSuccess = true;
+        } else if (dateObj && !isNaN(dateObj.getTime())) {
             sheet.getRange(i + 1, targetColIndex + 1).setValue(dateObj);
             sheet.getRange(i + 1, targetColIndex + 1).setNumberFormat("dd/MM/yyyy");
+            updateSuccess = true;
         }
-        updateSuccess = true;
         break;
     }
   }
@@ -4383,7 +4426,7 @@ function updateStartDate(email, courseId, startDate) {
   if (startDate) {
       try {
           const progressSheet = ss.getSheetByName("KH_TienDo");
-          ensureProgressColumns(progressSheet); // Ensure Ngay_Duoc_Giao exists
+          ensureProgressColumns(progressSheet); // Ensure Ngay_Duoc_Giao column exists
           
           const contentSheet = ss.getSheetByName("KH_NoiDung");
           const cData = contentSheet.getDataRange().getValues();
@@ -4394,8 +4437,20 @@ function updateStartDate(email, courseId, startDate) {
           const idxLesson = getColumnIndex(progressSheet, COL_NAME_MA_BAI);
           const idxAssigned = getColumnIndex(progressSheet, COL_NAME_NGAY_DUOC_GIAO);
           const idxStatus = getColumnIndex(progressSheet, COL_NAME_TRANG_THAI);
-           const idxGhiNhan = getColumnIndex(progressSheet, COL_NAME_GHI_NHAN);
           
+          // Parse Start Date correctly for Loop
+          let start = null;
+          if (startDate.indexOf('T') !== -1) {
+               start = new Date(startDate);
+          } else {
+               const parts = startDate.split('-');
+               start = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+          }
+          
+          if (!start || isNaN(start.getTime())) {
+               return { success: true, msg: "Cập nhật ngày bắt đầu (LS), nhưng lỗi định dạng ngày để khởi tạo tiến độ." };
+          }
+
           // Loop through Course Lessons
           for (let k = 1; k < cData.length; k++) {
               if (String(cData[k][0]) === String(courseId)) {
@@ -4403,8 +4458,6 @@ function updateStartDate(email, courseId, startDate) {
                   const lessonOrder = Number(cData[k][6] || 1);
                   
                   // Calculate Deadline
-                  const parts = startDate.split('-');
-                  const start = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
                   const deadline = new Date(start);
                   deadline.setDate(start.getDate() + (lessonOrder - 1));
                   const deadlineDate = Utilities.formatDate(deadline, "Asia/Ho_Chi_Minh", "dd/MM/yyyy");
@@ -4428,13 +4481,12 @@ function updateStartDate(email, courseId, startDate) {
                       progressSheet.getRange(rowNum, idxCourse + 1).setValue(courseId);
                       progressSheet.getRange(rowNum, idxLesson + 1).setValue(lessonId);
                       if (idxStatus !== -1) progressSheet.getRange(rowNum, idxStatus + 1).setValue("In Progress");
-                      // Initialize Timestamp for creation? No, only specific actions.
                   } else {
                       rowNum = rowIndex + 1;
                   }
                   
-                  // Set Assigned Date
-                  if (idxAssigned !== -1) {
+                  // Set Assigned Date - CRITICAL SAFETY CHECK
+                  if (idxAssigned !== -1 && rowNum > 1) { 
                       progressSheet.getRange(rowNum, idxAssigned + 1).setValue(deadlineDate);
                   }
               }
