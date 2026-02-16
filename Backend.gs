@@ -708,7 +708,6 @@ const COL_NAME_DIEM_DUNG_HAN = "Diem_Dung_Han";
 const COL_NAME_TONG_DIEM = "Tong_Diem";
 const COL_NAME_XEP_LOAI = "Xep_Loai"; 
 const COL_NAME_TRANG_THAI = "Trang_Thai"; 
-const COL_NAME_NGAY_HOAN_THANH = "Ngay_Hoan_Thanh"; // New: Submission Date
 const COL_NAME_NOP_TRE = "Nop_Tre"; // New: flag for late submission
 const COL_NAME_NGAY_DUOC_GIAO = "Ngay_Duoc_Giao"; // New: Assigned Date
 
@@ -781,7 +780,6 @@ function getCourseContent(email, courseId) {
   const IDX_XEP_LOAI = progressSheet ? getColumnIndex(progressSheet, COL_NAME_XEP_LOAI) : -1;
   const IDX_HO_TRO_1 = progressSheet ? getColumnIndex(progressSheet, COL_NAME_HO_TRO_1) : -1;
   const IDX_HO_TRO_2 = progressSheet ? getColumnIndex(progressSheet, COL_NAME_HO_TRO_2) : -1;
-  const IDX_NGAY_HOAN_THANH = progressSheet ? getColumnIndex(progressSheet, COL_NAME_NGAY_HOAN_THANH) : -1;
   
   // --- NEW: Fetch Start Date from LS_DangKy ---
   let courseStartDate = null;
@@ -1030,7 +1028,12 @@ function getCourseContent(email, courseId) {
       });
   }
   
-  return { success: true, data: curriculum, startDate: courseStartDate };
+  return { 
+    success: true, 
+    data: curriculum, 
+    startDate: courseStartDate,
+    needsStartDate: !courseStartDate // Flag to show start date selection UI
+  };
 }
 
 // Ensure KH_TienDo has Nop_Tre column (create header cell if missing)
@@ -1039,7 +1042,7 @@ function ensureProgressColumns(progressSheet) {
     if (!progressSheet) return;
     if (progressSheet.getLastRow() === 0) {
         // Empty sheet, add headers
-        const headers = [COL_NAME_EMAIL, COL_NAME_MA_KH, COL_NAME_MA_BAI, COL_NAME_HIEN_TAI, COL_NAME_XA_NHAT, COL_NAME_TRANG_THAI, COL_NAME_NOP_TRE, COL_NAME_NGAY_DUOC_GIAO, COL_NAME_NGAY_HOAN_THANH];
+        const headers = [COL_NAME_EMAIL, COL_NAME_MA_KH, COL_NAME_MA_BAI, COL_NAME_HIEN_TAI, COL_NAME_XA_NHAT, COL_NAME_TRANG_THAI, COL_NAME_NOP_TRE, COL_NAME_NGAY_DUOC_GIAO];
         progressSheet.appendRow(headers);
         return;
     }
@@ -1047,7 +1050,7 @@ function ensureProgressColumns(progressSheet) {
     const lastCol = progressSheet.getLastColumn();
     if (lastCol === 0) {
          // Empty columns but maybe rows exist? Unlikely.
-         const headers = [COL_NAME_EMAIL, COL_NAME_MA_KH, COL_NAME_MA_BAI, COL_NAME_HIEN_TAI, COL_NAME_XA_NHAT, COL_NAME_TRANG_THAI, COL_NAME_NOP_TRE, COL_NAME_NGAY_DUOC_GIAO, COL_NAME_NGAY_HOAN_THANH];
+         const headers = [COL_NAME_EMAIL, COL_NAME_MA_KH, COL_NAME_MA_BAI, COL_NAME_HIEN_TAI, COL_NAME_XA_NHAT, COL_NAME_TRANG_THAI, COL_NAME_NOP_TRE, COL_NAME_NGAY_DUOC_GIAO];
          progressSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
          return;
     }
@@ -1056,7 +1059,7 @@ function ensureProgressColumns(progressSheet) {
     const headers = headersRange.getValues()[0].map(h => String(h || "").trim());
     
     // Check for missing columns and add them
-    const needed = [COL_NAME_NOP_TRE, COL_NAME_NGAY_DUOC_GIAO, COL_NAME_NGAY_HOAN_THANH];
+    const needed = [COL_NAME_NOP_TRE, COL_NAME_NGAY_DUOC_GIAO];
     let curLast = headers.length;
     needed.forEach(name => {
       if (headers.indexOf(name) === -1) {
@@ -1099,7 +1102,7 @@ function setupKH_TienDo(fillMissingStartDate) {
     const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h || "").trim());
 
     // Ensure headers
-    const needed = [COL_NAME_NOP_TRE, COL_NAME_NGAY_DUOC_GIAO, COL_NAME_NGAY_HOAN_THANH];
+    const needed = [COL_NAME_NOP_TRE, COL_NAME_NGAY_DUOC_GIAO];
     let curLast = headers.length;
     needed.forEach(name => {
       if (headers.indexOf(name) === -1) {
@@ -4437,6 +4440,11 @@ function updateStartDate(email, courseId, startDate) {
           const idxLesson = getColumnIndex(progressSheet, COL_NAME_MA_BAI);
           const idxAssigned = getColumnIndex(progressSheet, COL_NAME_NGAY_DUOC_GIAO);
           const idxStatus = getColumnIndex(progressSheet, COL_NAME_TRANG_THAI);
+          const idxDiemVideo = getColumnIndex(progressSheet, COL_NAME_DIEM_VIDEO);
+          const idxDiemBHTDN = getColumnIndex(progressSheet, COL_NAME_DIEM_BHTDN);
+          const idxDiemLink = getColumnIndex(progressSheet, COL_NAME_DIEM_LINK);
+          const idxDiemDungHan = getColumnIndex(progressSheet, COL_NAME_DIEM_DUNG_HAN);
+          const idxTongDiem = getColumnIndex(progressSheet, COL_NAME_TONG_DIEM);
           
           // Parse Start Date correctly for Loop
           let start = null;
@@ -4452,10 +4460,12 @@ function updateStartDate(email, courseId, startDate) {
           }
 
           // Loop through Course Lessons
+          let lessonCount = 0;
           for (let k = 1; k < cData.length; k++) {
               if (String(cData[k][0]) === String(courseId)) {
                   const lessonId = String(cData[k][1]);
                   const lessonOrder = Number(cData[k][6] || 1);
+                  lessonCount++;
                   
                   // Calculate Deadline
                   const deadline = new Date(start);
@@ -4475,12 +4485,25 @@ function updateStartDate(email, courseId, startDate) {
                   
                   let rowNum = -1;
                   if (rowIndex === -1) {
-                      progressSheet.appendRow([""]); // Create placeholder
+                      // Create new row
+                      progressSheet.appendRow([""]);
                       rowNum = progressSheet.getLastRow();
+                      
+                      // Set basic info
                       progressSheet.getRange(rowNum, idxEmail + 1).setValue(email);
                       progressSheet.getRange(rowNum, idxCourse + 1).setValue(courseId);
                       progressSheet.getRange(rowNum, idxLesson + 1).setValue(lessonId);
-                      if (idxStatus !== -1) progressSheet.getRange(rowNum, idxStatus + 1).setValue("In Progress");
+                      
+                      // Set status: "Đang học" for first lesson, "Khóa" for others
+                      const status = (lessonCount === 1) ? "Đang học" : "Khóa";
+                      if (idxStatus !== -1) progressSheet.getRange(rowNum, idxStatus + 1).setValue(status);
+                      
+                      // Initialize all scores to 0
+                      if (idxDiemVideo !== -1) progressSheet.getRange(rowNum, idxDiemVideo + 1).setValue(0);
+                      if (idxDiemBHTDN !== -1) progressSheet.getRange(rowNum, idxDiemBHTDN + 1).setValue(0);
+                      if (idxDiemLink !== -1) progressSheet.getRange(rowNum, idxDiemLink + 1).setValue(0);
+                      if (idxDiemDungHan !== -1) progressSheet.getRange(rowNum, idxDiemDungHan + 1).setValue(0);
+                      if (idxTongDiem !== -1) progressSheet.getRange(rowNum, idxTongDiem + 1).setValue(0);
                   } else {
                       rowNum = rowIndex + 1;
                   }

@@ -1157,6 +1157,19 @@
                 </div>
                 <!-- Video Progress Overlay -->
                 <!-- Video Progress Overlay Removed -->
+
+                <!-- Ready to Learn Overlay -->
+                <div id="ready-to-learn-overlay" class="overlay-container"
+                    style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="overlay-icon" style="font-size: 80px;">🎓</div>
+                    <h2 class="overlay-title">Khóa học đã sẵn sàng!</h2>
+                    <p class="overlay-text">Bạn đã thiết lập ngày bắt đầu thành công. Hãy bắt đầu hành trình học tập của
+                        bạn ngay bây giờ!</p>
+                    <button id="btn-start-learning" onclick="startLearning()" class="overlay-btn"
+                        style="background: #10b981; font-size: 18px; padding: 15px 40px; font-weight: 700;">
+                        <i class="fas fa-play-circle"></i> CHÍNH THỨC HỌC
+                    </button>
+                </div>
             </div>
 
             <div class="lesson-detail">
@@ -1708,6 +1721,35 @@
                         console.log("Loaded Start Date from Server:", courseStartDate);
                     } else {
                         courseStartDate = null;
+                    }
+
+                    // --- NEW: Check if needs start date ---
+                    if (result.needsStartDate) {
+                        console.log("⚠️ Start date not set, showing date selection UI");
+                        // Show start date selection UI in sidebar
+                        const dateControl = document.getElementById('sidebar-date-control');
+                        const confirmBtn = document.getElementById('btn-confirm-date');
+                        if (dateControl) {
+                            dateControl.style.display = 'block';
+                            if (confirmBtn) confirmBtn.style.display = 'block';
+                        }
+
+                        // Set default date to today
+                        const today = new Date().toISOString().split('T')[0];
+                        const dateInput = document.getElementById('course-start-date');
+                        if (dateInput) {
+                            dateInput.value = today;
+                            dateInput.min = today; // Prevent selecting past dates
+                            onDateInputChange(dateInput); // Update display
+                        }
+
+                        // Hide lesson list and show message
+                        showToast("Vui lòng chọn ngày bắt đầu học!", "info");
+                        document.getElementById('current-lesson-title').textContent = "Chào mừng đến với khóa học!";
+                        document.getElementById('lesson-summary').textContent = "Vui lòng chọn ngày bắt đầu học ở sidebar bên trái và nhấn 'Xác nhận' để bắt đầu.";
+
+                        // Don't render lessons or play anything
+                        return;
                     }
 
                     // Cache the data
@@ -3173,14 +3215,21 @@
 
                     if (result.success) {
                         courseStartDate = date;
-                        initDateUI();
-                        renderLessonListNew();
-                        if (currentLessonIdx !== -1) playLesson(currentLessonIdx);
                         showToast("Đã thiết lập ngày bắt đầu!", "success");
 
                         // Clear cache to force reload next time
                         const cacheKey = `curriculum_${courseId}_${user.email}`;
                         localStorage.removeItem(cacheKey);
+
+                        // Hide date control
+                        const dateControl = document.getElementById('sidebar-date-control');
+                        if (dateControl) dateControl.style.display = 'none';
+
+                        // Show ready-to-learn overlay
+                        const overlay = document.getElementById('ready-to-learn-overlay');
+                        if (overlay) {
+                            overlay.style.display = 'flex';
+                        }
                     } else {
                         showToast(result.msg || "Lỗi khi lưu ngày bắt đầu", "error");
                     }
@@ -3191,6 +3240,16 @@
                     btn.textContent = originalText;
                 }
             }
+        }
+
+        // Start learning after confirming start date
+        async function startLearning() {
+            // Hide overlay
+            const overlay = document.getElementById('ready-to-learn-overlay');
+            if (overlay) overlay.style.display = 'none';
+
+            // Reload curriculum to get initialized data
+            await loadCurriculum(true);
         }
 
         async function requestResetDate() {
