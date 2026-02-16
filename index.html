@@ -1084,6 +1084,7 @@
     </div>
 
     <script>
+        // API URL - Direct connection to Google Apps Script Web App
         const API_URL = "https://script.google.com/macros/s/AKfycbwd9qsO3FlcwNMOWBqPm5c7NWb0d5c8hMCd5o2YzeXlFOQMVayvHErqcUcWHrelojIbeA/exec";
 
         // Check login status
@@ -1099,10 +1100,14 @@
         // Initialize page
         window.addEventListener('load', () => {
             renderHeader();
-            loadCourses();
-            if (isLoggedIn) {
-                loadRoadmap();
-            }
+            // Test CORS first
+            testCORSPreflight().then(() => {
+                // Then load courses
+                loadCourses();
+                if (isLoggedIn) {
+                    loadRoadmap();
+                }
+            });
         });
 
         // Render Header
@@ -1187,12 +1192,45 @@
             showToast('Tính năng đang phát triển!', 'info');
         }
 
+        // Test CORS preflight
+        async function testCORSPreflight() {
+            console.log("\n=== TESTING CORS PREFLIGHT ===");
+            console.log("🔗 API_URL:", API_URL);
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type',
+                        'Origin': 'http://localhost:8000'
+                    }
+                });
+                
+                console.log("✅ Preflight response status:", response.status);
+                console.log("🎯 CORS Headers:");
+                console.log("   - Access-Control-Allow-Origin:", response.headers.get('Access-Control-Allow-Origin'));
+                console.log("   - Access-Control-Allow-Methods:", response.headers.get('Access-Control-Allow-Methods'));
+                console.log("   - Access-Control-Allow-Headers:", response.headers.get('Access-Control-Allow-Headers'));
+                
+                if (response.headers.get('Access-Control-Allow-Origin')) {
+                    console.log("✅ CORS headers present!");
+                } else {
+                    console.error("❌ CORS headers MISSING!");
+                }
+            } catch (error) {
+                console.error("❌ Preflight test error:", error.message);
+            }
+        }
+
         // Load Courses with Caching
         async function loadCourses() {
             const loadingEl = document.getElementById('loading-courses');
             const gridEl = document.getElementById('courses-grid');
 
-            const CACHE_KEY = isLoggedIn ? `courses_${userData.email}` : 'courses_public';
+            console.log("🔍 loadCourses() called - isLoggedIn:", isLoggedIn, "userData:", userData);
+
+            const CACHE_KEY = isLoggedIn ? `courses_${userData?.code || 'unknown'}` : 'courses_public';
             const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
             try {
@@ -1200,6 +1238,7 @@
                 const cachedData = getCachedCourses(CACHE_KEY, CACHE_DURATION);
 
                 if (cachedData) {
+                    console.log("✅ Using cached courses:", cachedData.length, "courses");
                     // Show cached data immediately (optimistic rendering)
                     loadingEl.classList.add('hidden');
                     gridEl.classList.remove('hidden');
@@ -1211,40 +1250,103 @@
                 }
 
                 // No cache, show loading
+                console.log("📡 Fetching courses from API...");
                 loadingEl.classList.remove('hidden');
                 gridEl.classList.add('hidden');
 
                 courses = []; // Use global variable
 
-                if (isLoggedIn) {
+                if (isLoggedIn && userData && userData.code) {
+                    console.log("👤 Đã đăng nhập - gửi studentCode:", userData.code);
+                    console.log("🔗 API_URL:", API_URL);
+                    
+                    const requestBody = {
+                        action: "getCourses",
+                        studentCode: userData.code
+                    };
+                    console.log("📤 Request body:", requestBody);
+                    
                     // Fetch courses with activation status
                     const response = await fetch(API_URL, {
                         method: 'POST',
-                        body: JSON.stringify({
-                            action: "getCourses",
-                            email: userData.email
-                        })
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestBody)
                     });
+                    
+                    console.log("📥 Response status:", response.status);
+                    console.log("🎯 Response headers (key ones):");
+                    console.log("   - Access-Control-Allow-Origin:", response.headers.get('Access-Control-Allow-Origin'));
+                    console.log("   - Content-Type:", response.headers.get('Content-Type'));
+                    
+                    if (!response.ok) {
+                        console.error("❌ Response NOT ok (status:", response.status + ")");
+                        const text = await response.text();
+                        console.error("Response body:", text);
+                        showToast(`Lỗi HTTP ${response.status}: ${response.statusText}`, 'error');
+                        return;
+                    }
+                    
                     const result = await response.json();
+                    console.log("✅ API Result:", result);
                     if (result.success) {
                         courses = result.data;
+                        console.log("🎓 Tìm thấy", courses.length, "khóa học");
+                    } else {
+                        console.error("❌ API Error:", result.msg);
+                        showToast("Lỗi từ API: " + result.msg, 'error');
                     }
-                } else {
+                } else if (!isLoggedIn) {
+                    console.log("👥 Khách - gửi getAllAvailableCourses");
+                    console.log("🔗 API_URL:", API_URL);
+                    
+                    const requestBody = { action: "getAllAvailableCourses" };
+                    console.log("📤 Request body:", requestBody);
+                    
                     // Fetch all available courses (public)
                     const response = await fetch(API_URL, {
                         method: 'POST',
-                        body: JSON.stringify({
-                            action: "getAllAvailableCourses"
-                        })
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestBody)
                     });
+                    
+                    console.log("📥 Response status:", response.status);
+                    console.log("🎯 Response headers (key ones):");
+                    console.log("   - Access-Control-Allow-Origin:", response.headers.get('Access-Control-Allow-Origin'));
+                    console.log("   - Content-Type:", response.headers.get('Content-Type'));
+                    console.log("   - All headers:", Array.from(response.headers.entries()));
+                    
+                    // Check if response is OK
+                    if (!response.ok) {
+                        console.error("❌ Response NOT ok (status:", response.status + ")");
+                        const text = await response.text();
+                        console.error("Response body:", text);
+                        showToast(`Lỗi HTTP ${response.status}: ${response.statusText}`, 'error');
+                        return;
+                    }
+                    
                     const result = await response.json();
+                    console.log("✅ API Result:", result);
+                    
                     if (result.success) {
                         courses = result.data;
+                        console.log("🎓 Tìm thấy", courses.length, "khóa học");
+                    } else {
+                        console.error("❌ API Error:", result.msg);
+                        showToast("Lỗi từ API: " + result.msg, 'error');
                     }
+                } else {
+                    console.error("❌ userData không có code:", userData);
+                    showToast("Lỗi: userData không có code", 'error');
                 }
 
                 // Cache the result
-                setCachedCourses(CACHE_KEY, courses);
+                if (courses.length > 0) {
+                    setCachedCourses(CACHE_KEY, courses);
+                }
 
                 // Hide loading, show grid
                 loadingEl.classList.add('hidden');
@@ -1252,10 +1354,23 @@
 
                 renderCourses(courses);
             } catch (error) {
-                console.error('Error loading courses:', error);
+                console.error('❌ Error in loadCourses:', error);
+                console.error('Error message:', error.message);
+                console.error('Error name:', error.name);
+                console.error('Error stack:', error.stack);
+                
+                // Additional network debugging
+                if (error.message.includes('Failed to fetch')) {
+                    console.error('🔴 Network error - possible causes:');
+                    console.error('   1. CORS policy blocking (check response headers)');
+                    console.error('   2. Backend server not responding');
+                    console.error('   3. Network connectivity issue');
+                    console.error('   4. API_URL is incorrect');
+                }
+                
                 loadingEl.classList.add('hidden');
                 gridEl.classList.remove('hidden');
-                showToast('Lỗi tải danh sách khóa học!', 'error');
+                showToast('Lỗi tải danh sách khóa học: ' + error.message, 'error');
             }
         }
 
@@ -1306,7 +1421,7 @@
                         method: 'POST',
                         body: JSON.stringify({
                             action: "getCourses",
-                            email: userData.email
+                            studentCode: userData.code
                         })
                     });
                     const result = await response.json();
@@ -1673,7 +1788,7 @@
                     method: 'POST',
                     body: JSON.stringify({
                         action: 'activateCourse',
-                        email: userData.email,
+                        studentCode: userData.code,
                         courseId: currentCourseId,
                         fileData: activateFileData ? activateFileData.base64 : null,
                         fileName: activateFileData ? activateFileData.name : null,
@@ -2012,7 +2127,7 @@
 
             try {
                 // Send to backend
-                console.log('🤖 Sending chat request:', { message, email: isLoggedIn ? userData.email : "" });
+                console.log('🤖 Sending chat request:', { message, code: isLoggedIn ? userData.code : "" });
 
                 const response = await fetch(API_URL, {
                     method: 'POST',
@@ -2020,7 +2135,7 @@
                         action: 'chatWithAI',
                         message: message,
                         conversationHistory: conversationHistory,
-                        email: isLoggedIn ? userData.email : ""
+                        studentCode: isLoggedIn ? userData.code : ""
                     })
                 });
 
