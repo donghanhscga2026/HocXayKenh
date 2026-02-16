@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BRK - Đăng nhập / Đăng ký</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated Background */
+        .circles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .circles li {
+            position: absolute;
+            display: block;
+            list-style: none;
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            animation: animate 25s linear infinite;
+            bottom: -150px;
+        }
+
+        .circles li:nth-child(1) {
+            left: 25%;
+            width: 80px;
+            height: 80px;
+            animation-delay: 0s;
+        }
+
+        .circles li:nth-child(2) {
+            left: 10%;
+            width: 20px;
+            height: 20px;
+            animation-delay: 2s;
+            animation-duration: 12s;
+        }
+
+        .circles li:nth-child(3) {
+            left: 70%;
+            width: 20px;
+            height: 20px;
+            animation-delay: 4s;
+        }
+
+        .circles li:nth-child(4) {
+            left: 40%;
+            width: 60px;
+            height: 60px;
+            animation-delay: 0s;
+            animation-duration: 18s;
+        }
+
+        .circles li:nth-child(5) {
+            left: 65%;
+            width: 20px;
+            height: 20px;
+            animation-delay: 0s;
+        }
+
+        @keyframes animate {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+                border-radius: 0;
+            }
+
+            100% {
+                transform: translateY(-1000px) rotate(720deg);
+                opacity: 0;
+                border-radius: 50%;
+            }
+        }
+
+        /* Container */
+        .container {
+            position: relative;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 30px 40px;
+            width: 90%;
+            max-width: 450px;
+            max-height: 90vh;
+            overflow-y: auto;
+            text-align: center;
+            color: white;
+        }
+
+        .logo {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            opacity: 0.9;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px 12px 45px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 30px;
+            color: #fff;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            left: auto !important;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .password-toggle:hover {
+            color: #fff;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 30px;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            color: #fff;
+            font-weight: bold;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .toggle-link {
+            margin-top: 20px;
+            font-size: 14px;
+            opacity: 0.9;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .toggle-link:hover {
+            opacity: 1;
+        }
+
+        .forgot-link {
+            display: block;
+            margin-top: 10px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+        }
+
+        .forgot-link:hover {
+            text-decoration: underline;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            animation: slideDown 0.3s ease;
+        }
+
+        .alert.success {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid #10B981;
+            color: #D1FAE5;
+        }
+
+        .alert.error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #EF4444;
+            color: #FEE2E2;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            margin-top: 10px;
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .checkbox-container input {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .password-hint {
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 5px;
+            text-align: left;
+            padding-left: 15px;
+        }
+
+        .referrer-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+
+        .referrer-info strong {
+            color: #ffd700;
+        }
+
+        /* Scrollbar styling */
+        .container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        .container::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Tablet */
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px 30px;
+                max-width: 400px;
+            }
+
+            h2 {
+                font-size: 1.8em;
+            }
+
+            .logo {
+                font-size: 2.5em;
+            }
+        }
+
+        /* Mobile */
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px 25px;
+                max-width: 100%;
+            }
+
+            h2 {
+                font-size: 1.5em;
+            }
+
+            .logo {
+                font-size: 2em;
+            }
+
+            .subtitle {
+                font-size: 0.85em;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Background Animation -->
+    <ul class="circles">
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+        <li></li>
+    </ul>
+
+    <!-- Auth Container -->
+    <div class="container">
+        <div class="logo">🎓</div>
+        <h2 id="form-title">Đăng Nhập</h2>
+        <p class="subtitle">Học viện BRK - Ngân hàng phước báu</p>
+
+        <div id="alert" class="alert hidden"></div>
+
+        <form id="auth-form">
+            <div class="input-group">
+                <i class="fas fa-user"></i>
+                <input type="text" id="login-email" placeholder="Email hoặc SĐT" required>
+            </div>
+
+            <!-- Register Fields (Hidden by default) -->
+            <div id="register-fields" class="hidden">
+                <div class="input-group">
+                    <i class="fas fa-id-card"></i>
+                    <input type="text" id="reg-name" placeholder="Họ và tên">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-phone"></i>
+                    <input type="text" id="reg-phone" placeholder="Số điện thoại Zalo">
+                </div>
+
+                <div class="input-group">
+                    <i class="fas fa-user-tag"></i>
+                    <input type="text" id="reg-referral" placeholder="Mã người giới thiệu (nếu có)" readonly>
+                </div>
+
+                <!-- Referrer Info (Hidden by default) -->
+                <div id="referrer-info" class="referrer-info hidden">
+                    👤 Người giới thiệu: <strong id="referrer-name">Đang tải...</strong>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <i class="fas fa-lock"></i>
+                <input type="password" id="login-pass" placeholder="Mật khẩu" required style="padding-right: 45px;">
+                <i class="fas fa-eye password-toggle" id="toggle-pass"></i>
+            </div>
+            <p class="password-hint hidden" id="password-hint">💡 Mật khẩu mặc định là <strong>Brk@3773</strong>. Bạn có
+                thể thay đổi thành mật khẩu cá nhân.</p>
+
+            <div class="checkbox-container" id="remember-container">
+                <input type="checkbox" id="rememberMe">
+                <label for="rememberMe">Ghi nhớ đăng nhập</label>
+            </div>
+
+            <button type="submit" class="btn" id="btn-submit">ĐĂNG NHẬP</button>
+        </form>
+
+        <a href="forgot_password.html" class="forgot-link" id="forgot-link">Quên mật khẩu?</a>
+        <p class="toggle-link" id="toggle-link">Chưa có tài khoản? Đăng ký ngay</p>
+    </div>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbwd9qsO3FlcwNMOWBqPm5c7NWb0d5c8hMCd5o2YzeXlFOQMVayvHErqcUcWHrelojIbeA/exec";
+
+        let isLoginMode = true;
+
+        // DOM Elements
+        const formTitle = document.getElementById('form-title');
+        const registerFields = document.getElementById('register-fields');
+        const btnSubmit = document.getElementById('btn-submit');
+        const toggleLink = document.getElementById('toggle-link');
+        const authForm = document.getElementById('auth-form');
+        const alert = document.getElementById('alert');
+        const togglePass = document.getElementById('toggle-pass');
+        const rememberContainer = document.getElementById('remember-container');
+        const forgotLink = document.getElementById('forgot-link');
+
+        // Toggle between Login/Register
+        toggleLink.addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            const passwordHint = document.getElementById('password-hint');
+            const passInput = document.getElementById('login-pass');
+
+            if (isLoginMode) {
+                formTitle.textContent = 'Đăng Nhập';
+                registerFields.classList.add('hidden');
+                btnSubmit.textContent = 'ĐĂNG NHẬP';
+                toggleLink.textContent = 'Chưa có tài khoản? Đăng ký ngay';
+                rememberContainer.classList.remove('hidden');
+                forgotLink.classList.remove('hidden');
+                passwordHint.classList.add('hidden');
+                passInput.value = ''; // Clear password
+            } else {
+                formTitle.textContent = 'Đăng Ký';
+                registerFields.classList.remove('hidden');
+                btnSubmit.textContent = 'ĐĂNG KÝ';
+                toggleLink.textContent = 'Đã có tài khoản? Đăng nhập';
+                rememberContainer.classList.add('hidden');
+                forgotLink.classList.add('hidden');
+                passwordHint.classList.remove('hidden');
+                passInput.value = 'Brk@3773'; // Set default password
+            }
+            hideAlert();
+        });
+
+        // Password Toggle
+        togglePass.addEventListener('click', () => {
+            const passInput = document.getElementById('login-pass');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                togglePass.classList.remove('fa-eye');
+                togglePass.classList.add('fa-eye-slash');
+            } else {
+                passInput.type = 'password';
+                togglePass.classList.remove('fa-eye-slash');
+                togglePass.classList.add('fa-eye');
+            }
+        });
+
+        // Form Submit
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (isLoginMode) {
+                await handleLogin();
+            } else {
+                await handleRegister();
+            }
+        });
+
+        // Handle Login
+        async function handleLogin() {
+            const loginInput = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-pass').value;
+
+            if (!loginInput || !password) {
+                showAlert('Vui lòng điền đầy đủ thông tin!', 'error');
+                return;
+            }
+
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = 'Đang đăng nhập...';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: "login",
+                        loginInput: loginInput,
+                        password: password
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Save user info
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    localStorage.setItem('password', password);
+
+                    showAlert(result.msg, 'success');
+
+                    // Redirect to dashboard
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
+                } else {
+                    showAlert(result.msg, 'error');
+                }
+            } catch (error) {
+                showAlert('Lỗi kết nối! Vui lòng thử lại.', 'error');
+                console.error('Error:', error);
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = 'ĐĂNG NHẬP';
+            }
+        }
+
+        // Handle Register
+        async function handleRegister() {
+            const email = document.getElementById('login-email').value.trim();
+            const name = document.getElementById('reg-name').value.trim();
+            const phone = document.getElementById('reg-phone').value.trim();
+            const referralCode = document.getElementById('reg-referral').value.trim();
+            const password = document.getElementById('login-pass').value;
+
+            if (!email || !name || !phone || !password) {
+                showAlert('Vui lòng điền đầy đủ thông tin!', 'error');
+                return;
+            }
+
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = 'Đang đăng ký...';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: "register",
+                        email: email,
+                        password: password,
+                        phone: phone,
+                        name: name,
+                        referralCode: referralCode
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('Đăng ký thành công! Mã học viên: ' + result.code + '. Vui lòng kiểm tra email để kích hoạt tài khoản.', 'success');
+
+                    // Reset form
+                    authForm.reset();
+
+                    // Switch to login mode after 3 seconds
+                    setTimeout(() => {
+                        toggleLink.click();
+                    }, 3000);
+                } else {
+                    showAlert(result.msg, 'error');
+                }
+            } catch (error) {
+                showAlert('Lỗi kết nối! Vui lòng thử lại.', 'error');
+                console.error('Error:', error);
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = 'ĐĂNG KÝ';
+            }
+        }
+
+        // Alert Functions
+        function showAlert(message, type) {
+            alert.textContent = message;
+            alert.className = `alert ${type}`;
+            alert.classList.remove('hidden');
+        }
+
+        function hideAlert() {
+            alert.classList.add('hidden');
+        }
+
+        // Get referrer name from API
+        async function getReferrerName(refCode) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: "getReferrerInfo",
+                        referralCode: refCode
+                    })
+                });
+
+                const result = await response.json();
+                return result.success ? result.name : 'Không tìm thấy';
+            } catch (error) {
+                console.error('Error getting referrer name:', error);
+                return 'Không xác định';
+            }
+        }
+
+        // Check if already logged in
+        window.addEventListener('load', async () => {
+            const user = localStorage.getItem('user');
+            if (user) {
+                // Already logged in, redirect to dashboard
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            // Check for referral code in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const refCode = urlParams.get('ref');
+            if (refCode) {
+                // Switch to register mode
+                toggleLink.click();
+
+                // Fill referral code
+                document.getElementById('reg-referral').value = refCode;
+
+                // Show referrer info and get name
+                const referrerInfo = document.getElementById('referrer-info');
+                const referrerName = document.getElementById('referrer-name');
+                referrerInfo.classList.remove('hidden');
+
+                // Get referrer name from API
+                const name = await getReferrerName(refCode);
+                referrerName.textContent = name;
+            }
+        });
+    </script>
+</body>
+
+</html>

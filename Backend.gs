@@ -4300,4 +4300,8 @@ function findRelevantChunks(query, userEmail, topK = 5) {
     Logger.log("❌ Error in findRelevantChunks:", error);
     return [];
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 82ea12552eabf93d2f65328d5d2e91e82ad92407
