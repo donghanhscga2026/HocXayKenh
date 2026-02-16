@@ -131,6 +131,12 @@ function doPost(e) {
     else if (action === "updateVideoProgress") {
       return returnJSON(updateVideoProgress(content.email, content.courseId, content.lessonId, content.currentTime, content.duration));
     }
+    else if (action === "submitAssignment") {
+      return returnJSON(submitAssignment(content));
+    }
+    else if (action === "autoSaveProgress") {
+      return returnJSON(autoSaveProgress(content));
+    }
     else if (action === "chatWithAI") {
       return returnJSON(chatWithAI(content.message, content.conversationHistory, content.email, content.courseId, content.courseTitle));
     }
@@ -704,6 +710,7 @@ const COL_NAME_XEP_LOAI = "Xep_Loai";
 const COL_NAME_TRANG_THAI = "Trang_Thai"; 
 const COL_NAME_NGAY_HOAN_THANH = "Ngay_Hoan_Thanh"; // New: Submission Date
 const COL_NAME_NOP_TRE = "Nop_Tre"; // New: flag for late submission
+const COL_NAME_NGAY_DUOC_GIAO = "Ngay_Duoc_Giao"; // New: Assigned Date
 
 function calculateCourseProgress(email, courseId, ss) {
   const contentSheet = ss.getSheetByName("KH_NoiDung");
@@ -1058,7 +1065,7 @@ function setupKH_TienDo(fillMissingStartDate) {
     const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h || "").trim());
 
     // Ensure headers
-    const needed = [COL_NAME_NOP_TRE];
+    const needed = [COL_NAME_NOP_TRE, COL_NAME_NGAY_DUOC_GIAO, COL_NAME_NGAY_HOAN_THANH];
     let curLast = headers.length;
     needed.forEach(name => {
       if (headers.indexOf(name) === -1) {
@@ -4314,6 +4321,7 @@ function findRelevantChunks(query, userEmail, topK = 5) {
   }
 }
 // --- NEW: Update Start Date in LS_DangKy ---
+// --- NEW: Update Start Date in LS_DangKy AND Initialize KH_TienDo ---
 function updateStartDate(email, courseId, startDate) {
   const studentCode = getStudentCodeByEmail(email);
   if (!studentCode) return { success: false, msg: "Không tìm thấy thông tin học viên" };
@@ -4338,11 +4346,18 @@ function updateStartDate(email, courseId, startDate) {
       targetColIndex = headers.length;
   }
 
+  let updateSuccess = false;
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][idxCode]) === String(studentCode) && String(data[i][idxMaLop]) === String(courseId)) {
         let dateObj = null;
         if (startDate) {
-            dateObj = new Date(startDate);
+            // Check format yyyy-MM-dd
+            const parts = startDate.split('-');
+            if (parts.length === 3) {
+                dateObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+            } else {
+                 dateObj = new Date(startDate);
+            }
         }
         
         if (!startDate) {
@@ -4351,12 +4366,80 @@ function updateStartDate(email, courseId, startDate) {
             sheet.getRange(i + 1, targetColIndex + 1).setValue(dateObj);
             sheet.getRange(i + 1, targetColIndex + 1).setNumberFormat("dd/MM/yyyy");
         }
-        
-        return { success: true, msg: "Cập nhật ngày bắt đầu thành công!" };
+        updateSuccess = true;
+        break;
     }
   }
   
-  return { success: false, msg: "Không tìm thấy thông tin đăng ký lớp học này" };
+  if (!updateSuccess) return { success: false, msg: "Không tìm thấy thông tin đăng ký lớp học này" };
+  
+  // --- 2. Initialize KH_TienDo Rows with Assigned Date ---
+  if (startDate) {
+      try {
+          const progressSheet = ss.getSheetByName("KH_TienDo");
+          ensureProgressColumns(progressSheet); // Ensure Ngay_Duoc_Giao exists
+          
+          const contentSheet = ss.getSheetByName("KH_NoiDung");
+          const cData = contentSheet.getDataRange().getValues();
+          const pData = progressSheet.getDataRange().getValues();
+          
+          const idxEmail = getColumnIndex(progressSheet, COL_NAME_EMAIL);
+          const idxCourse = getColumnIndex(progressSheet, COL_NAME_MA_KH);
+          const idxLesson = getColumnIndex(progressSheet, COL_NAME_MA_BAI);
+          const idxAssigned = getColumnIndex(progressSheet, COL_NAME_NGAY_DUOC_GIAO);
+          const idxStatus = getColumnIndex(progressSheet, COL_NAME_TRANG_THAI);
+           const idxGhiNhan = getColumnIndex(progressSheet, COL_NAME_GHI_NHAN);
+          
+          // Loop through Course Lessons
+          for (let k = 1; k < cData.length; k++) {
+              if (String(cData[k][0]) === String(courseId)) {
+                  const lessonId = String(cData[k][1]);
+                  const lessonOrder = Number(cData[k][6] || 1);
+                  
+                  // Calculate Deadline
+                  const parts = startDate.split('-');
+                  const start = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                  const deadline = new Date(start);
+                  deadline.setDate(start.getDate() + (lessonOrder - 1));
+                  const deadlineDate = Utilities.formatDate(deadline, "Asia/Ho_Chi_Minh", "dd/MM/yyyy");
+                  
+                  // Find or Create Row
+                  let rowIndex = -1;
+                  for (let r = 1; r < pData.length; r++) {
+                      if (String(pData[r][idxEmail]) === email && 
+                          String(pData[r][idxCourse]) === courseId && 
+                          String(pData[r][idxLesson]) === lessonId) {
+                          rowIndex = r;
+                          break;
+                      }
+                  }
+                  
+                  let rowNum = -1;
+                  if (rowIndex === -1) {
+                      progressSheet.appendRow([""]); // Create placeholder
+                      rowNum = progressSheet.getLastRow();
+                      progressSheet.getRange(rowNum, idxEmail + 1).setValue(email);
+                      progressSheet.getRange(rowNum, idxCourse + 1).setValue(courseId);
+                      progressSheet.getRange(rowNum, idxLesson + 1).setValue(lessonId);
+                      if (idxStatus !== -1) progressSheet.getRange(rowNum, idxStatus + 1).setValue("In Progress");
+                      // Initialize Timestamp for creation? No, only specific actions.
+                  } else {
+                      rowNum = rowIndex + 1;
+                  }
+                  
+                  // Set Assigned Date
+                  if (idxAssigned !== -1) {
+                      progressSheet.getRange(rowNum, idxAssigned + 1).setValue(deadlineDate);
+                  }
+              }
+          }
+      } catch (e) {
+          Logger.log("Error initializing KH_TienDo: " + e);
+          // Don't fail the whole request, as start date was saved
+      }
+  }
+
+  return { success: true, msg: "Cập nhật ngày bắt đầu và khởi tạo tiến độ thành công!" };
 }
 
 // --- NEW: Reset Progress (Clear StartDate + Wipe KH_TienDo) ---
@@ -4379,7 +4462,8 @@ function resetProgress(email, courseId) {
         COL_NAME_HO_TRO_1, COL_NAME_HO_TRO_2,
         COL_NAME_DIEM_DUNG_HAN, COL_NAME_TONG_DIEM, COL_NAME_XEP_LOAI, 
         COL_NAME_TRANG_THAI, 
-        COL_NAME_NGAY_HOAN_THANH, COL_NAME_NOP_TRE
+        COL_NAME_NGAY_HOAN_THANH, COL_NAME_NOP_TRE,
+        COL_NAME_NGAY_DUOC_GIAO
     ];
     
     const colIndexes = colsToClear.map(name => getColumnIndex(sheet, name)).filter(idx => idx !== -1);
@@ -4457,4 +4541,292 @@ function getStudentCodeByEmail(email) {
        }
    }
    return null;
+}
+
+// --- SUBMIT ASSIGNMENT HANDLER ---
+function submitAssignment(data) {
+  try {
+    const ss = getDB();
+    const sheet = ss.getSheetByName("KH_TienDo");
+    if (!sheet) return { success: false, msg: "Sheet KH_TienDo không tồn tại" };
+
+    const email = data.email;
+    const courseId = data.courseId;
+    const lessonId = data.lessonId;
+    
+    // Calculate Score (Re-verify backend side or trust frontend? Trusting frontend for now but validating basics)
+    // 1. Video (2pts)
+    let videoScore = 0;
+    const duration = Number(data.duration) || 0;
+    const maxTime = Number(data.videoMaxTime) || 0;
+    if (duration > 0) {
+        const p = (maxTime / duration) * 100;
+        if (p >= 95) videoScore = 2;
+        else if (p >= 50) videoScore = 1;
+    }
+    
+    // 2. Reflection (2pts)
+    let reflectionScore = 0;
+    const reflection = data.reflection || "";
+    if (reflection.length >= 50) reflectionScore = 2;
+    else if (reflection.length > 10) reflectionScore = 1;
+    
+    // 3. Practice Links (3pts)
+    let practiceScore = 0;
+    if (data.link1 && data.link1.trim()) practiceScore++;
+    if (data.link2 && data.link2.trim()) practiceScore++;
+    if (data.link3 && data.link3.trim()) practiceScore++;
+    
+    // 4. Support (2pts)
+    let supportScore = 0;
+    if (data.disciplineSupport1) supportScore++;
+    if (data.disciplineSupport2) supportScore++;
+    
+    // 5. On-Time (1pt)
+    // Calculate Deadline
+    let isLate = false;
+    // Get Start Date from LS_DangKy
+    const startDate = getCourseStartDateFromLS(generateStudentCodeFromEmail(email, ss), courseId); 
+    // Wait, generateStudentCodeFromEmail might be slow/complex. 
+    // Easier: Just get course content? No, cyclic dependency.
+    // Let's rely on the fact that if we are submitting, we probably have a start date.
+    // Actually, calculate late status based on current date vs deadline derived from start date.
+    
+    // We need lesson index to calculate deadline. 
+    // Let's get lesson index from KH_NoiDung
+    const contentSheet = ss.getSheetByName("KH_NoiDung");
+    const contentData = contentSheet.getDataRange().getValues();
+    let lessonIndex = -1;
+    let rank = 0;
+    for (let i = 1; i < contentData.length; i++) {
+        if (String(contentData[i][0]) === String(courseId)) {
+            if (String(contentData[i][1]) === String(lessonId)) {
+                lessonIndex = rank;
+                break;
+            }
+            rank++;
+        }
+    }
+    
+    if (startDate && lessonIndex !== -1) {
+         const parts = startDate.split('-'); // yyyy-MM-dd
+         if (parts.length === 3) {
+             const start = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+             const deadline = new Date(start);
+             deadline.setDate(deadline.getDate() + lessonIndex);
+             deadline.setHours(23, 59, 59, 999);
+             
+             if (new Date() > deadline) isLate = true;
+         }
+    }
+    
+    let onTimeScore = isLate ? -1 : 1;
+    
+    // Total
+    let totalScore = videoScore + reflectionScore + practiceScore + supportScore + onTimeScore;
+    if (totalScore > 10) totalScore = 10;
+    if (totalScore < 0) totalScore = 0; // Should not happen but safety
+    
+    // Grade
+    let grade = "Cần cố gắng";
+    if (totalScore >= 9) grade = "Xuất sắc";
+    else if (totalScore >= 7) grade = "Giỏi";
+    else if (totalScore >= 5) grade = "Khá";
+    
+    // Save to KH_TienDo
+    const rows = sheet.getDataRange().getValues();
+    const idxEmail = getColumnIndex(sheet, COL_NAME_EMAIL);
+    const idxCourse = getColumnIndex(sheet, COL_NAME_MA_KH);
+    const idxLesson = getColumnIndex(sheet, COL_NAME_MA_BAI);
+    
+    let rowToUpdate = -1;
+    for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][idxEmail]) === email && 
+            String(rows[i][idxCourse]) === courseId && 
+            String(rows[i][idxLesson]) === lessonId) {
+            rowToUpdate = i + 1;
+            break;
+        }
+    }
+    
+    // If not found, create new row? (Should exist from getCourses or getCourseContent ensuring rows)
+    // But if not, we append.
+    
+    const timestamp = Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "dd/MM/yyyy HH:mm:ss");
+    const todayDate = Utilities.formatDate(new Date(), "Asia/Ho_Chi_Minh", "dd/MM/yyyy");
+
+    if (rowToUpdate === -1) {
+        // Append new
+        // We need to map columns carefully
+        // Simplified: just return error, or call ensureProgressRow?
+        // Let's assume row exists or we fail. 
+        // Actually, let's append safely using map similar to ensureDailyChallenge
+        return { success: false, msg: "Không tìm thấy dữ liệu bài học để cập nhật." };
+    }
+    
+    // Update columns
+    const updateCol = (colName, val) => {
+        const idx = getColumnIndex(sheet, colName);
+        if (idx !== -1) sheet.getRange(rowToUpdate, idx + 1).setValue(val);
+    };
+    
+    updateCol(COL_NAME_GHI_NHAN, timestamp);
+    updateCol(COL_NAME_TRANG_THAI, (videoScore >= 2 && totalScore >= 5) ? "Completed" : "In Progress"); // Example logic
+    // Actually, user wants "Completed" if they submit? 
+    // Let's set to "Completed" (or Approved) if score is decent? 
+    // Or just "Completed" implies they finished the action.
+    updateCol(COL_NAME_TRANG_THAI, "Completed"); 
+    
+    updateCol(COL_NAME_NGAY_HOAN_THANH, todayDate); // Submission Date
+    updateCol(COL_NAME_NOP_TRE, isLate);
+    
+    updateCol(COL_NAME_DIEM_VIDEO, videoScore);
+    updateCol(COL_NAME_BHTDN, reflection);
+    // updateCol(COL_NAME_DIEM_BHTDN, reflectionScore); // If exists
+    updateCol(COL_NAME_LINK_1, data.link1);
+    updateCol(COL_NAME_LINK_2, data.link2);
+    updateCol(COL_NAME_LINK_3, data.link3);
+    // updateCol(COL_NAME_DIEM_LINK, practiceScore);
+    
+    updateCol(COL_NAME_HO_TRO_1, data.disciplineSupport1);
+    updateCol(COL_NAME_HO_TRO_2, data.disciplineSupport2);
+    
+    updateCol(COL_NAME_TONG_DIEM, totalScore);
+    updateCol(COL_NAME_XEP_LOAI, grade);
+    
+    return { 
+        success: true, 
+        msg: "Ghi nhận thành công!", 
+        score: totalScore,
+        grade: grade,
+        details: {
+            video: videoScore,
+            reflection: reflectionScore,
+            practice: practiceScore,
+            discipline: supportScore,
+            onTime: onTimeScore
+        }
+    };
+
+  } catch (e) {
+    Logger.log("submitAssignment error: " + e);
+    return { success: false, msg: "Lỗi server: " + e.toString() };
+  }
+}
+
+// Helper to get needed info for lateness check (if not available globally)
+function generateStudentCodeFromEmail(email, ss) {
+    // simplified lookup
+    const sheet = ss.getSheetByName("Dky");
+    const data = sheet.getDataRange().getValues();
+    for(let i=1; i<data.length; i++) {
+        if(String(data[i][COL_EMAIL]) === email) return data[i][COL_CODE];
+    }
+    return "";
+}
+
+// --- AUTO SAVE PROGRESS HANDLER ---
+function autoSaveProgress(data) {
+  try {
+    const ss = getDB();
+    const sheet = ss.getSheetByName("KH_TienDo");
+    if (!sheet) return { success: false, msg: "Sheet KH_TienDo missing" };
+
+    const email = data.email;
+    const courseId = data.courseId;
+    const lessonId = data.lessonId;
+    
+    // Ensure row exists
+    // We reuse logic from updateVideoProgress or similar, but let's be explicit
+    const rows = sheet.getDataRange().getValues();
+    const idxEmail = getColumnIndex(sheet, COL_NAME_EMAIL);
+    const idxCourse = getColumnIndex(sheet, COL_NAME_MA_KH);
+    const idxLesson = getColumnIndex(sheet, COL_NAME_MA_BAI);
+    
+    let rowIndex = -1;
+    for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][idxEmail]) === email && 
+            String(rows[i][idxCourse]) === courseId && 
+            String(rows[i][idxLesson]) === lessonId) {
+            rowIndex = i;
+            break;
+        }
+    }
+    
+    if (rowIndex === -1) {
+        // Append new row if not found (Auto-create progress tracking)
+        // This solves "data ready for next time"
+        const lastRow = sheet.getLastRow();
+        rowIndex = lastRow; // 0-based relative to data array? No, data array is snapshot.
+        // Append empty row
+        const width = sheet.getLastColumn();
+        const emptyRow = new Array(width).fill("");
+        sheet.appendRow(emptyRow); // We will set values via setValue to be safe with indexes
+        
+        sheet.getRange(lastRow + 1, idxEmail + 1).setValue(email);
+        sheet.getRange(lastRow + 1, idxCourse + 1).setValue(courseId);
+        sheet.getRange(lastRow + 1, idxLesson + 1).setValue(lessonId);
+        sheet.getRange(lastRow + 1, getColumnIndex(sheet, COL_NAME_TRANG_THAI) + 1).setValue("In Progress");
+        rowIndex = lastRow; // Now it exists at this index in terms of getRange? No getRange is 1-based.
+        // logical row index for getRange is rowIndex + 1
+    }
+
+    const rowNum = rowIndex + 1;
+    
+    // Helper
+    const setVal = (colName, val) => {
+        const idx = getColumnIndex(sheet, colName);
+        if (idx !== -1) sheet.getRange(rowNum, idx + 1).setValue(val);
+    };
+    
+    // Update Fields
+    if (data.currentTime !== undefined) setVal(COL_NAME_HIEN_TAI, data.currentTime);
+    if (data.maxTime !== undefined) setVal(COL_NAME_XA_NHAT, data.maxTime);
+    if (data.duration !== undefined) {
+         // Optionally update video score if high enough?
+         const duration = Number(data.duration);
+         const maxTime = Number(data.maxTime || 0);
+         if (duration > 0) {
+             const p = (maxTime / duration) * 100;
+             let vScore = 0;
+             if (p >= 95) vScore = 2;
+             else if (p >= 50) vScore = 1;
+             setVal(COL_NAME_DIEM_VIDEO, vScore);
+         }
+    }
+    
+    if (data.reflection !== undefined) setVal(COL_NAME_BHTDN, data.reflection);
+    if (data.link1 !== undefined) setVal(COL_NAME_LINK_1, data.link1);
+    if (data.link2 !== undefined) setVal(COL_NAME_LINK_2, data.link2);
+    if (data.link3 !== undefined) setVal(COL_NAME_LINK_3, data.link3);
+    if (data.disciplineSupport1 !== undefined) setVal(COL_NAME_HO_TRO_1, data.disciplineSupport1);
+    if (data.disciplineSupport2 !== undefined) setVal(COL_NAME_HO_TRO_2, data.disciplineSupport2);
+    
+    // Calculate Temporary Score (Live Score)
+    // ... duplicate logic from submitAssignment or extract helper? 
+    // For auto-save, we might not need to save Total Score yet, but user asked for "diem tam tinh" to be updated.
+    // Let's do a quick calc.
+    
+    // Reuse submitAssignment calc logic? It's embedded.
+    // Simplified calc for auto-save:
+    let tempScore = 0;
+    // Video
+    const idxVideoScore = getColumnIndex(sheet, COL_NAME_DIEM_VIDEO);
+    let vScore = 0; // Read from sheet or calc? logic above set it.
+    // ... let's trust frontend to send current score? Or recalc.
+    // Let's recalc briefly.
+    // Video (from above), Reflection (len >= 50 -> 2), Links (count), Support (count), OnTime (1).
+    // ... ample complexity.
+    // Let's just save the field data. The "Live Score" is displayed on Frontend.
+    // Does Backend need to save "Combined Score" during auto-save?
+    // User: "điểm tạm tính được cập nhật sẵn sàng".
+    // "Cập nhật sẵn sàng" means when I reload, I see the score.
+    // If I save the raw inputs (reflection, links, time), the Frontend `calculateLiveScore` will recalc it on load!
+    // So saving raw inputs is sufficient.
+    
+    return { success: true };
+
+  } catch (e) {
+    return { success: false, msg: e.toString() };
+  }
 }

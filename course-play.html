@@ -593,9 +593,13 @@
             transition: all 0.2s;
         }
 
-        .overlay-btn:hover {
-            background: white;
-            color: black;
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #059669);
+            width: 0%;
+            transition: width 0.3s ease-out;
+            /* Smooth transition */
+            position: relative;
         }
 
         /* Mobile Dropdown Base Styles */
@@ -2572,11 +2576,20 @@
             updateVideoProgress(); // Ensure local progress is up-to-date before syncing
             const lesson = curriculum[currentLessonIdx];
 
+            // Gather Form Data for Auto-Save
+            const isDesktop = window.innerWidth > 1024;
+            const reflection = document.getElementById(isDesktop ? 'reflection-input-desktop' : 'reflection-input')?.value || "";
+            const link1 = document.getElementById(isDesktop ? 'link-1-desktop' : 'link-1')?.value || "";
+            const link2 = document.getElementById(isDesktop ? 'link-2-desktop' : 'link-2')?.value || "";
+            const link3 = document.getElementById(isDesktop ? 'link-3-desktop' : 'link-3')?.value || "";
+            const support1 = document.getElementById(isDesktop ? 'discipline-support-1-desktop' : 'discipline-support-1')?.checked || false;
+            const support2 = document.getElementById(isDesktop ? 'discipline-support-2-desktop' : 'discipline-support-2')?.checked || false;
+
             // If video is finished (>95%)
             if (isFinished || (lesson.progress.duration > 0 && lesson.progress.currentTime / lesson.progress.duration > 0.95)) {
                 if (lesson.progress.status !== "Completed" && lesson.progress.status !== "Approved") {
-                    // If no assignment -> Completed immediately
-                    // If there is an assignment -> Wait for submission -> In Progress (but backend will handle this logic)
+                    // Keep as In Progress until explicit submit, or Auto-complete if no assignment? 
+                    // User prefers manual submit for full data.
                 }
             }
 
@@ -2584,15 +2597,25 @@
                 await fetch(API_URL, {
                     method: 'POST',
                     body: JSON.stringify({
-                        action: "updateVideoProgress",
+                        action: "autoSaveProgress", // NEW ACTION
                         email: user.email,
                         courseId: courseId,
                         lessonId: lesson.id,
                         currentTime: lesson.progress.currentTime,
-                        duration: lesson.progress.duration
+                        maxTime: lesson.progress.maxTime,
+                        duration: lesson.progress.duration,
+                        reflection: reflection,
+                        link1: link1,
+                        link2: link2,
+                        link3: link3,
+                        disciplineSupport1: support1,
+                        disciplineSupport2: support2
                     })
                 });
-            } catch (e) { }
+                console.log("Auto-saved progress.");
+            } catch (e) {
+                console.warn("Auto-save failed", e);
+            }
         }
 
         async function submitWork() {

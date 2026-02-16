@@ -1,0 +1,106 @@
+
+// --- AUTO SAVE PROGRESS HANDLER ---
+function autoSaveProgress(data) {
+  try {
+    const ss = getDB();
+    const sheet = ss.getSheetByName("KH_TienDo");
+    if (!sheet) return { success: false, msg: "Sheet KH_TienDo missing" };
+
+    const email = data.email;
+    const courseId = data.courseId;
+    const lessonId = data.lessonId;
+    
+    // Ensure row exists
+    // We reuse logic from updateVideoProgress or similar, but let's be explicit
+    const rows = sheet.getDataRange().getValues();
+    const idxEmail = getColumnIndex(sheet, COL_NAME_EMAIL);
+    const idxCourse = getColumnIndex(sheet, COL_NAME_MA_KH);
+    const idxLesson = getColumnIndex(sheet, COL_NAME_MA_BAI);
+    
+    let rowIndex = -1;
+    for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][idxEmail]) === email && 
+            String(rows[i][idxCourse]) === courseId && 
+            String(rows[i][idxLesson]) === lessonId) {
+            rowIndex = i;
+            break;
+        }
+    }
+    
+    if (rowIndex === -1) {
+        // Append new row if not found (Auto-create progress tracking)
+        // This solves "data ready for next time"
+        const lastRow = sheet.getLastRow();
+        rowIndex = lastRow; // 0-based relative to data array? No, data array is snapshot.
+        // Append empty row
+        const width = sheet.getLastColumn();
+        const emptyRow = new Array(width).fill("");
+        sheet.appendRow(emptyRow); // We will set values via setValue to be safe with indexes
+        
+        sheet.getRange(lastRow + 1, idxEmail + 1).setValue(email);
+        sheet.getRange(lastRow + 1, idxCourse + 1).setValue(courseId);
+        sheet.getRange(lastRow + 1, idxLesson + 1).setValue(lessonId);
+        sheet.getRange(lastRow + 1, getColumnIndex(sheet, COL_NAME_TRANG_THAI) + 1).setValue("In Progress");
+        rowIndex = lastRow; // Now it exists at this index in terms of getRange? No getRange is 1-based.
+        // logical row index for getRange is rowIndex + 1
+    }
+
+    const rowNum = rowIndex + 1;
+    
+    // Helper
+    const setVal = (colName, val) => {
+        const idx = getColumnIndex(sheet, colName);
+        if (idx !== -1) sheet.getRange(rowNum, idx + 1).setValue(val);
+    };
+    
+    // Update Fields
+    if (data.currentTime !== undefined) setVal(COL_NAME_HIEN_TAI, data.currentTime);
+    if (data.maxTime !== undefined) setVal(COL_NAME_XA_NHAT, data.maxTime);
+    if (data.duration !== undefined) {
+         // Optionally update video score if high enough?
+         const duration = Number(data.duration);
+         const maxTime = Number(data.maxTime || 0);
+         if (duration > 0) {
+             const p = (maxTime / duration) * 100;
+             let vScore = 0;
+             if (p >= 95) vScore = 2;
+             else if (p >= 50) vScore = 1;
+             setVal(COL_NAME_DIEM_VIDEO, vScore);
+         }
+    }
+    
+    if (data.reflection !== undefined) setVal(COL_NAME_BHTDN, data.reflection);
+    if (data.link1 !== undefined) setVal(COL_NAME_LINK_1, data.link1);
+    if (data.link2 !== undefined) setVal(COL_NAME_LINK_2, data.link2);
+    if (data.link3 !== undefined) setVal(COL_NAME_LINK_3, data.link3);
+    if (data.disciplineSupport1 !== undefined) setVal(COL_NAME_HO_TRO_1, data.disciplineSupport1);
+    if (data.disciplineSupport2 !== undefined) setVal(COL_NAME_HO_TRO_2, data.disciplineSupport2);
+    
+    // Calculate Temporary Score (Live Score)
+    // ... duplicate logic from submitAssignment or extract helper? 
+    // For auto-save, we might not need to save Total Score yet, but user asked for "diem tam tinh" to be updated.
+    // Let's do a quick calc.
+    
+    // Reuse submitAssignment calc logic? It's embedded.
+    // Simplified calc for auto-save:
+    let tempScore = 0;
+    // Video
+    const idxVideoScore = getColumnIndex(sheet, COL_NAME_DIEM_VIDEO);
+    let vScore = 0; // Read from sheet or calc? logic above set it.
+    // ... let's trust frontend to send current score? Or recalc.
+    // Let's recalc briefly.
+    // Video (from above), Reflection (len >= 50 -> 2), Links (count), Support (count), OnTime (1).
+    // ... ample complexity.
+    // Let's just save the field data. The "Live Score" is displayed on Frontend.
+    // Does Backend need to save "Combined Score" during auto-save?
+    // User: "điểm tạm tính được cập nhật sẵn sàng".
+    // "Cập nhật sẵn sàng" means when I reload, I see the score.
+    // If I save the raw inputs (reflection, links, time), the Frontend `calculateLiveScore` will recalc it on load!
+    // So saving raw inputs is sufficient.
+    
+    return { success: true };
+
+  } catch (e) {
+    return { success: false, msg: e.toString() };
+  }
+}
